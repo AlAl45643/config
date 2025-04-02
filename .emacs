@@ -1,0 +1,597 @@
+;;; package management
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(package-initialize)
+
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+;;; functions
+
+; Erase all reminders and rebuilt reminders for today from the agenda
+(defun bh/org-agenda-to-appt ()
+  (interactive)
+  (setq appt-time-msg-list nil)
+  (org-agenda-to-appt))
+
+
+; resume pomodoro timer after running it
+(defun my/org-pomodoro-resume-after-break ()
+  (save-window-excursion
+    (org-clock-goto)
+    (org-pomodoro)))
+
+(defun my/set-font ()
+  (when (find-font (font-spec :name phundrak/default-font-name))
+    (set-face-attribute 'default nil
+                        :font phundrak/default-font-name
+                        :height phundrak/default-font-size)))
+
+(defvar run-current-file-dispatch nil
+"A dispatch table used by `run-current-file' to call dedicated function to run code.
+Value is a association list.
+Each item is (EXT . FUNCTION).
+EXT is filename extension (sans the dot), type string.
+FUNCTION is a elisp function name to call, type symbol.
+If file extension match, and FUNCTION is defined, call it, pass current buffer's filepath as arg.
+Else, `run-current-file-map' is looked up." )
+
+(setq run-current-file-dispatch
+      '(("el" . load)
+        ("elc" . load)
+        ("java" . xah-java-compile-and-run)))
+
+(defvar run-current-file-map
+  "A association list that maps file extension to a command for running the file, used by `run-current-file'.
+Each item is (EXT . PROGRAM).
+EXT is filename extension (sans the dot), type string.
+PROGRAM is program name or path, with command options to run a file, type string.
+A filename is appended after the PROGRAM string as external command to call.")
+
+(setq run-current-file-map
+      '(
+        ;; following are tested as of 2024-12-20
+
+        ("fs" . "dotnet fsi")
+        ("fsx" . "dotnet fsi")
+        ("go" . "go run")
+        ("js" . "deno run")
+        ("php" . "php")
+        ("pl" . "perl")
+        ("ps1" . "pwsh")
+        ("py" . "python")
+        ("py2" . "python2")
+        ("py3" . "python3")
+        ("rb" . "ruby")
+        ("ts" . "deno run")
+        ("m" . "wolframscript -print all -file")
+        ("wl" . "wolframscript -print all -file")
+        ("wls" . "wolframscript -print all -file")))
+
+(defun run-current-file (Filename)
+"Execute the current file.
+Output is printed to buffer *xah-run output*.
+
+File suffix is used to determine what external command to run, in the variable `run-current-file-map'.
+
+If file is modified, it is auto saved before run.
+
+The variable `run-current-file-dispatch' allows you to customize this command to call other function to run the current file.
+
+URL `http://xahlee.info/emacs/emacs/elisp_run_current_file.html'
+Created: 2020-09-24
+Version: 2024-12-20"
+  (interactive (if buffer-file-name (progn (when (buffer-modified-p) (save-buffer)) (list buffer-file-name)) (user-error "Buffer is not file. Save it first.")))
+  (let ((xoutbuf (get-buffer-create "*xah-run output*" t))
+        (xext (file-name-extension Filename))
+        xdispatch)
+    (setq xdispatch (assoc xext run-current-file-dispatch))
+    (if xdispatch
+        (if (fboundp (cdr xdispatch))
+            (progn
+              (message "calling %s" (cdr xdispatch))
+              (funcall (cdr xdispatch) Filename))
+          (warn "`run-current-file' found function %s in run-current-file-dispatch but it is unbound. Normal run continues using `run-current-file-map'." xdispatch))
+      (let ((xappCmdStr (cdr (assoc xext run-current-file-map))))
+        (when (not xappCmdStr) (error "%s: Unknown file extension: %s. check `run-current-file-map'" real-this-command xext))
+        (cond
+         (t
+          (progn
+            (with-current-buffer xoutbuf (erase-buffer))
+            (apply 'start-process (append (list "Run" xoutbuf) (split-string xappCmdStr " +" t) (list Filename) nil))
+            (display-buffer xoutbuf))))))))
+
+
+
+;;; config for packages that I know listed in order they should be loaded
+
+(use-package evil
+  :defer t
+  :ensure t
+  :init
+  (progn
+    (setq evil-undo-system 'undo-redo)
+                                        ; `evil-collection' assumes `evil-want-keybinding' is set to
+                                        ; `nil' before loading `evil' and `evil-collection'
+                                        ; @see https://github.com/emacs-evil/evil-collection#installation
+    (setq evil-want-keybinding nil))
+  (evil-mode 1)
+  )
+
+
+(use-package evil-collection
+  :defer t
+  :ensure t
+  :init
+  (evil-collection-init)
+  )
+
+
+(use-package evil-snipe
+  :defer t
+  :ensure t
+  :init
+  (evil-snipe-mode +1)
+  (evil-snipe-override-mode +1)
+)
+
+(use-package evil-owl
+  :defer t
+  :ensure t
+  :custom
+  (evil-owl-display-method 'posframe)
+  (evil-owl-extra-posframe-args '(:width 50 :height 20))
+  (evil-owl-max-string-length 50)
+  (evil-owl-idle-delay 0.5)
+  :init
+  (evil-owl-mode)
+)
+
+
+
+(use-package org
+  :defer t
+  :hook ((org-agenda-finalize . bh/org-agenda-to-appt)
+         (org-agenda-finalize . append))
+  :bind (("C-c l" . #'org-store-link)
+         ("C-c a" . #'org-agenda)
+         ("C-c c" . #'org-capture))
+  :mode ("\\.org\\'" . org-mode)
+  :custom
+  (bh/org-agenda-to-appt)
+                                        ; Activate appointments so we get notifications
+  (appt-activate t)
+                                        ; If we leave Emacs running overnight - reset the appointments one minute after midnight
+  (run-at-time "24:01" nil 'bh/org-agenda-to-appt)
+                                        ; keep track of when todo is finished when created
+  (org-log-done 'time)
+                                        ; change org clock sound for
+  (org-clock-sound (concat user-emacs-directory "bell.wav"))
+                                        ; set agenda files
+  (org-agenda-files nil)
+                                        ; include diary for agenda
+  (org-agenda-include-diary t)
+                                        ; restore agendas to how they previously were after quitting agenda view
+  (org-agenda-restore-windows-after-quit t)
+                                        ; set default org-agenda span to a week
+  (org-agenda-span 'week)
+                                        ; set time grid to ampm
+  (org-agenda-timegrid-use-ampm t)
+                                        ; enable plantuml and emacs-lisp in #+BEGIN
+  (org-babel-load-languages '((emacs-lisp . t) (plantuml . t)))
+                                        ; put logs into drawer
+  (org-log-into-drawer t)
+                                        ; file path for plantuml
+  (org-plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
+                                        ; ask before killing a pomodora timer
+  (org-src-lang-modes
+   '(("C" . c)
+     ("C++" . c++)
+     ("asymptote" . asy)
+     ("bash" . sh)
+     ("beamer" . latex)
+     ("calc" . fundamental)
+     ("cpp" . c++)
+     ("ditaa" . artist)
+     ("desktop" . conf-desktop)
+     ("dot" . fundamental)
+     ("elisp" . emacs-lisp)
+     ("ocaml" . tuareg)
+     ("screen" . shell-script)
+     ("shell" . sh)
+     ("sqlite" . sql)
+     ("toml" . conf-toml)
+     ("plantuml" . plantuml)))
+)
+
+(use-package org-pomodoro
+  :defer t
+  :ensure t
+  :hook (org-pomodoro-break-finished . my/org-pomodoro-resume-after-break)
+  :custom
+  (org-pomodoro-ask-upon-killing t)
+                                        ; change finish sound to differentiate between starting and stopping
+  (org-pomodoro-finished-sound (concat user-emacs-directory "bell.wav"))
+                                        ; change pomo length and pomo break length
+  (org-pomodoro-length 25)
+  (org-pomodoro-long-break-length 15)
+)
+
+(use-package evil-org
+  :defer t
+  :ensure t
+  :hook (org-mode . (lambda () evil-org-mode))
+  :config
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys)
+  (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
+  )
+
+
+
+(use-package flycheck
+  :defer t
+  :ensure t
+  :init (global-flycheck-mode)
+  )
+
+(use-package corfu
+  :defer t
+  :ensure t
+  :init
+  (global-corfu-mode)
+  (corfu-history-mode)
+  (corfu-popupinfo-mode)
+  :custom
+  (corfu-cycle t)
+  (corfu-quit-no-match 'separator)
+  (corfu-auto-prefix 2)
+  (corfu-auto-delay 0.1)
+  (corfu-preview-current 'nil)
+  (corfu-preselect 'first)
+  (corfu-auto t)
+  (corfu-min-width 80)
+  (corfu-max-width corfu-min-width)
+  (corfu-count 14)
+  (corfu-scroll-margin 4)
+  (global-corfu-minibuffer nil)
+  :bind (("TAB" . completion-at-point)
+         (:map corfu-map
+               ("S-SPC" . corfu-insert-separator)
+               ("M-p" . nil)
+               ("<return>" . nil)
+               ("RET" . nil)))
+ )
+
+
+(use-package vertico
+  :defer t
+  :ensure t
+  :custom
+  (vertico-cycle t)
+  :init
+  (vertico-mode)
+  :bind (:map vertico-map
+              ("C-j" . vertico-next)
+              ("C-k" . vertico-previous))
+ )
+
+
+(use-package orderless
+  :defer t
+  :ensure t
+  :custom
+  (completion-styles '(orderless partial-completion basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles partial-completion))))
+  )
+
+(use-package savehist
+  :defer t
+  :init
+  (savehist-mode)
+  )
+
+(use-package consult
+  :defer t
+  :ensure t
+  :custom
+  (completion-in-region-function 'consult-completion-in-region)
+  )
+
+(use-package cape
+  :ensure t
+  :defer t
+  ;; Bind prefix keymap providing all Cape commands under a mnemonic key.
+  ;; Press C-c p ? to for help.
+  :bind ("M-p" . cape-prefix-map) ;; Alternative key: M-<tab>, M-p, M-+
+  ;; Alternatively bind Cape commands individually.
+  ;; :bind (("C-c p d" . cape-dabbrev)
+  ;;        ("C-c p h" . cape-history)
+  ;;        ("C-c p f" . cape-file)
+  ;;        ...)
+  :init
+  ;; Add to the global default value of `completion-at-point-functions' which is
+  ;; used by `completion-at-point'.  The order of the functions matters, the
+  ;; first function returning a result wins.  Note that the list of buffer-local
+  ;; completion functions takes precedence over the global list.
+  (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  (add-hook 'completion-at-point-functions #'cape-file)
+  (add-hook 'completion-at-point-functions #'cape-elisp-block)
+  ;; (add-hook 'completion-at-point-functions #'cape-history)
+  ;; ...
+)
+
+(use-package lsp-mode
+  :defer t
+  :ensure t
+  :init
+  (setq lsp-keymap-prefix "C-c s")
+  (defun my/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(orderless))) ;; Configure orderless
+  :hook (((web-mode php-mode css-mode sql-mode csharp-mode mhtml-mode js-mode) . lsp)
+         (lsp-completion-mode . my/lsp-mode-setup-completion))
+  :custom
+  (lsp-completion-provider :none) ;; we use corfu!!
+  (lsp-signature-cycle t)
+  :config
+                                        ; enable which-key
+  (with-eval-after-load 'lsp-mode
+    (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
+                                        ; get rid of lsp warnings
+  (add-to-list 'warning-suppress-log-types '(lsp-mode))
+  (add-to-list 'warning-suppress-types '(lsp-mode))
+)
+
+;; Enable rich annotations using the Marginalia package
+(use-package marginalia
+  :defer t
+  :ensure t
+  ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
+  ;; available in the *Completions* buffer, add it to the
+  ;; `completion-list-mode-map'.
+  :bind (:map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init section is always executed.
+  :init
+
+  ;; Marginalia must be activated in the :init section of use-package such that
+  ;; the mode gets enabled right away. Note that this forces loading the
+  ;; package.
+  (marginalia-mode)
+  )
+
+(use-package tree-sitter
+  :defer t
+  :ensure t
+  :config
+  (tree-sitter-require 'csharp)
+  )
+
+
+(use-package tree-sitter-langs
+  :defer t
+  :ensure t)
+
+;(use-package treesit-auto
+;:defer t
+;:ensure t
+;:config
+;(global-treesit-auto-mode)
+;)
+
+
+
+(use-package posframe
+  :defer t
+  :ensure t
+  )
+
+(use-package yasnippet
+  :defer t
+  :ensure t
+  :hook (corfu-mode . yas-minor-mode)
+  :init
+  (yas-global-mode 1)
+)
+
+(use-package yasnippet-snippets
+  :defer t
+  :ensure t
+  )
+
+(use-package yasnippet-capf
+  :after cape
+  :ensure t
+  :config
+  (add-to-list 'completion-at-point-functions #'yasnippet-capf)
+  )
+
+
+(use-package doom-snippets
+  :after yasnippet
+  :straight (doom-snippets :type git :host github :repo "doomemacs/snippets" :files ("*.el" "*")))
+
+
+
+
+(use-package lsp-ui
+  :defer t
+  :ensure t
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (gc-cons-threshold 100000000)
+  (read-process-output-max (* 1024 1024)) ;; 1mb
+  (lsp-ui-doc-enable t)
+  (lsp-ui-doc-position 'top)
+  (lsp-ui-doc-side 'right)
+  (lsp-ui-doc-delay 0)
+  (lsp-ui-doc-border "red")
+  (lsp-ui-doc-max-height 100)
+  (lsp-ui-doc-max-width 100)
+  (lsp-ui-doc-show-with-mouse t)
+  (lsp-ui-sideline-enable t)
+  (lsp-ui-sideline-show-diagnostics t)
+  (lsp-ui-sideline-delay 0)
+)
+
+
+(use-package php-mode
+  :defer t
+  :ensure t
+  :mode ("\\.php\\'" . php-mode)
+
+)
+
+(use-package rainbow-delimiters
+  :defer t
+  :ensure t
+  :hook (prog-mode . rainbow-delimiters-mode)
+  )
+
+(use-package adaptive-wrap
+  :defer t
+  :ensure t
+  :hook ((web-mode php-mode css-mode sql-mode csharp-mode mhtml-mode js-mode emacs-lisp-mode) . adaptive-wrap-prefix-mode)
+  )
+
+
+
+(use-package sharper
+  :defer t
+  :ensure t
+  :bind
+  ("C-c n" . sharper-main-transient)
+  )
+
+(use-package which-key
+  :defer t
+  :ensure t
+  :custom
+  (which-key-idle-delay 0.5)
+  (which-key-separator ":")
+  :init
+  (which-key-mode)
+)
+
+
+(use-package web-mode
+  :defer t
+  :ensure t
+  :mode ((("\\.phtml\\'") . web-mode)
+         (("\\page\\'") . web-mode))
+  )
+
+(use-package undo-fu-session
+  :defer t
+  :ensure t
+  :init
+  (undo-fu-session-global-mode)
+  :custom
+  (org-clock-sound (concat user-emacs-directory "bell.wav"))
+  (undo-fu-session-directory (concat user-emacs-directory "Backups"))
+  (undo-limit 400000)           ; 400kb (default is 160kb)
+  (undo-strong-limit 3000000)   ; 3mb   (default is 240kb)
+  (undo-outer-limit 48000000)  ; 48mb  (default is 24mb)
+  :config
+  (when (executable-find "zstd")
+                                        ; There are other algorithms available, but zstd is the fastest, and speed
+                                        ; is our priority within Emacs
+    (setq undo-fu-session-compression 'zst))
+ )
+
+
+
+(use-package emacs
+  :defer t
+  :mode ("\\.sql\\'" . sql-mode)
+  :hook (((php-mode csharp-mode mhtml-mode css-mode emacs-lisp-mode sql-mode) . display-line-numbers-mode)
+         (server-after-make-frame . my/set-font)
+         ; spaces for indentation
+         ((prog-mode . (lambda () (setq indent-tabs-mode nil))))
+         ; remove trailing spaces
+         (before-save . whitespace-cleanup))
+  :bind ("C-c p" . toggle-truncate-lines)
+
+  :config
+  (defvar phundrak/default-font-size 90
+    "Default font size.")
+
+  (defvar phundrak/default-font-name "Cascadia Code"
+    "Default font.")
+  (my/set-font)
+                                        ; ellipsis marker single character of three dots
+  (with-eval-after-load 'mule-util
+    (setq truncate-string-ellipsis "…"))
+                                        ; disable transparency
+  (add-to-list 'default-frame-alist '(alpha-background . 1.0))
+                                        ; yes or no now y or n
+  (if (version<= emacs-version "28")
+      (defalias 'yes-or-no-p 'y-or-n-p)
+    (setopt use-short-answers t))
+                                        ; set theme to tango dark
+  (add-to-list 'custom-enabled-themes 'tango-dark)
+  (load-theme 'tango-dark)
+  :custom
+  (indent-tabs-mode nil)
+                                        ; turn off comp warnings
+  (native-comp-async-report-warnings-error nil)
+                                        ; get rid of menu bar, tab bar, and tool bar
+  (menu-bar-mode nil)
+  (tab-bar-mode nil)
+  (tool-bar-mode nil)
+                                        ; setup differnet directoy for backups and autosaves
+  (backup-directory-alist '(concat user-emacs-directory "Backups"))
+                                        ; tabs insert spaces
+  (indent-tabs-mode nil)
+                                        ; cursor over actual space of character
+  (x-stretch-cursor t)
+  (window-combination-resize t) ; take new window space from all other windows
+                                        ; buffer is same version as file when opened
+  (global-auto-revert-mode 1)
+                                        ; end double space between sentences
+  (sentence-end-double-space nil)
+  (desktop-save-mode 1)
+  (doc-view-resolution 200)
+                                        ; support opening new minibuffers from inside existing minibuffers
+  (enable-recursive-minibuffers t)
+                                        ; hide commands in M-x which do not work in current mode.
+  (read-extended-command-predicate #'command-completion-default-include-p)
+                                        ; do not allow cursor in the minibuffer prompt
+  (minibuffer-prompt-properties
+
+   '(read-only t cursor-intangible t face minibuffer-prompt))
+
+)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(adaptive-wrap auto-complete cape company consult corfu dotnet
+                   evil-collection evil-org evil-owl evil-snipe
+                   flycheck lsp-ui marginalia orderless org-pomodoro
+                   php-mode pkg-info posframe rainbow-delimiters
+                   sharper undo-fu-session vertico web-mode which-key
+                   xcscope yasnippet-snippets)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
