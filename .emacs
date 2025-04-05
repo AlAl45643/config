@@ -26,7 +26,6 @@
   (setq appt-time-msg-list nil)
   (org-agenda-to-appt))
 
-
 ; resume pomodoro timer after running it
 (defun my/org-pomodoro-resume-after-break ()
   (save-window-excursion
@@ -38,7 +37,6 @@
     (set-face-attribute 'default nil
                         :font phundrak/default-font-name
                         :height phundrak/default-font-size)))
-
 (defvar run-current-file-dispatch nil
 "A dispatch table used by `run-current-file' to call dedicated function to run code.
 Value is a association list.
@@ -232,7 +230,8 @@ Version: 2024-12-20"
 (use-package evil-org
   :defer t
   :ensure t
-  :hook (org-mode . (lambda () evil-org-mode))
+  :after (evil org)
+  :hook (org-mode .  evil-org-mode)
   :config
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys)
@@ -256,6 +255,7 @@ Version: 2024-12-20"
   (corfu-popupinfo-mode)
   :custom
   (corfu-cycle t)
+  (corfu-on-exact-match nil)
   (corfu-quit-no-match 'separator)
   (corfu-auto-prefix 2)
   (corfu-auto-delay 0.1)
@@ -267,6 +267,7 @@ Version: 2024-12-20"
   (corfu-count 14)
   (corfu-scroll-margin 4)
   (global-corfu-minibuffer nil)
+  (corfu-popupinfo-delay 0)
   :bind (("TAB" . completion-at-point)
          (:map corfu-map
                ("S-SPC" . corfu-insert-separator)
@@ -334,16 +335,24 @@ Version: 2024-12-20"
   ;; ...
 )
 
+
 (use-package lsp-mode
   :defer t
   :ensure t
   :init
+  (defun my/update-completions-list ()
+    (progn
+        (fset 'non-greedy-lsp (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
+        (setq completion-at-point-functions
+              '(yasnippet-capf non-greedy-lsp cape-file cape-dabbrev
+))))
   (setq lsp-keymap-prefix "C-c s")
   (defun my/lsp-mode-setup-completion ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
           '(orderless))) ;; Configure orderless
   :hook (((web-mode php-mode css-mode sql-mode csharp-mode mhtml-mode js-mode) . lsp)
-         (lsp-completion-mode . my/lsp-mode-setup-completion))
+         (lsp-completion-mode . my/lsp-mode-setup-completion)
+         (lsp-completion-mode . my/update-completions-list))
   :custom
   (lsp-completion-provider :none) ;; we use corfu!!
   (lsp-signature-cycle t)
@@ -354,9 +363,10 @@ Version: 2024-12-20"
                                         ; get rid of lsp warnings
   (add-to-list 'warning-suppress-log-types '(lsp-mode))
   (add-to-list 'warning-suppress-types '(lsp-mode))
+                                        ; make lsp completer less greedy
 )
 
-;; Enable rich annotations using the Marginalia package
+;;Enable rich annotations using the Marginalia package
 (use-package marginalia
   :defer t
   :ensure t
@@ -401,9 +411,25 @@ Version: 2024-12-20"
   :ensure t
   )
 
+(use-package yasnippet-capf
+  :after cape
+  :ensure t
+  :init
+  (defun my/yasnippet-capf-h ()
+    (add-to-list 'completion-at-point-functions #'yasnippet-capf))
+  :hook (org-mode . my/yasnippet-capf-h)
+  :config
+  (add-to-list 'completion-at-point-functions #'yasnippet-capf)
+  )
+
+
 (use-package yasnippet
   :defer t
   :ensure t
+  :custom
+  (yas-keymap-disable-hook
+           (lambda () (and (frame-live-p corfu--frame)
+                           (frame-visible-p corfu--frame))))
   :hook (corfu-mode . yas-minor-mode)
   :init
   (yas-global-mode 1)
@@ -413,21 +439,6 @@ Version: 2024-12-20"
   :defer t
   :ensure t
   )
-
-(use-package yasnippet-capf
-  :after cape
-  :ensure t
-  :config
-  (add-to-list 'completion-at-point-functions #'yasnippet-capf)
-  )
-
-
-(use-package doom-snippets
-  :after yasnippet
-  :straight (doom-snippets :type git :host github :repo "doomemacs/snippets" :files ("*.el" "*")))
-
-
-
 
 (use-package lsp-ui
   :defer t
@@ -496,30 +507,65 @@ Version: 2024-12-20"
          (("\\page\\'") . web-mode))
   )
 
-(use-package undo-fu-session
-  :defer t
-  :ensure t
-  :init
-  (undo-fu-session-global-mode)
-  :custom
-  (org-clock-sound (concat user-emacs-directory "bell.wav"))
-  (undo-fu-session-directory (concat user-emacs-directory "Backups"))
-  (undo-limit 400000)           ; 400kb (default is 160kb)
-  (undo-strong-limit 3000000)   ; 3mb   (default is 240kb)
-  (undo-outer-limit 48000000)  ; 48mb  (default is 24mb)
-  :config
-  (when (executable-find "zstd")
-                                        ; There are other algorithms available, but zstd is the fastest, and speed
-                                        ; is our priority within Emacs
-    (setq undo-fu-session-compression 'zst))
- )
 
+;(use-package minuet
+;:ensure t
+;:bind
+;(("M-y" . #'minuet-complete-with-minibuffer) ;; use minibuffer for completion
+;    ("M-i" . #'minuet-show-suggestion) ;; use overlay for completion
+;    ("C-c m" . #'minuet-configure-provider)
+;    :map minuet-active-mode-map
+;    ;; These keymaps activate only when a minuet suggestion is displayed in the current buffer
+;    ("M-p" . #'minuet-previous-suggestion) ;; invoke completion or cycle to next completion
+;    ("M-n" . #'minuet-next-suggestion) ;; invoke completion or cycle to previous completion
+;    ("M-A" . #'minuet-accept-suggestion) ;; accept whole completion
+;    ;; Accept the first line of completion, or N lines with a numeric-prefix:
+;    ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
+;    ("M-a" . #'minuet-accept-suggestion-line)
+;    ("M-e" . #'minuet-dismiss-suggestion))
+;
+;:init
+;;; if you want to enable auto suggestion.
+;;; Note that you can manually invoke completions without enable minuet-auto-suggestion-mode
+;(add-hook 'prog-mode-hook #'minuet-auto-suggestion-mode)
+;:config
+;(setq minuet-provider 'openai-fim-compatible)
+;(setq minuet-n-completions 1) ; recommended for Local LLM for resource saving
+;;; I recommend beginning with a small context window size and incrementally
+;;; expanding it, depending on your local computing power. A context window
+;;; of 512, serves as an good starting point to estimate your computing
+;;; power. Once you have a reliable estimate of your local computing power,
+;;; you should adjust the context window to a larger value.
+;(setq minuet-context-window 512)
+;(plist-put minuet-openai-fim-compatible-options :end-point "http://localhost:8012/v1/completions")
+;;; an arbitrary non-null environment variable as placeholder
+;(plist-put minuet-openai-fim-compatible-options :name "Llama.cpp")
+;(plist-put minuet-openai-fim-compatible-options :api-key "TERM")
+;;; The model is set by the llama-cpp server and cannot be altered
+;;; post-launch.
+;(plist-put minuet-openai-fim-compatible-options :model "PLACEHOLDER")
+;
+;;; Llama.cpp does not support the `suffix` option in FIM completion.
+;;; Therefore, we must disable it and manually populate the special
+;;; tokens required for FIM completion.
+;(minuet-set-optional-options minuet-openai-fim-compatible-options :suffix nil :template)
+;(minuet-set-optional-options
+;minuet-openai-fim-compatible-options
+;:prompt
+;(defun minuet-llama-cpp-fim-qwen-prompt-function (ctx)
+;    (format "<|fim_prefix|>%s\n%s<|fim_suffix|>%s<|fim_middle|>"
+;            (plist-get ctx :language-and-tab)
+;            (plist-get ctx :before-cursor)
+;            (plist-get ctx :after-cursor)))
+;:template)
+;
+;(minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
 
 
 (use-package emacs
   :defer t
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((php-mode csharp-mode mhtml-mode css-mode emacs-lisp-mode sql-mode) . display-line-numbers-mode)
+  :hook (((php-mode csharp-mode mhtml-mode css-mode emacs-lisp-mode sql-mode web-mode evil-org-mode) . display-line-numbers-mode)
          (server-after-make-frame . my/set-font)
          ; spaces for indentation
          ((prog-mode . (lambda () (setq indent-tabs-mode nil))))
@@ -547,7 +593,12 @@ Version: 2024-12-20"
   (add-to-list 'custom-enabled-themes 'tango-dark)
   (load-theme 'tango-dark)
   :custom
+  (undo-limit 400000)           ; 400kb (default is 160kb)
+  (undo-strong-limit 3000000)   ; 3mb   (default is 240kb)
+  (undo-outer-limit 48000000)  ; 48mb  (default is 24mb)
+
   (indent-tabs-mode nil)
+
                                         ; turn off comp warnings
   (native-comp-async-report-warnings-error nil)
                                         ; get rid of menu bar, tab bar, and tool bar
@@ -577,21 +628,3 @@ Version: 2024-12-20"
    '(read-only t cursor-intangible t face minibuffer-prompt))
 
 )
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(adaptive-wrap auto-complete cape company consult corfu dotnet
-                   evil-collection evil-org evil-owl evil-snipe
-                   flycheck lsp-ui marginalia orderless org-pomodoro
-                   php-mode pkg-info posframe rainbow-delimiters
-                   sharper undo-fu-session vertico web-mode which-key
-                   xcscope yasnippet-snippets)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
