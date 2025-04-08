@@ -243,7 +243,7 @@ Version: 2024-12-20"
   :custom
   ;; cycle when reaching end of popup
   (corfu-cycle t)
-  (corfu-quit-no-match 'separator)
+;  (corfu-quit-no-match 'separator)
   (corfu-preview-current 'nil)
   (corfu-preselect 'first)
   (corfu-auto t)
@@ -279,6 +279,10 @@ Version: 2024-12-20"
   :ensure t
   :defer t
   :hook (prog-mode . eglot-ensure)
+  :custom
+  (eglot-ignored-server-capabilities '(:documentOnTypeFormattingProvider :renameProvider))
+
+
   :config
   ;; turn off eglots completion categories so we can add our own
   (with-eval-after-load 'eglot
@@ -308,7 +312,7 @@ Version: 2024-12-20"
               ("C-j" . vertico-next)
               ("C-k" . vertico-previous)
               ("TAB" . vertico-exit)
-              ("<tab" . vertico-exit))
+              ("<tab>" . vertico-exit))
   :config
   ;; fixes C-k defaulting to adding a digraph in M-x
   (eval-after-load "evil-maps"
@@ -398,7 +402,7 @@ Version: 2024-12-20"
   :init
   (defun my/yasnippet-capf-h ()
     (add-to-list 'completion-at-point-functions #'yasnippet-capf))
-  :hook (org-mode . my/yasnippet-capf-h)
+  :hook ((org-mode) . my/yasnippet-capf-h)
   )
 
 
@@ -408,8 +412,12 @@ Version: 2024-12-20"
   :hook (corfu-mode . yas-minor-mode)
   :bind (:map yas-keymap
               ("C-TAB" . yas-next-field-or-maybe-expand)
+              ("TAB" . nil)
+              ("<tab>" . nil)
               ("C-<tab>" . yas-next-field-or-maybe-expand)
               ("C-S-TAB" . yas-prev-field)
+              ("S-TAB" . nil)
+              ("S-<tab>" . nil)
               ("C-<iso-lefttab>" . yas-prev-field))
   :init
   (yas-global-mode 1)
@@ -460,6 +468,7 @@ Version: 2024-12-20"
   )
 
 
+
 (use-package web-mode
   :defer t
   :ensure t
@@ -468,6 +477,7 @@ Version: 2024-12-20"
   )
 
 (use-package treesit-auto
+  :defer t
   :ensure t
   :init
   :custom
@@ -478,6 +488,7 @@ Version: 2024-12-20"
   )
 
 (use-package minuet
+  :defer t
   :ensure t
   :bind
   (("M-y" . #'minuet-complete-with-minibuffer) ;; use minibuffer for completion
@@ -540,6 +551,10 @@ Version: 2024-12-20"
          ((prog-mode . (lambda () (setq indent-tabs-mode nil))))
          ;; remove trailing spaces
          (before-save . whitespace-cleanup))
+  :hook ((eshell-mode shell-mode) . (lambda ()
+        (corfu-mode -1)
+        (keymap-set "TAB" #'pcomplete-expand-and-complete)))
+
   :bind ("C-c p" . toggle-truncate-lines)
 
   :config
@@ -666,7 +681,7 @@ Version: 2024-12-20"
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages nil))
+'(package-selected-packages nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
