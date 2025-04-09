@@ -225,12 +225,13 @@ Version: 2024-12-20"
   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
   )
 
-;;(use-package evil-textobj-tree-sitter
-;;  :ensure t
-;;  :config
-;;  (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
-;;  (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
-;;  )
+(use-package evil-textobj-tree-sitter
+  :ensure t
+  :config
+  (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
+  (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
+  (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer")))
+  )
 
 
 (use-package corfu
@@ -243,13 +244,14 @@ Version: 2024-12-20"
   :custom
   ;; cycle when reaching end of popup
   (corfu-cycle t)
-;  (corfu-quit-no-match 'separator)
+  (corfu-on-exact-match 'quit)
+  (corfu-quit-no-match 'separator)
   (corfu-preview-current 'nil)
   (corfu-preselect 'first)
   (corfu-auto t)
   ;; if it doesn't work it is probably because the lsp is overriding it with :company-prefix-length
   (corfu-auto-prefix 2)
-  (corfu-auto-delay 0.0)
+  (corfu-auto-delay 0.2)
   (corfu-min-width 80)
   (corfu-max-width corfu-min-width)
   (corfu-count 14)
@@ -261,10 +263,28 @@ Version: 2024-12-20"
               ("RET" . nil)
               ("<return>" . nil)
               ("M-p" . nil))
-
-
   )
 
+(use-package hippie-exp
+  :commands (hippie-expand)
+  :config
+  (setq hippie-expand-try-functions-list
+        '(try-expand-dabbrev
+          try-expand-line
+          try-expand-all-abbrevs
+          try-expand-dabbrev-all-buffers
+          try-expand-dabbrev-from-kill
+          try-complete-file-name-partially
+          try-complete-lisp-symbol-partially
+          try-complete-lisp-symbol
+          try-complete-file-name
+          try-expand-list))
+  :bind ("TAB" . hippie-expand)
+  :custom
+  (keymap-set "C-/" #'hippie-expand
+              (lambda () (and (frame-live-p corfu--frame)
+                              (frame-visible-p corfu--frame))))
+)
 (use-package eglot
   :init
   (add-to-list 'exec-path (concat user-emacs-directory "langservers/omnisharp/"))
@@ -278,6 +298,7 @@ Version: 2024-12-20"
                        #'cape-file))))
   :ensure t
   :defer t
+ ; ; prog-mode causes a wrong type argument warning from eglot but you can just ignore it
   :hook (prog-mode . eglot-ensure)
   :custom
   (eglot-ignored-server-capabilities '(:documentOnTypeFormattingProvider :renameProvider))
@@ -363,6 +384,7 @@ Version: 2024-12-20"
   (add-hook 'completion-at-point-functions #'cape-dabbrev)
   (add-hook 'completion-at-point-functions #'cape-file)
   (add-hook 'completion-at-point-functions #'cape-elisp-block)
+  (add-hook 'completion-at-point-functions #'yasnippet-capf)
   ;; (add-hook 'completion-at-point-functions #'cape-history)
   ;; ...
   )
@@ -397,12 +419,11 @@ Version: 2024-12-20"
   )
 
 (use-package yasnippet-capf
-  :after cape
   :ensure t
   :init
   (defun my/yasnippet-capf-h ()
     (add-to-list 'completion-at-point-functions #'yasnippet-capf))
-  :hook ((org-mode) . my/yasnippet-capf-h)
+  :hook (org-mode . my/yasnippet-capf-h)
   )
 
 
@@ -433,7 +454,6 @@ Version: 2024-12-20"
   :defer t
   :ensure t
   :mode ("\\.php\\'" . php-ts-mode)
-
   )
 
 (use-package rainbow-delimiters
@@ -487,59 +507,59 @@ Version: 2024-12-20"
 
   )
 
-(use-package minuet
-  :defer t
-  :ensure t
-  :bind
-  (("M-y" . #'minuet-complete-with-minibuffer) ;; use minibuffer for completion
-   ("M-i" . #'minuet-show-suggestion) ;; use overlay for completion
-   ("C-c m" . #'minuet-configure-provider)
-   :map minuet-active-mode-map
-    ;; These keymaps activate only when a minuet suggestion is displayed in the current buffer
-   ("M-p" . #'minuet-previous-suggestion) ;; invoke completion or cycle to next completion
-   ("M-n" . #'minuet-next-suggestion) ;; invoke completion or cycle to previous completion
-   ("TAB" . #'minuet-accept-suggestion) ;; accept whole completion
-    ;; Accept the first line of completion, or N lines with a numeric-prefix:
-    ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
-   ("M-a" . #'minuet-accept-suggestion-line)
-   ("M-e" . #'minuet-dismiss-suggestion))
-
-  :init
-;; if you want to enable auto suggestion.
-;; Note that you can manually invoke completions without enable minuet-auto-suggestion-mode
-  (add-hook 'prog-mode-hook #'minuet-auto-suggestion-mode)
-  :config
-  (setq minuet-provider 'openai-fim-compatible)
-  (setq minuet-n-completions 1) ;; recommended for Local LLM for resource saving
-;; I recommend beginning with a small context window size and incrementally
-;; expanding it, depending on your local computing power. A context window
-;; of 512, serves as an good starting point to estimate your computing
-;; power. Once you have a reliable estimate of your local computing power,
-;; you should adjust the context window to a larger value.
-  (setq minuet-context-window 250)
-  (plist-put minuet-openai-fim-compatible-options :end-point "http://localhost:8012/v1/completions")
-;; an arbitrary non-null environment variable as placeholder
-  (plist-put minuet-openai-fim-compatible-options :name "Llama.cpp")
-  (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
-;; The model is set by the llama-cpp server and cannot be altered
-;; post-launch.
-  (plist-put minuet-openai-fim-compatible-options :model "PLACEHOLDER")
-
-;; Llama.cpp does not support the `suffix` option in FIM completion.
-;; Therefore, we must disable it and manually populate the special
-;; tokens required for FIM completion.
-  (minuet-set-optional-options minuet-openai-fim-compatible-options :suffix nil :template)
-  (minuet-set-optional-options
-   minuet-openai-fim-compatible-options
-   :prompt
-   (defun minuet-llama-cpp-fim-qwen-prompt-function (ctx)
-     (format "<|fim_prefix|>%s\n%s<|fim_suffix|>%s<|fim_middle|>"
-             (plist-get ctx :language-and-tab)
-             (plist-get ctx :before-cursor)
-             (plist-get ctx :after-cursor)))
-   :template)
-
-  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
+;;(use-package minuet
+;;  :defer t
+;;  :ensure t
+;;  :bind
+;;  (("M-y" . #'minuet-complete-with-minibuffer) ;; use minibuffer for completion
+;;   ("M-i" . #'minuet-show-suggestion) ;; use overlay for completion
+;;   ("C-c m" . #'minuet-configure-provider)
+;;   :map minuet-active-mode-map
+;;    ;; These keymaps activate only when a minuet suggestion is displayed in the current buffer
+;;   ("M-p" . #'minuet-previous-suggestion) ;; invoke completion or cycle to next completion
+;;   ("M-n" . #'minuet-next-suggestion) ;; invoke completion or cycle to previous completion
+;;   ("TAB" . #'minuet-accept-suggestion) ;; accept whole completion
+;;    ;; Accept the first line of completion, or N lines with a numeric-prefix:
+;;    ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
+;;   ("M-a" . #'minuet-accept-suggestion-line)
+;;   ("M-e" . #'minuet-dismiss-suggestion))
+;;
+;;  :init
+;;;; if you want to enable auto suggestion.
+;;;; Note that you can manually invoke completions without enable minuet-auto-suggestion-mode
+;;  (add-hook 'prog-mode-hook #'minuet-auto-suggestion-mode)
+;;  :config
+;;  (setq minuet-provider 'openai-fim-compatible)
+;;  (setq minuet-n-completions 1) ;; recommended for Local LLM for resource saving
+;;;; I recommend beginning with a small context window size and incrementally
+;;;; expanding it, depending on your local computing power. A context window
+;;;; of 512, serves as an good starting point to estimate your computing
+;;;; power. Once you have a reliable estimate of your local computing power,
+;;;; you should adjust the context window to a larger value.
+;;  (setq minuet-context-window 250)
+;;  (plist-put minuet-openai-fim-compatible-options :end-point "http://localhost:8012/v1/completions")
+;;;; an arbitrary non-null environment variable as placeholder
+;;  (plist-put minuet-openai-fim-compatible-options :name "Llama.cpp")
+;;  (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
+;;;; The model is set by the llama-cpp server and cannot be altered
+;;;; post-launch.
+;;  (plist-put minuet-openai-fim-compatible-options :model "PLACEHOLDER")
+;;
+;;;; Llama.cpp does not support the `suffix` option in FIM completion.
+;;;; Therefore, we must disable it and manually populate the special
+;;;; tokens required for FIM completion.
+;;  (minuet-set-optional-options minuet-openai-fim-compatible-options :suffix nil :template)
+;;  (minuet-set-optional-options
+;;   minuet-openai-fim-compatible-options
+;;   :prompt
+;;   (defun minuet-llama-cpp-fim-qwen-prompt-function (ctx)
+;;     (format "<|fim_prefix|>%s\n%s<|fim_suffix|>%s<|fim_middle|>"
+;;             (plist-get ctx :language-and-tab)
+;;             (plist-get ctx :before-cursor)
+;;             (plist-get ctx :after-cursor)))
+;;   :template)
+;;
+;;  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
 
 
 (use-package emacs
@@ -552,8 +572,7 @@ Version: 2024-12-20"
          ;; remove trailing spaces
          (before-save . whitespace-cleanup))
   :hook ((eshell-mode shell-mode) . (lambda ()
-        (corfu-mode -1)
-        (keymap-set "TAB" #'pcomplete-expand-and-complete)))
+        (corfu-mode -1)))
 
   :bind ("C-c p" . toggle-truncate-lines)
 
