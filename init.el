@@ -3,25 +3,91 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
-;;; functions
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+;;; functions and variables
+
+(defun smart-tab ()
+  "This smart tab is minibuffer compliant: it acts as usual in
+    the minibuffer. Else, if mark is active, indents region. Else if
+    point is at the end of a symbol, expands it. Else indents the
+    current line."
+  (interactive)
+  (if (minibufferp)
+      (unless (minibuffer-complete)
+        (hippie-expand nil))
+    (if mark-active
+        (indent-region (region-beginning)
+                       (region-end))
+      (if (looking-at "\\_>")
+         (hippie-expand nil)
+        (indent-for-tab-command)))))
+
+;; regexp count=\([0-9]+\)
+;;;###autoload
+(defvar my/eglot-completion-functions (list #'yasnippet-capf                              #'eglot-completion-at-point))
+
+;;(defun tree-sitter! ()
+;;  "Dispatch to turn on tree sitter.
+;;
+;;Used as a hook function which turns on `tree-sitter-mode'
+;;and selectively turn on `tree-sitter-hl-mode'.
+;;according to `+tree-sitter-hl-enabled-modes'"
+;;  (turn-on-tree-sitter-mode)
+;;  ;; conditionally enable `tree-sitter-hl-mode'
+;;  (let ((mode (bound-and-true-p tree-sitter-hl-mode)))
+;;    (when-let (mode (if (pcase +tree-sitter-hl-enabled-modes
+;;                          (`(not . ,modes) (not (memq major-mode modes)))
+;;                          ((and `(,_ . ,_) modes) (memq major-mode modes))
+;;                          (bool bool))
+;;                        (unless mode +1)
+;;                      (if mode -1)))
+;;      (tree-sitter-hl-mode mode))))                             #'cape-file))
+
+;;;###autoload
+(defun my/eglot-capf ()
+  (setq-local completion-at-point-functions
+              (list (apply 'cape-capf-super my/eglot-completion-functions))))
+;;;###autoload
+  (defun my/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(orderless))) ;; Configure orderless
 
 ;; Erase all reminders and rebuilt reminders for today from the agenda
+;;;###autoload
 (defun bh/org-agenda-to-appt ()
   (interactive)
   (setq appt-time-msg-list nil)
   (org-agenda-to-appt))
 
 ;; resume pomodoro timer after running it
+;;;###autoload
 (defun my/org-pomodoro-resume-after-break ()
   (save-window-excursion
     (org-clock-goto)
     (org-pomodoro)))
-
+;;;###autoload
 (defun my/set-font ()
   (when (find-font (font-spec :name phundrak/default-font-name))
     (set-face-attribute 'default nil
                         :font phundrak/default-font-name
                         :height phundrak/default-font-size)))
+
+;;;###autoload
 (defvar run-current-file-dispatch nil
   "A dispatch table used by `run-current-file' to call dedicated function to run code.
 Value is a association list.
@@ -35,7 +101,7 @@ Else, `run-current-file-map' is looked up." )
       '(("el" . load)
         ("elc" . load)
         ("java" . xah-java-compile-and-run)))
-
+;;;###autoload
 (defvar run-current-file-map
   "A association list that maps file extension to a command for running the file, used by `run-current-file'.
 Each item is (EXT . PROGRAM).
@@ -62,7 +128,7 @@ A filename is appended after the PROGRAM string as external command to call.")
         ("m" . "wolframscript -print all -file")
         ("wl" . "wolframscript -print all -file")
         ("wls" . "wolframscript -print all -file")))
-
+;;;###autoload
 (defun run-current-file (Filename)
   "Execute the current file.
 Output is printed to buffer *xah-run output*.
@@ -144,6 +210,42 @@ Version: 2024-12-20"
   (evil-owl-mode)
   )
 
+(use-package evil-multiedit
+  :ensure t
+  :init
+  (add-hook 'after-init-hook #'evil-multiedit-default-keybinds)
+  )
+
+
+(use-package iedit
+  :ensure t
+  :defer t)
+
+(use-package evil-mc
+  :ensure t
+  :defer t
+  :config
+  (evil-define-key '(normal visual) evil-mc-key-map
+    (kbd "g c RET") #'evil-mc-make-cursor-here
+    (kbd "g c a") #'evil-mc-make-all-cursors
+    (kbd "g c A") #'evil-mc-make-cursor-in-visual-selection-end
+    (kbd "g c I") #'evil-mc-make-cursor-in-visual-selection-beg
+    (kbd "g c o") #'evil-mc-make-cursor-move-next-line
+    (kbd "g c O") #'evil-mc-make-cursor-move-prev-line
+    (kbd "g c q") #'evil-mc-undo-all-cursors
+    (kbd "g c u") #'evil-mc-undo-last-added-cursor
+    (kbd "g c C-p") #'evil-mc-pause-cursors
+    (kbd "g c C-r") #'evil-mc-resume-cursors
+    (kbd "g c n") #'evil-mc-make-and-goto-next-cursor
+    (kbd "g c N") #'evil-mc-make-and-goto-last-cursor
+    (kbd "g c p") #'evil-mc-make-and-goto-prev-cursor
+    (kbd "g c P") #'evil-mc-make-and-goto-first-cursor
+    (kbd "g c d") #'evil-mc-make-and-goto-next-match
+    (kbd "g c D") #'evil-mc-make-and-goto-prev-match
+    (kbd "g c s") #'evil-mc-skip-and-goto-next-match
+    (kbd "g c S") #'evil-mc-skip-and-goto-prev-match
+    (kbd "g c c") #'evil-mc-skip-and-goto-next-cursor
+    (kbd "g c C") #'evil-mc-skip-and-goto-prev-cursor))
 
 
 (use-package org
@@ -166,17 +268,6 @@ Version: 2024-12-20"
   (org-clock-sound (concat user-emacs-directory "bell.wav"))
   ;; set agenda files
   (org-agenda-files nil)
-  ;; include diary for agenda
-  (org-agenda-include-diary t)
-  ;; restore agendas to how they previously were after quitting agenda view
-  (org-agenda-restore-windows-after-quit t)
-  ;; set default org-agenda span to a week
-  (org-agenda-span 'week)
-  ;; set time grid to ampm
-  (org-agenda-timegrid-use-ampm t)
-  ;; enable plantuml and emacs-lisp in #+BEGIN
-  (org-babel-load-languages '((emacs-lisp . t) (plantuml . t)))
-  ;; put logs into drawer
   (org-log-into-drawer t)
   ;; file path for plantuml
   (org-plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
@@ -225,14 +316,6 @@ Version: 2024-12-20"
   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
   )
 
-(use-package evil-textobj-tree-sitter
-  :ensure t
-  :config
-  (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
-  (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
-  (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer")))
-  )
-
 
 (use-package corfu
   :defer t
@@ -251,18 +334,21 @@ Version: 2024-12-20"
   (corfu-auto t)
   ;; if it doesn't work it is probably because the lsp is overriding it with :company-prefix-length
   (corfu-auto-prefix 2)
-  (corfu-auto-delay 0.2)
+  (corfu-auto-delay 0.3)
   (corfu-min-width 80)
   (corfu-max-width corfu-min-width)
   (corfu-count 14)
   (corfu-scroll-margin 4)
   (global-corfu-minibuffer nil)
-  (corfu-popupinfo-delay 0.5)
-  :bind (:map corfu-map
+  (corfu-popupinfo-delay nil)
+  :bind ((:map corfu-map
               ("TAB" . corfu-insert)
               ("RET" . nil)
               ("<return>" . nil)
               ("M-p" . nil))
+         (:map corfu-popupinfo-map
+               ("C-h" . corfu-popupinfo-toggle)))
+  :config
   )
 
 (use-package hippie-exp
@@ -279,40 +365,60 @@ Version: 2024-12-20"
           try-complete-lisp-symbol
           try-complete-file-name
           try-expand-list))
-  :bind ("TAB" . hippie-expand)
+  :bind ("TAB" . smart-tab)
   :custom
-  (keymap-set "C-/" #'hippie-expand
+  (keymap-set "M-/" #'smart-tab
               (lambda () (and (frame-live-p corfu--frame)
                               (frame-visible-p corfu--frame))))
 )
 (use-package eglot
   :init
   (add-to-list 'exec-path (concat user-emacs-directory "langservers/omnisharp/"))
-;  (add-to-list 'exec-path (concat user-emacs-directory "langservers/csharp-language-server-main/src/CSharpLanguageServer/"))
-  ;; combine yasnippet eglot and cape
-  (defun my/eglot-capf ()
-    (setq-local completion-at-point-functions
-                (list (cape-capf-super
-                       #'yasnippet-capf
-                       #'eglot-completion-at-point
-                       #'cape-file))))
   :ensure t
   :defer t
  ; ; prog-mode causes a wrong type argument warning from eglot but you can just ignore it
-  :hook (prog-mode . eglot-ensure)
-  :custom
-  (eglot-ignored-server-capabilities '(:documentOnTypeFormattingProvider :renameProvider))
-
-
+  :hook ((html-ts-mode prog-mode) . eglot-ensure)
   :config
   ;; turn off eglots completion categories so we can add our own
   (with-eval-after-load 'eglot
     (setq completion-category-defaults nil))
 
   ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
-  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
+  ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
+;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
   (add-hook 'eglot-managed-mode-hook #'my/eglot-capf)
-  )
+ )
+
+;;(use-package lsp-mode
+;;  :defer t
+;;  :ensure t
+;;  :init
+;;  (setq lsp-keymap-prefix "C-c s")
+;;
+;;  :hook ((prog-mode . lsp)
+;;         (lsp-completion-mode . my/lsp-mode-setup-completion)
+;;         ;; This code makes lsp-completion-at-point more likely to give way control to other completion functions
+;;         (lsp-completion-mode . (lambda () (progn
+;;                                            (fset 'non-greedy-lsp (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
+;;                                            (setq completion-at-point-functions (delq #'lsp-completion-at-point completion-at-point-functions))
+;;                                            (add-to-list 'completion-at-point-functions #'non-greedy-lsp)))))
+;;       ;; This code makes lsp-completion-at-point only run after other completion functions cannot match.
+;; ;;       (lsp-completion-mode . (lambda () (progn
+;; ;;                                             (setq completion-at-point-functions (delq #'lsp-completion-at-point completion-at-point-functions))
+;; ;;                                           (add-to-list 'completion-at-point-functions #'lsp-completion-at-point t)))))
+;;  :custom
+;;  (lsp-completion-provider :none) ;; we use corfu!!
+;;  (lsp-signature-cycle t)
+;;  (lsp-enable-suggest-server-download nil)
+;;  :config
+;;  ;; enable which-key
+;;  (with-eval-after-load 'lsp-mode
+;;    (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
+;;  ;; get rid of lsp warnings
+;;  (add-to-list 'warning-suppress-log-types '(lsp-mode))
+;;  (add-to-list 'warning-suppress-types '(lsp-mode))
+;;)
+
 
 (use-package eldoc
   :defer t
@@ -320,6 +426,34 @@ Version: 2024-12-20"
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
   )
+
+;;(use-package tree-sitter-langs
+;;  :ensure t)
+;;
+;;(use-package tree-sitter
+;;  :defer t
+;;  :config
+;;  (require 'tree-sitter-langs)
+;;  (setq tree-sitter-debug-jump-buttons t
+;;        tree-sitter-debug-highlight-jump-region))
+;;
+;;
+;;(use-package evil-textobj-tree-sitter
+;;  :ensure t
+;;  :defer t
+;;  :config
+;;  (defvar +tree-sitter-inner-text-objects-map (make-sparse-keymap))
+;;  (defvar +tree-sitter-outer-text-objects-map (make-sparse-keymap))
+;;  (defvar +tree-sitter-goto-previous-map (make-sparse-keymap))
+;;  (defvar +tree-sitter-goto-next-map (make-sparse-keymap))
+;;
+;;  (evil-define-key '(visual operator) 'tree-sitter-mode
+;;    "i" +tree-sitter-inner-text-objects-map
+;;    "a" +tree-sitter-outer-text-objects-map)
+;;  (evil-define-key 'normal 'tree-sitter-mode
+;;    "[g" +tree-sitter-goto-previous-map
+;;    "]g" +tree-sitter-goto-next-map))
+
 
 
 (use-package vertico
@@ -381,14 +515,15 @@ Version: 2024-12-20"
   ;; used by `completion-at-point'.  The order of the functions matters, the
   ;; first function returning a result wins.  Note that the list of buffer-local
   ;; completion functions takes precedence over the global list.
-  (add-hook 'completion-at-point-functions #'cape-dabbrev)
-  (add-hook 'completion-at-point-functions #'cape-file)
-  (add-hook 'completion-at-point-functions #'cape-elisp-block)
-  (add-hook 'completion-at-point-functions #'yasnippet-capf)
   ;; (add-hook 'completion-at-point-functions #'cape-history)
   ;; ...
-  )
+  (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
+  (advice-add #'lsp-completion-at-point :around #'cape-wrap-nonexclusive)
+  (advice-add #'comint-completion-at-point :around #'cape-wrap-nonexclusive)
+  (advice-add #'eglot-completion-at-point :around #'cape-wrap-nonexclusive)
+  (advice-add #'pcomplete-completions-at-point :around #'cape-wrap-nonexclusive)
 
+  )
 
 
 
@@ -421,28 +556,30 @@ Version: 2024-12-20"
 (use-package yasnippet-capf
   :ensure t
   :init
-  (defun my/yasnippet-capf-h ()
-    (add-to-list 'completion-at-point-functions #'yasnippet-capf))
-  :hook (org-mode . my/yasnippet-capf-h)
+  :hook ((prog-mode org-mode) . (lambda () (add-to-list 'completion-at-point-functions #'yasnippet-capf)))
   )
-
 
 (use-package yasnippet
   :defer t
   :ensure t
-  :hook (corfu-mode . yas-minor-mode)
   :bind (:map yas-keymap
-              ("C-TAB" . yas-next-field-or-maybe-expand)
+              ([(tab)] . nil)
               ("TAB" . nil)
-              ("<tab>" . nil)
+              ("C-TAB" . yas-next-field-or-maybe-expand)
               ("C-<tab>" . yas-next-field-or-maybe-expand)
               ("C-S-TAB" . yas-prev-field)
               ("S-TAB" . nil)
               ("S-<tab>" . nil)
               ("C-<iso-lefttab>" . yas-prev-field))
+  :bind (:map yas-minor-mode-map
+              ([(tab)] . nil)
+              ("TAB" . nil)
+              ("C-TAB" . yas-expand)
+              ("C-<tab>" . yas-expand))
   :init
   (yas-global-mode 1)
   )
+
 
 (use-package yasnippet-snippets
   :defer t
@@ -456,16 +593,22 @@ Version: 2024-12-20"
   :mode ("\\.php\\'" . php-ts-mode)
   )
 
+(use-package js2-mode
+  :defer t
+  :ensure t
+  :mode ("\\.js\\'" . js2-mode))
+
+
 (use-package rainbow-delimiters
   :defer t
   :ensure t
-  :hook (prog-mode . rainbow-delimiters-mode)
+  :hook ((html-ts-mode prog-mode) . rainbow-delimiters-mode)
   )
 
 (use-package adaptive-wrap
   :defer t
   :ensure t
-  :hook ((help-mode prog-mode evil-org-mode) . adaptive-wrap-prefix-mode)
+  :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode) . adaptive-wrap-prefix-mode)
   )
 
 
@@ -479,7 +622,14 @@ Version: 2024-12-20"
 
 (use-package which-key
   :defer t
-  :ensure t
+  :init
+  (setq which-key-sort-order #'which-key-key-order-alpha
+      which-key-sort-uppercase-first nil
+      which-key-add-column-padding 1
+      which-key-max-display-columns nil
+      which-key-min-display-lines 6
+      which-key-side-window-slot -10
+      which-key-max-description-length nil)
   :custom
   (which-key-idle-delay 0.5)
   (which-key-separator ":")
@@ -496,16 +646,6 @@ Version: 2024-12-20"
          (("\\page\\'") . web-mode))
   )
 
-(use-package treesit-auto
-  :defer t
-  :ensure t
-  :init
-  :custom
-  (treesit-auto-install 'prompt)
-  :config
-  (global-treesit-auto-mode)
-
-  )
 
 ;;(use-package minuet
 ;;  :defer t
@@ -565,17 +705,13 @@ Version: 2024-12-20"
 (use-package emacs
   :defer t
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((prog-mode evil-org-mode) . display-line-numbers-mode)
+  :hook (((help-mode prog-mode evil-org-mode html-ts-mode) . display-line-numbers-mode)
          (server-after-make-frame . my/set-font)
-         ;; spaces for indentation
-         ((prog-mode . (lambda () (setq indent-tabs-mode nil))))
-         ;; remove trailing spaces
-         (before-save . whitespace-cleanup))
-  :hook ((eshell-mode shell-mode) . (lambda ()
-        (corfu-mode -1)))
-
+         (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
+         ((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))
+         (before-save . whitespace-cleanup)
+         (prog-mode . electric-pair-mode))
   :bind ("C-c p" . toggle-truncate-lines)
-
   :config
   (defvar phundrak/default-font-size 90
     "Default font size.")
@@ -599,17 +735,11 @@ Version: 2024-12-20"
   (when scroll-bar-mode
     (scroll-bar-mode -1))
 
-  (setq treesit-language-source-alist
-        '((c-sharp "https://github.com/tree-sitter/tree-sitter-c-sharp")
-          (php "https://github.com/tree-sitter/tree-sitter-php")
-          (html "https://github.com/tree-sitter/tree-sitter-html")
-          (elisp "https://github.com/emacs-tree-sitter/elisp-tree-sitter")))
   :custom
   (undo-limit 400000)           ;; 400kb (default is 160kb)
   (undo-strong-limit 3000000)   ;; 3mb   (default is 240kb)
   (undo-outer-limit 48000000)  ;; 48mb  (default is 24mb)
 
-  (indent-tabs-mode nil)
 
   ;; turn off comp warnings
   (native-comp-async-report-warnings-error nil)
@@ -640,59 +770,12 @@ Version: 2024-12-20"
   (minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt))
 
+
+
   )
 
 ;;; archive
 
-;;(use-package lsp-mode
-;;  :defer t
-;;  :ensure t
-;;  :init
-;;  (defun my/update-completions-list ()
-;;    (progn
-;;        (fset 'non-greedy-lsp (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
-;;        (setq completion-at-point-functions
-;;              '(yasnippet-capf non-greedy-lsp cape-file cape-dabbrev
-;;))))
-;;  (setq lsp-keymap-prefix "C-c s")
-;;  (defun my/lsp-mode-setup-completion ()
-;;    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-;;          '(orderless))) ;; Configure orderless
-;;  :hook (((web-mode php-mode css-mode sql-mode csharp-mode mhtml-mode js-mode) . lsp)
-;;         (lsp-completion-mode . my/lsp-mode-setup-completion)
-;;         (lsp-completion-mode . my/update-completions-list))
-;;  :custom
-;;  (lsp-completion-provider :none) ;; we use corfu!!
-;;  (lsp-signature-cycle t)
-;;  :config
-;;                                        ; enable which-key
-;;  (with-eval-after-load 'lsp-mode
-;;    (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
-;;                                        ; get rid of lsp warnings
-;;  (add-to-list 'warning-suppress-log-types '(lsp-mode))
-;;  (add-to-list 'warning-suppress-types '(lsp-mode))
-;;                                        ; make lsp completer less greedy
-;;)
-
-;;(use-package lsp-ui
-;;  :defer t
-;;  :ensure t
-;;  :hook (lsp-mode . lsp-ui-mode)
-;;  :custom
-;;  (gc-cons-threshold 100000000)
-;;  (read-process-output-max (* 1024 1024)) ;; 1mb
-;;  (lsp-ui-doc-enable t)
-;;  (lsp-ui-doc-position 'top)
-;;  (lsp-ui-doc-side 'right)
-;;  (lsp-ui-doc-delay 0)
-;;  (lsp-ui-doc-border "red")
-;;  (lsp-ui-doc-max-height 100)
-;;  (lsp-ui-doc-max-width 100)
-;;  (lsp-ui-doc-show-with-mouse t)
-;;  (lsp-ui-sideline-enable t)
-;;  (lsp-ui-sideline-show-diagnostics t)
-;;  (lsp-ui-sideline-delay 0)
-;;)
 
 
 (custom-set-variables
@@ -700,7 +783,13 @@ Version: 2024-12-20"
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
-'(package-selected-packages nil))
+ '(package-selected-packages
+   '(adaptive-wrap cape consult corfu evil-collection evil-org evil-owl
+                   evil-snipe evil-textobj-tree-sitter f ht lv
+                   marginalia markdown-mode orderless org-pomodoro
+                   php-mode plz posframe rainbow-delimiters sharper
+                   spinner treesit-auto tsc undo-fu-session vertico
+                   web-mode yasnippet-capf yasnippet-snippets)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
