@@ -1,4 +1,4 @@
-;;; package management
+;;; PACKAGE management
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
@@ -19,154 +19,358 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-;;; functions and variables
 
-(defun smart-tab ()
-  "This smart tab is minibuffer compliant: it acts as usual in
-    the minibuffer. Else, if mark is active, indents region. Else if
-    point is at the end of a symbol, expands it. Else indents the
-    current line."
-  (interactive)
-  (if (minibufferp)
-      (unless (minibuffer-complete)
-        (hippie-expand nil))
-    (if mark-active
-        (indent-region (region-beginning)
-                       (region-end))
-      (if (looking-at "\\_>")
-         (hippie-expand nil)
-        (indent-for-tab-command)))))
+;;; keybinding core
 
-;; regexp count=\([0-9]+\)
-;;;###autoload
-(defvar my/eglot-completion-functions (list #'yasnippet-capf                              #'eglot-completion-at-point))
+(use-package general
+  :ensure t
+  :demand t
+  :config
+  (general-evil-setup)
+  )
 
-;;(defun tree-sitter! ()
-;;  "Dispatch to turn on tree sitter.
+(general-define-key
+ :keymaps 'override
+ :states  '(insert emacs normal hybrid motion visual operator)
+ :prefix-map 'my/prefix-map
+ :prefix-command 'my/prefix-map
+ :prefix "SPC"
+ :non-normal-prefix "M-SPC")
+(general-create-definer global-definer
+  :wk-full-keys nil
+  :keymaps 'my/prefix-map)
+
+
+
+(general-define-key
+ :keymaps 'override
+ :states '(insert emacs normal hybrid motion visual operator)
+ :prefix-map 'my/evil-prefix-map
+ :prefix-command 'my/evil-prefix-map
+ :prefix ","
+ :non-normal-prefix "C-,")
+(general-create-definer global-evil-definer
+  :wk-full-keys nil
+  :keymaps 'my/evil-prefix-map)
+
+
+(general-create-definer global-leader
+  :keymaps 'override
+  :states '(insert normal hybrid motion visual operator)
+  :prefix "SPC m"
+  :non-normal-prefix "M-SPC m"
+  "" '(:ignore t :which-key (lambda (arg) (cons (cadr (split-string (car arg) " ")) (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))))
+
+(defmacro +general-global-menu! (name infix-key &rest body)
+  "Create a definer named +general-global-NAME wrapping global-definer.
+Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY."
+  (declare (indent 2))
+  `(progn
+     ;; don't use :which-key it is less performant according to general.el author
+     ;; also for some reason which-key duplicates keybindings
+     (which-key-add-keymap-based-replacements my/prefix-map ,infix-key ,name)
+     (general-create-definer ,(intern (concat "+general-global-" name))
+       :wrapping global-definer
+       :prefix-map (quote ,(intern (concat "+general-global-" name "-map")))
+       :infix ,infix-key
+       :wk-full-keys nil)
+     (,(intern (concat "+general-global-" name))
+      ,@body)))
+
+(defmacro after! (package &rest body)
+  "Evaluate BODY after PACKAGE have loaded.
+
+PACKAGE is a symbol (or list of them) referring to Emacs features (aka
+packages). PACKAGE may use :or/:any and :and/:all operators. The precise format
+is:
+
+- An unquoted package symbol (the name of a package)
+    (after! helm BODY...)
+- An unquoted, nested list of compound package lists, using any combination of
+  :or/:any and :and/:all
+    (after! (:or package-a package-b ...)  BODY...)
+    (after! (:and package-a package-b ...) BODY...)
+    (after! (:and package-a (:or package-b package-c) ...) BODY...)
+- An unquoted list of package symbols (i.e. BODY is evaluated once both magit
+  and diff-hl have loaded)
+    (after! (magit diff-hl) BODY...)
+  If :or/:any/:and/:all are omitted, :and/:all are implied.
+
+This emulates `eval-after-load' with a few key differences:
+
+1. No-ops for package that are disabled by the user (via `package!') or not
+   installed yet.
+2. Supports compound package statements (see :or/:any and :and/:all above).
+
+Since the contents of these blocks will never by byte-compiled, avoid putting
+things you want byte-compiled in them! Like function/macro definitions."
+  (declare (indent defun) (debug t))
+  (if (symbolp package)
+      (unless (memq package (bound-and-true-p disabled-packages))
+        (list (if (or (not (bound-and-true-p byte-compile-current-file))
+                      (require package nil 'noerror))
+                  #'progn
+                #'with-no-warnings)
+              `(with-eval-after-load ',package ,@body)))
+    (let ((p (car package)))
+      (cond ((memq p '(:or :any))
+             (macroexp-progn
+              (cl-loop for next in (cdr package)
+                       collect `(after! ,next ,@body))))
+            ((memq p '(:and :all))
+             (dolist (next (reverse (cdr package)) (car body))
+               (setq body `((after! ,next ,@body)))))
+            (`(after! (:and ,@package) ,@body))))))
+
+
+
+
+;;; rules
+;; binding rules
+;; 1. All commands should be be classified as minibuffer, module, mode, and global.
+;; 2. Any command that is to be bound should be prioritized based on its frequency of use against all other commands within their type.
+;; 3. The commands should then be bound to the shortest semantically correct key binding left for that command in order.
+;; 4. If multiple semantic keybindings for a command are the same length then the keybinding shall be chosen according to this order
+;; 1) evil
+;; 2) evil menu
+;; 3) global menu
 ;;
-;;Used as a hook function which turns on `tree-sitter-mode'
-;;and selectively turn on `tree-sitter-hl-mode'.
-;;according to `+tree-sitter-hl-enabled-modes'"
-;;  (turn-on-tree-sitter-mode)
-;;  ;; conditionally enable `tree-sitter-hl-mode'
-;;  (let ((mode (bound-and-true-p tree-sitter-hl-mode)))
-;;    (when-let (mode (if (pcase +tree-sitter-hl-enabled-modes
-;;                          (`(not . ,modes) (not (memq major-mode modes)))
-;;                          ((and `(,_ . ,_) modes) (memq major-mode modes))
-;;                          (bool bool))
-;;                        (unless mode +1)
-;;                      (if mode -1)))
-;;      (tree-sitter-hl-mode mode))))                             #'cape-file))
+;; global menu semantic rules
+;; 1. Each menu should be named according to the most descriptive adjective that describes every command it contains. A comment description for each menu should also be created to describe exactly what commands are supposed to be put in this menu.
+;; 2. The menu key should be either the first or last character of the descriptive adjective or the first character of each syllable in that adjective. The descriptive function keyword does not have necessarily have to be in the command
+;; 3. Any command bound within a menu should be the smoothest key for the chord that is the first or last character of the most descriptive function keyword in the command or the first character in each syllable of the keyword.
+;; 4. Commands that have similar functionality and adjective but are in different menus should have the same key.
+;;
+;; evil menu semantic rules
+;; 1. The evil menu should not have any menus within it.
+;; 2. Any command bound within the evil menu should be the smoothest key for the chord that is the first or last character of the most descriptive function keyword in the command or the first character in each syllable of the keyword.
+;;
+;; evil semantic rules
+;; 1. All keys bound outside of the global menu and evil menu should follow evil semantic rules.
 
-;;;###autoload
-(defun my/eglot-capf ()
-  (setq-local completion-at-point-functions
-              (list (apply 'cape-capf-super my/eglot-completion-functions))))
-;;;###autoload
-  (defun my/lsp-mode-setup-completion ()
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(orderless))) ;; Configure orderless
+;; minibuffer specific command priority
+;; C-j vertico-next
+;; C-k vertico-previous
+;; C-b evil-backward char
+;; C-f evil-forward char
+;; C-S-j scroll-down-command
+;; C-S-k scroll-up-command
 
-;; Erase all reminders and rebuilt reminders for today from the agenda
-;;;###autoload
-(defun bh/org-agenda-to-appt ()
-  (interactive)
-  (setq appt-time-msg-list nil)
-  (org-agenda-to-appt))
-
-;; resume pomodoro timer after running it
-;;;###autoload
-(defun my/org-pomodoro-resume-after-break ()
-  (save-window-excursion
-    (org-clock-goto)
-    (org-pomodoro)))
-;;;###autoload
-(defun my/set-font ()
-  (when (find-font (font-spec :name phundrak/default-font-name))
-    (set-face-attribute 'default nil
-                        :font phundrak/default-font-name
-                        :height phundrak/default-font-size)))
-
-;;;###autoload
-(defvar run-current-file-dispatch nil
-  "A dispatch table used by `run-current-file' to call dedicated function to run code.
-Value is a association list.
-Each item is (EXT . FUNCTION).
-EXT is filename extension (sans the dot), type string.
-FUNCTION is a elisp function name to call, type symbol.
-If file extension match, and FUNCTION is defined, call it, pass current buffer's filepath as arg.
-Else, `run-current-file-map' is looked up." )
-
-(setq run-current-file-dispatch
-      '(("el" . load)
-        ("elc" . load)
-        ("java" . xah-java-compile-and-run)))
-;;;###autoload
-(defvar run-current-file-map
-  "A association list that maps file extension to a command for running the file, used by `run-current-file'.
-Each item is (EXT . PROGRAM).
-EXT is filename extension (sans the dot), type string.
-PROGRAM is program name or path, with command options to run a file, type string.
-A filename is appended after the PROGRAM string as external command to call.")
-
-(setq run-current-file-map
-      '(
-        ;; following are tested as of 2024-12-20
-
-        ("fs" . "dotnet fsi")
-        ("fsx" . "dotnet fsi")
-        ("go" . "go run")
-        ("js" . "deno run")
-        ("php" . "php")
-        ("pl" . "perl")
-        ("ps1" . "pwsh")
-        ("py" . "python")
-        ("py2" . "python2")
-        ("py3" . "python3")
-        ("rb" . "ruby")
-        ("ts" . "deno run")
-        ("m" . "wolframscript -print all -file")
-        ("wl" . "wolframscript -print all -file")
-        ("wls" . "wolframscript -print all -file")))
-;;;###autoload
-(defun run-current-file (Filename)
-  "Execute the current file.
-Output is printed to buffer *xah-run output*.
-
-File suffix is used to determine what external command to run, in the variable `run-current-file-map'.
-
-If file is modified, it is auto saved before run.
-
-The variable `run-current-file-dispatch' allows you to customize this command to call other function to run the current file.
-
-URL `http://xahlee.info/emacs/emacs/elisp_run_current_file.html'
-Created: 2020-09-24
-Version: 2024-12-20"
-  (interactive (if buffer-file-name (progn (when (buffer-modified-p) (save-buffer)) (list buffer-file-name)) (user-error "Buffer is not file. Save it first.")))
-  (let ((xoutbuf (get-buffer-create "*xah-run output*" t))
-        (xext (file-name-extension Filename))
-        xdispatch)
-    (setq xdispatch (assoc xext run-current-file-dispatch))
-    (if xdispatch
-        (if (fboundp (cdr xdispatch))
-            (progn
-              (message "calling %s" (cdr xdispatch))
-              (funcall (cdr xdispatch) Filename))
-          (warn "`run-current-file' found function %s in run-current-file-dispatch but it is unbound. Normal run continues using `run-current-file-map'." xdispatch))
-      (let ((xappCmdStr (cdr (assoc xext run-current-file-map))))
-        (when (not xappCmdStr) (error "%s: Unknown file extension: %s. check `run-current-file-map'" real-this-command xext))
-        (cond
-         (t
-          (progn
-            (with-current-buffer xoutbuf (erase-buffer))
-            (apply 'start-process (append (list "Run" xoutbuf) (split-string xappCmdStr " +" t) (list Filename) nil))
-            (display-buffer xoutbuf))))))))
+;;
+;; module specific command priority
+;; TAB corfu-insert
+;; C-SPC corfu-insert-separator
+;; C-h corfu-popupinfo-toggle
+;; C-S-j corfu-popupinfo-scroll-up
+;; C-S-k corfu-popupinfo-scroll-down
+;;
+;; mode specific commands
+;; php-search-documentation // add to lookups
+;; php-browse-manual // add to lookups
+;; d sharper-main-transient
+;;
+;; global key commands priority
+;; M-x execute-extended command
+;; TAB smart-tab (vertico / eshell/ corfu/ indent / hippie-expand)
+;; ,s switch-to-buffer
+;; ,f find-file
+;; ,e save-some-buffers
+;; == format-buffer
+;; ,l eshell
+;; ,a evil-mc-make-all-cursors
+;; C-<tab> yas-expand
+;; C-<tab> yas-next-field
+;; g h description-at-point
+;; ,k kill-buffer
+;; ,u evil-mc-undo-all-cursors
+;; ,P evil-mc-skip-and-goto-prev-cursor
+;; ,p evil-mc-skip-and-goto-next-cursor
+;; SPC c p evil-mc-pause-cursors
+;; SPC c r evil-mc-resume-cursors
+;; ,v eval-expression
+;; ,t toggle-truncate-lines
+;; ,u search-documentation
+;; ,g org-agenda
+;; ,d project-dired
+;; C-<iso-lefttab> yas-prev-field
+;; SPC e a execute-code-action // eglot
+;; g d goto-definition-at-point // eglot
+;; g r find-references // eglot
+;; g c evil-commentary
+;; , u evil-mc-undo-last-added-cursor
+;; , h evil-mc-make-cursor-here
+;; SPC e asignature-activate
+;; SPC p p completion-at-point
+;; SPC j fproject-find-file
+;; SPC j h project-search
+;; SPC j s project-switch-to-buffer
+;; SPC j j project-switch-project
 
 
-;;; config for packages that I know listed in order they should be loaded
+;; minibuffer
+(general-def vertico-map
+  "C-j" 'vertico-next
+  "C-k" 'vertico-previous
+  "C-S-j" 'scroll-down-command
+  "C-b" 'evil-backward-char
+  "C-f" 'evil-forward-char
+  "C-S-k" 'scroll-up-command)
+
+;; module specific keybinds
+(general-def corfu-map
+  "C-SPC" 'corfu-insert-separator
+  "RET" nil)
+
+
+(after! corfu-popupinfo
+  (general-def corfu-popupinfo-map
+    "C-h" 'corfu-popupinfo-toggle
+    "C-S-j" 'corfu-popupinfo-scroll-up
+    "C-S-k" 'corfu-popupinfo-scroll-down))
+
+
+
+;;; global commands
+
+;; miscaleanous commands
+
+(general-def 'insert
+  "TAB" (lambda () (interactive)
+          (cond ((minibufferp) (vertico-insert))
+                ((derived-mode-p 'eshell-mode 'comint-mod) (completion-at-point))
+                ((and (frame-live-p corfu--frame) (frame-visible-p corfu--frame)) (corfu-insert))
+                (mark-active (indent-region (region-beginning) (region-end)))
+                ((looking-at "\\_>") (hippie-expand nil))
+                (t (indent-for-tab-command)))))
+
+(general-def
+  "C-<tab>" 'yas-expand)
+
+(after! yasnippet
+  (general-def yas-keymap
+    "<tab>" nil
+    "TAB" nil
+    "C-<tab>" 'yas-next-field
+    "C-<iso-lefttab>" 'yas-prev-field))
+
+;; evil commands
+
+(general-def 'normal
+  "g h" (lambda () (interactive) (let (sym)
+                                   ;; sigh, function-at-point is too clever.  we want only the first half.
+                                   (cond ((setq sym (ignore-errors
+                                                      (with-syntax-table emacs-lisp-mode-syntax-table
+                                                        (save-excursion
+                                                          (or (not (zerop (skip-syntax-backward "_w")))
+                                                              (eq (char-syntax (char-after (point))) ?w)
+                                                              (eq (char-syntax (char-after (point))) ?_)
+                                                              (forward-sexp -1))
+                                                          (skip-chars-forward "`'")
+                                                          (let ((obj (read (current-buffer))))
+                                                            (and (symbolp obj) (fboundp obj) obj))))))
+                                          (describe-function sym))
+                                         ((setq sym (variable-at-point)) (describe-variable sym))
+                                         ;; now let it operate fully -- i.e. also check the
+                                         ;; surrounding sexp for a function call.
+                                         ((setq sym (function-at-point)) (describe-function sym))))))
+
+(general-nmap "=" (general-key-dispatch 'evil-indent
+                    "=" (lambda () (interactive) (indent-region (point-min) (point-max)))))
+(after! lsp-mode
+  (general-def 'normal lsp-mode-map
+    "g h" 'lsp-describe-thing-at-point
+    "g r" 'lsp-find-references)
+  (general-nmap lsp-mode-map "=" (general-key-dispatch 'evil-indent
+                                   "=" 'lsp-format-buffer)))
+
+(after! eglot
+  (general-def 'normal eglot-mode-map
+    "g h" 'eldoc-doc-buffer)
+  (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
+                                     "=" 'eglot-format-buffer)))
+;; evil , key commands
+
+(global-evil-definer
+  "s" 'switch-to-buffer
+  "f" 'find-file
+  "e" 'save-some-buffers
+  "l" 'eshell
+  "k" 'kill-buffer
+  "a" '("make-all-cursors" . evil-mc-make-all-cursors)
+  "q" '("quit-all-cursors" . evil-mc-undo-all-cursors)
+  "p" '("pause-cursors" . evil-mc-pause-cursors)
+  "r" '("resume-cursors" . evil-mc-resume-cursors)
+  "v" 'eval-expression
+  "t" 'toggle-truncate-lines
+  "g" 'org-agenda
+  "d" 'project-dired
+  "u" 'evil-mc-undo-last-added-cursor
+  "h" 'evil-mc-make-cursor-here
+  )
+
+(general-def 'normal emacs-lisp-mode-map
+  ", m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
+
+(general-def 'insert emacs-lisp-mode-map
+  "C-, m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
+
+(after! csharp-mode
+  (global-leader csharp-ts-mode-map
+    "d" '("dotnet-ui" . sharper-main-transient))
+  (general-def 'normal csharp-ts-mode-map
+    ", m" '("browse-documentation" . (lambda () (interactive) (browse-url "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/"))))
+  (general-def 'insert csharp-ts-mode-map
+    "C-, m" '("browse-documentation" . (lambda () (interactive) (browse-url "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/")))))
+
+(after! php-ts-mode
+  (general-def 'normal php-ts-mode-map
+    ", m" 'php-browse-manual)
+  (general-def 'insert php-ts-mode-map
+    "C-, m" 'php-browse-manual))
+
+;; space commands
+
+(+general-global-menu! "cursor" "c")
+(+general-global-cursor
+  "n" '("skip-and-goto-next-cursor" . evil-mc-skip-and-goto-next-cursor)
+  "p" '("skip-and-goto-prev-cursor" . evil-mc-skip-and-goto-prev-cursor))
+
+(+general-global-menu! "code" "e")
+(after! lsp-mode
+  (general-def 'normal lsp-mode-map
+    "SPC e a" 'lsp-execute-code-action
+    "SPC e s" 'lsp-signature-activate)
+  (general-def 'insert lsp-mode-map
+    "M-SPC e a" 'lsp-execute-code-action
+    "M-SPC e s" 'lsp-signature-activate))
+
+(after! eglot
+  (general-def 'normal eglot-mode-map
+    "SPC e a" 'eglot-code-actions)
+  (general-def 'insert eglot-mode-map
+    "M-SPC e a" 'eglot-code-actions))
+
+(+general-global-menu! "completion" "p")
+(+general-global-completion
+  "p" 'completion-at-point)
+
+(+general-global-menu! "project" "j")
+(+general-global-project
+  "f" 'project-find-file
+  "s" 'project-switch-to-buffer
+  "j" 'project-switch-project
+  "h" 'project-search)
+
+
+
+   ;;; config for installed packages
+
+(use-package use-package-core
+  :custom
+  (use-package-always-defer t))
+
 
 (use-package evil
-  :defer t
   :ensure t
   :init
   (progn
@@ -183,7 +387,6 @@ Version: 2024-12-20"
 
 
 (use-package evil-collection
-  :defer t
   :ensure t
   :init
   (evil-collection-init)
@@ -191,7 +394,6 @@ Version: 2024-12-20"
 
 
 (use-package evil-snipe
-  :defer t
   :ensure t
   :init
   (evil-snipe-mode +1)
@@ -199,7 +401,6 @@ Version: 2024-12-20"
   )
 
 (use-package evil-owl
-  :defer t
   :ensure t
   :custom
   (evil-owl-display-method 'posframe)
@@ -210,51 +411,33 @@ Version: 2024-12-20"
   (evil-owl-mode)
   )
 
-(use-package evil-multiedit
-  :ensure t
-  :init
-  (add-hook 'after-init-hook #'evil-multiedit-default-keybinds)
-  )
 
-
-(use-package iedit
-  :ensure t
-  :defer t)
 
 (use-package evil-mc
   :ensure t
-  :defer t
-  :config
-  (evil-define-key '(normal visual) evil-mc-key-map
-    (kbd "g c RET") #'evil-mc-make-cursor-here
-    (kbd "g c a") #'evil-mc-make-all-cursors
-    (kbd "g c A") #'evil-mc-make-cursor-in-visual-selection-end
-    (kbd "g c I") #'evil-mc-make-cursor-in-visual-selection-beg
-    (kbd "g c o") #'evil-mc-make-cursor-move-next-line
-    (kbd "g c O") #'evil-mc-make-cursor-move-prev-line
-    (kbd "g c q") #'evil-mc-undo-all-cursors
-    (kbd "g c u") #'evil-mc-undo-last-added-cursor
-    (kbd "g c C-p") #'evil-mc-pause-cursors
-    (kbd "g c C-r") #'evil-mc-resume-cursors
-    (kbd "g c n") #'evil-mc-make-and-goto-next-cursor
-    (kbd "g c N") #'evil-mc-make-and-goto-last-cursor
-    (kbd "g c p") #'evil-mc-make-and-goto-prev-cursor
-    (kbd "g c P") #'evil-mc-make-and-goto-first-cursor
-    (kbd "g c d") #'evil-mc-make-and-goto-next-match
-    (kbd "g c D") #'evil-mc-make-and-goto-prev-match
-    (kbd "g c s") #'evil-mc-skip-and-goto-next-match
-    (kbd "g c S") #'evil-mc-skip-and-goto-prev-match
-    (kbd "g c c") #'evil-mc-skip-and-goto-next-cursor
-    (kbd "g c C") #'evil-mc-skip-and-goto-prev-cursor))
+  :init
+  (global-evil-mc-mode)
+
+
+  )
+
+(use-package evil-commentary
+  :ensure t
+  :hook (prog-mode . evil-commentary-mode)
+  )
+
+
+;;;###autoload
+(defun my/org-agenda-to-appt ()
+  " Erase all reminders and rebuilt reminders for today from the agenda"
+  (interactive)
+  (setq appt-time-msg-list nil)
+  (org-agenda-to-appt))
 
 
 (use-package org
-  :defer t
   :hook ((org-agenda-finalize . bh/org-agenda-to-appt)
          (org-agenda-finalize . append))
-  :bind (("C-c l" . #'org-store-link)
-         ("C-c a" . #'org-agenda)
-         ("C-c c" . #'org-capture))
   :mode ("\\.org\\'" . org-mode)
   :custom
   (bh/org-agenda-to-appt)
@@ -292,8 +475,15 @@ Version: 2024-12-20"
      ("plantuml" . plantuml)))
   )
 
+
+;;;###autoload
+(defun my/org-pomodoro-resume-after-break ()
+  " resume pomodoro timer after running it"
+  (save-window-excursion
+    (org-clock-goto)
+    (org-pomodoro)))
+
 (use-package org-pomodoro
-  :defer t
   :ensure t
   :hook (org-pomodoro-break-finished . my/org-pomodoro-resume-after-break)
   :custom
@@ -306,7 +496,6 @@ Version: 2024-12-20"
   )
 
 (use-package evil-org
-  :defer t
   :ensure t
   :after (evil org)
   :hook (org-mode .  evil-org-mode)
@@ -318,7 +507,6 @@ Version: 2024-12-20"
 
 
 (use-package corfu
-  :defer t
   :ensure t
   :init
   (global-corfu-mode)
@@ -334,140 +522,97 @@ Version: 2024-12-20"
   (corfu-auto t)
   ;; if it doesn't work it is probably because the lsp is overriding it with :company-prefix-length
   (corfu-auto-prefix 2)
-  (corfu-auto-delay 0.3)
+  (corfu-auto-delay 0.5)
   (corfu-min-width 80)
   (corfu-max-width corfu-min-width)
   (corfu-count 14)
   (corfu-scroll-margin 4)
   (global-corfu-minibuffer nil)
   (corfu-popupinfo-delay nil)
-  :bind ((:map corfu-map
-              ("TAB" . corfu-insert)
-              ("RET" . nil)
-              ("<return>" . nil)
-              ("M-p" . nil))
-         (:map corfu-popupinfo-map
-               ("C-h" . corfu-popupinfo-toggle)))
-  :config
   )
 
 (use-package hippie-exp
   :commands (hippie-expand)
   :config
-  (setq hippie-expand-try-functions-list
-        '(try-expand-dabbrev
-          try-expand-line
-          try-expand-all-abbrevs
-          try-expand-dabbrev-all-buffers
-          try-expand-dabbrev-from-kill
-          try-complete-file-name-partially
-          try-complete-lisp-symbol-partially
-          try-complete-lisp-symbol
-          try-complete-file-name
-          try-expand-list))
-  :bind ("TAB" . smart-tab)
-  :custom
-  (keymap-set "M-/" #'smart-tab
-              (lambda () (and (frame-live-p corfu--frame)
-                              (frame-visible-p corfu--frame))))
-)
+  (setq hippie-expand-try-functions-list '(try-expand-dabbrev try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill try-complete-file-name-partially try-complete-file-name try-expand-all-abbrevs try-expand-list try-expand-line try-complete-lisp-symbol-partially try-complete-lisp-symbol))
+  )
+
+;;;###autoload
+(defvar my/eglot-completion-functions (list #'yasnippet-capf #'eglot-completion-at-point))
+
+;;;###autoload
+(defun my/eglot-capf ()
+  "Configure eglot corfu completion display with multiple backends such as yasnippet"
+  (setq-local completion-at-point-functions
+              (list (apply 'cape-capf-super my/eglot-completion-functions))))
+
 (use-package eglot
   :init
   (add-to-list 'exec-path (concat user-emacs-directory "langservers/omnisharp/"))
-  :ensure t
-  :defer t
- ; ; prog-mode causes a wrong type argument warning from eglot but you can just ignore it
-  :hook ((html-ts-mode prog-mode) . eglot-ensure)
+                                        ; ; prog-mode causes a wrong type argument warning from eglot but you can just ignore it
   :config
-  ;; turn off eglots completion categories so we can add our own
+                                        ;TODO ; turn off eglots completion categories so we can add our own
   (with-eval-after-load 'eglot
     (setq completion-category-defaults nil))
 
   ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
   ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
-;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
+                                        ;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
   (add-hook 'eglot-managed-mode-hook #'my/eglot-capf)
- )
+  )
 
-;;(use-package lsp-mode
-;;  :defer t
-;;  :ensure t
-;;  :init
-;;  (setq lsp-keymap-prefix "C-c s")
-;;
-;;  :hook ((prog-mode . lsp)
-;;         (lsp-completion-mode . my/lsp-mode-setup-completion)
-;;         ;; This code makes lsp-completion-at-point more likely to give way control to other completion functions
-;;         (lsp-completion-mode . (lambda () (progn
-;;                                            (fset 'non-greedy-lsp (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
-;;                                            (setq completion-at-point-functions (delq #'lsp-completion-at-point completion-at-point-functions))
-;;                                            (add-to-list 'completion-at-point-functions #'non-greedy-lsp)))))
-;;       ;; This code makes lsp-completion-at-point only run after other completion functions cannot match.
-;; ;;       (lsp-completion-mode . (lambda () (progn
-;; ;;                                             (setq completion-at-point-functions (delq #'lsp-completion-at-point completion-at-point-functions))
-;; ;;                                           (add-to-list 'completion-at-point-functions #'lsp-completion-at-point t)))))
-;;  :custom
-;;  (lsp-completion-provider :none) ;; we use corfu!!
-;;  (lsp-signature-cycle t)
-;;  (lsp-enable-suggest-server-download nil)
-;;  :config
-;;  ;; enable which-key
-;;  (with-eval-after-load 'lsp-mode
-;;    (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
-;;  ;; get rid of lsp warnings
-;;  (add-to-list 'warning-suppress-log-types '(lsp-mode))
-;;  (add-to-list 'warning-suppress-types '(lsp-mode))
-;;)
 
+;;;###autoload
+(defun my/lsp-mode-setup-completion ()
+  " Configure orderless "
+  (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+        '(orderless)))
+
+(use-package lsp-mode
+  :ensure t
+  :init
+  :hook (((csharp-ts-mode php-ts-mode) . lsp)
+         (lsp-completion-mode . my/lsp-mode-setup-completion)
+         ;;         ;; This code makes lsp-completion-at-point more likely to give way control to other completion functions
+         ;;         (lsp-completion-mode . (lambda () (progn
+         ;;                                            (fset 'non-greedy-lsp (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
+         ;;                                            (setq completion-at-point-functions (delq #'lsp-completion-at-point completion-at-point-functions))
+         ;;                                            (add-to-list 'completion-at-point-functions #'non-greedy-lsp)))))
+         ;; This code makes lsp-completion-at-point only run after other completion functions cannot match.
+         (lsp-completion-mode . (lambda () (progn
+                                             (setq completion-at-point-functions (delq #'lsp-completion-at-point completion-at-point-functions))
+                                             (add-to-list 'completion-at-point-functions #'lsp-completion-at-point t)))))
+  :custom
+  (lsp-completion-provider :none)
+  (lsp-signature-cycle t)
+  (lsp-enable-suggest-server-download nil)
+
+  :config
+  ;; enable which-key
+  (with-eval-after-load 'lsp-mode
+    (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
+  ;; get rid of lsp warnings
+  (add-to-list 'warning-suppress-log-types '(lsp-mode))
+  (add-to-list 'warning-suppress-types '(lsp-mode)))
 
 (use-package eldoc
-  :defer t
   :custom
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
   )
 
-;;(use-package tree-sitter-langs
-;;  :ensure t)
-;;
-;;(use-package tree-sitter
-;;  :defer t
-;;  :config
-;;  (require 'tree-sitter-langs)
-;;  (setq tree-sitter-debug-jump-buttons t
-;;        tree-sitter-debug-highlight-jump-region))
-;;
-;;
-;;(use-package evil-textobj-tree-sitter
-;;  :ensure t
-;;  :defer t
-;;  :config
-;;  (defvar +tree-sitter-inner-text-objects-map (make-sparse-keymap))
-;;  (defvar +tree-sitter-outer-text-objects-map (make-sparse-keymap))
-;;  (defvar +tree-sitter-goto-previous-map (make-sparse-keymap))
-;;  (defvar +tree-sitter-goto-next-map (make-sparse-keymap))
-;;
-;;  (evil-define-key '(visual operator) 'tree-sitter-mode
-;;    "i" +tree-sitter-inner-text-objects-map
-;;    "a" +tree-sitter-outer-text-objects-map)
-;;  (evil-define-key 'normal 'tree-sitter-mode
-;;    "[g" +tree-sitter-goto-previous-map
-;;    "]g" +tree-sitter-goto-next-map))
 
-
+(use-package treesit-auto
+  :ensure t
+  :config
+  (global-treesit-auto-mode))
 
 (use-package vertico
-  :defer t
   :ensure t
   :custom
   (vertico-cycle t)
   :init
   (vertico-mode)
-  :bind (:map vertico-map
-              ("C-j" . vertico-next)
-              ("C-k" . vertico-previous)
-              ("TAB" . vertico-exit)
-              ("<tab>" . vertico-exit))
   :config
   ;; fixes C-k defaulting to adding a digraph in M-x
   (eval-after-load "evil-maps"
@@ -477,7 +622,6 @@ Version: 2024-12-20"
   )
 
 (use-package orderless
-  :defer t
   :ensure t
   :custom
   (completion-styles '(orderless partial-completion basic))
@@ -485,31 +629,16 @@ Version: 2024-12-20"
   (completion-category-overrides '((file (styles partial-completion))))
   )
 
-(use-package savehist
-  :defer t
-  :init
-  (savehist-mode)
-  )
 
 (use-package consult
-  :defer t
   :ensure t
   :custom
-  ; turns on vertico for : in evil
+                                        ; turns on vertico for : in evil
   (completion-in-region-function 'consult-completion-in-region)
   )
 
 (use-package cape
   :ensure t
-  :defer t
-  ;; Bind prefix keymap providing all Cape commands under a mnemonic key.
-  ;; Press C-c p ? to for help.
-  :bind ("M-p" . cape-prefix-map) ;; Alternative key: M-<tab>, M-p, M-+
-  ;; Alternatively bind Cape commands individually.
-  ;; :bind (("C-c p d" . cape-dabbrev)
-  ;;        ("C-c p h" . cape-history)
-  ;;        ("C-c p f" . cape-file)
-  ;;        ...)
   :init
   ;; Add to the global default value of `completion-at-point-functions' which is
   ;; used by `completion-at-point'.  The order of the functions matters, the
@@ -522,20 +651,87 @@ Version: 2024-12-20"
   (advice-add #'comint-completion-at-point :around #'cape-wrap-nonexclusive)
   (advice-add #'eglot-completion-at-point :around #'cape-wrap-nonexclusive)
   (advice-add #'pcomplete-completions-at-point :around #'cape-wrap-nonexclusive)
+  (add-hook 'completion-at-point-functions #'cape-file)
+  )
 
+(use-package kind-icon
+  :ensure t
+  :after corfu
+  :custom
+                                        ; (kind-icon-blend-background t)
+                                        ; (kind-icon-default-face 'corfu-default) ; only needed with blend-background
+  (kind-icon-mapping
+   '((array "a" :icon "code-brackets" :face font-lock-type-face)
+     (boolean "b" :icon "circle-half-full" :face
+              font-lock-builtin-face)
+     (class "c" :icon "view-grid-plus-outline" :face
+            font-lock-type-face)
+     (color "#" :icon "palette" :face success)
+     (command "cm" :icon "code-greater-than" :face default)
+     (constant "co" :icon "lock-remove-outline" :face
+               font-lock-constant-face)
+     (constructor "cn" :icon "table-column-plus-after" :face
+                  font-lock-function-name-face)
+     (enummember "em" :icon "order-bool-ascending-variant" :face
+                 font-lock-builtin-face)
+     (enum-member "em" :icon "order-bool-ascending-variant" :face
+                  font-lock-builtin-face)
+     (enum "e" :icon "format-list-bulleted-square" :face
+           font-lock-builtin-face)
+     (event "ev" :icon "lightning-bolt-outline" :face
+            font-lock-warning-face)
+     (field "fd" :icon "application-braces-outline" :face
+            font-lock-variable-name-face)
+     (file "f" :icon "file-document-outline" :face
+           font-lock-string-face)
+     (folder "d" :icon "folder" :face font-lock-doc-face)
+     (interface "if" :icon "application-brackets-outline" :face
+                font-lock-type-face)
+     (keyword "kw" :icon "key-variant" :face font-lock-keyword-face)
+     (macro "mc" :icon "lambda" :face font-lock-keyword-face)
+     (magic "ma" :icon "auto-fix" :face font-lock-builtin-face)
+     (method "m" :icon "function-variant" :face
+             font-lock-function-name-face)
+     (function "f" :icon "function" :face font-lock-function-name-face)
+     (module "{" :icon "file-code-outline" :face
+             font-lock-preprocessor-face)
+     (numeric "nu" :icon "numeric" :face font-lock-builtin-face)
+     (operator "op" :icon "plus-minus" :face
+               font-lock-comment-delimiter-face)
+     (param "pa" :icon "cog" :face default)
+     (property "pr" :icon "wrench" :face font-lock-variable-name-face)
+     (reference "rf" :icon "library" :face
+                font-lock-variable-name-face)
+     (snippet "S" :icon "content-cut" :face font-lock-string-face)
+     (string "s" :icon "sticker-text-outline" :face
+             font-lock-string-face)
+     (struct "%" :icon "code-braces" :face
+             font-lock-variable-name-face)
+     (text "tx" :icon "script-text-outline" :face font-lock-doc-face)
+     (typeparameter "tp" :icon "format-list-bulleted-type" :face
+                    font-lock-type-face)
+     (type-parameter "tp" :icon "format-list-bulleted-type" :face
+                     font-lock-type-face)
+     (unit "u" :icon "ruler-square" :face font-lock-constant-face)
+     (value "v" :icon "plus-circle-outline" :face
+            font-lock-builtin-face)
+     (variable "va" :icon "variable" :face
+               font-lock-variable-name-face)
+     (t "." :icon "crosshairs-question" :face font-lock-warning-face)))
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)
   )
 
 
 
 ;;Enable rich annotations using the Marginalia package
 (use-package marginalia
-  :defer t
   :ensure t
   ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
   ;; available in the *Completions* buffer, add it to the
   ;; `completion-list-mode-map'.
-  :bind (:map minibuffer-local-map
-              ("M-A" . marginalia-cycle))
+
+
 
   ;; The :init section is always executed.
   :init
@@ -549,90 +745,72 @@ Version: 2024-12-20"
 
 
 (use-package posframe
-  :defer t
   :ensure t
+  )
+
+;;;###autoload
+(defun my/yasnippet-add-completion-functions ()
+  "This function adds yasnippet-capf to completion-at-point-functions."
+  (add-to-list 'completion-at-point-functions #'yasnippet-capf)
   )
 
 (use-package yasnippet-capf
   :ensure t
   :init
-  :hook ((prog-mode org-mode) . (lambda () (add-to-list 'completion-at-point-functions #'yasnippet-capf)))
+  :hook ((prog-mode org-mode) . my/yasnippet-add-completion-functions)
   )
 
 (use-package yasnippet
-  :defer t
   :ensure t
-  :bind (:map yas-keymap
-              ([(tab)] . nil)
-              ("TAB" . nil)
-              ("C-TAB" . yas-next-field-or-maybe-expand)
-              ("C-<tab>" . yas-next-field-or-maybe-expand)
-              ("C-S-TAB" . yas-prev-field)
-              ("S-TAB" . nil)
-              ("S-<tab>" . nil)
-              ("C-<iso-lefttab>" . yas-prev-field))
-  :bind (:map yas-minor-mode-map
-              ([(tab)] . nil)
-              ("TAB" . nil)
-              ("C-TAB" . yas-expand)
-              ("C-<tab>" . yas-expand))
   :init
   (yas-global-mode 1)
   )
 
 
 (use-package yasnippet-snippets
-  :defer t
   :ensure t
   )
 
 
 (use-package php-mode
-  :defer t
   :ensure t
   :mode ("\\.php\\'" . php-ts-mode)
   )
 
 (use-package js2-mode
-  :defer t
   :ensure t
   :mode ("\\.js\\'" . js2-mode))
 
 
 (use-package rainbow-delimiters
-  :defer t
   :ensure t
   :hook ((html-ts-mode prog-mode) . rainbow-delimiters-mode)
   )
 
 (use-package adaptive-wrap
-  :defer t
   :ensure t
-  :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode) . adaptive-wrap-prefix-mode)
+  :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode dired-mode) . adaptive-wrap-prefix-mode)
   )
 
 
-; dotnet wrapper
 (use-package sharper
-  :defer t
   :ensure t
-  :bind
-  ("C-c n" . sharper-main-transient)
+  :demand t
   )
 
 (use-package which-key
-  :defer t
   :init
   (setq which-key-sort-order #'which-key-key-order-alpha
-      which-key-sort-uppercase-first nil
-      which-key-add-column-padding 1
-      which-key-max-display-columns nil
-      which-key-min-display-lines 6
-      which-key-side-window-slot -10
-      which-key-max-description-length nil)
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 6
+        which-key-side-window-slot -10
+        which-key-max-description-length nil)
   :custom
   (which-key-idle-delay 0.5)
   (which-key-separator ":")
+  (which-key-allow-multiple-replacements t)
   :init
   (which-key-mode)
   )
@@ -640,7 +818,6 @@ Version: 2024-12-20"
 
 
 (use-package web-mode
-  :defer t
   :ensure t
   :mode ((("\\.phtml\\'") . web-mode)
          (("\\page\\'") . web-mode))
@@ -648,7 +825,6 @@ Version: 2024-12-20"
 
 
 ;;(use-package minuet
-;;  :defer t
 ;;  :ensure t
 ;;  :bind
 ;;  (("M-y" . #'minuet-complete-with-minibuffer) ;; use minibuffer for completion
@@ -702,8 +878,20 @@ Version: 2024-12-20"
 ;;  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
 
 
+;;; config for default emacs packages
+
+;;;###autoload
+(defun my/set-font ()
+  (when (find-font (font-spec :name phundrak/default-font-name))
+    (set-face-attribute 'default nil
+                        :font phundrak/default-font-name
+                        :height phundrak/default-font-size)))
+
+(use-package savehist
+  :init
+  (savehist-mode))
+
 (use-package emacs
-  :defer t
   :mode ("\\.sql\\'" . sql-mode)
   :hook (((help-mode prog-mode evil-org-mode html-ts-mode) . display-line-numbers-mode)
          (server-after-make-frame . my/set-font)
@@ -711,7 +899,6 @@ Version: 2024-12-20"
          ((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))
          (before-save . whitespace-cleanup)
          (prog-mode . electric-pair-mode))
-  :bind ("C-c p" . toggle-truncate-lines)
   :config
   (defvar phundrak/default-font-size 90
     "Default font size.")
@@ -748,7 +935,7 @@ Version: 2024-12-20"
   (tab-bar-mode nil)
   (tool-bar-mode nil)
   ;; setup differnet directoy for backups and autosaves
-  (backup-directory-alist (concat user-emacs-directory "backups"))
+  (backup-directory-alist (concat user-emacs-directory "backups/"))
   ;; tabs insert spaces
   (indent-tabs-mode nil)
   ;; cursor over actual space of character
@@ -776,23 +963,54 @@ Version: 2024-12-20"
 
 ;;; archive
 
+(use-package evil-multiedit
+  :ensure t
+  :demand t
+  :config
+  (evil-multiedit-default-keybinds)
+  )
 
+;; (use-package iedit
+;;   :ensure t)
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(adaptive-wrap cape consult corfu evil-collection evil-org evil-owl
-                   evil-snipe evil-textobj-tree-sitter f ht lv
-                   marginalia markdown-mode orderless org-pomodoro
-                   php-mode plz posframe rainbow-delimiters sharper
-                   spinner treesit-auto tsc undo-fu-session vertico
-                   web-mode yasnippet-capf yasnippet-snippets)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+;;(defun tree-sitter! ()
+;;  "Dispatch to turn on tree sitter.
+;;
+;;Used as a hook function which turns on `tree-sitter-mode'
+;;and selectively turn on `tree-sitter-hl-mode'.
+;;according to `+tree-sitter-hl-enabled-modes'"
+;;  (turn-on-tree-sitter-mode)
+;;  ;; conditionally enable `tree-sitter-hl-mode'
+;;  (let ((mode (bound-and-true-p tree-sitter-hl-mode)))
+;;    (when-let (mode (if (pcase +tree-sitter-hl-enabled-modes
+;;                          (`(not . ,modes) (not (memq major-mode modes)))
+;;                          ((and `(,_ . ,_) modes) (memq major-mode modes))
+;;                          (bool bool))
+;;                        (unless mode +1)
+;;                      (if mode -1)))
+;;      (tree-sitter-hl-mode mode))))                             #'cape-file))
+;;(use-package tree-sitter-langs
+;;  :ensure t)
+;;
+;;(use-package tree-sitter
+;;  :config
+;;  (require 'tree-sitter-langs)
+;;  (setq tree-sitter-debug-jump-buttons t
+;;        tree-sitter-debug-highlight-jump-region))
+;;
+;;
+;;(use-package evil-textobj-tree-sitter
+;;  :ensure t
+;;  :config
+;;  (defvar +tree-sitter-inner-text-objects-map (make-sparse-keymap))
+;;  (defvar +tree-sitter-outer-text-objects-map (make-sparse-keymap))
+;;  (defvar +tree-sitter-goto-previous-map (make-sparse-keymap))
+;;  (defvar +tree-sitter-goto-next-map (make-sparse-keymap))
+;;
+;;  (evil-define-key '(visual operator) 'tree-sitter-mode
+;;    "i" +tree-sitter-inner-text-objects-map
+;;    "a" +tree-sitter-outer-text-objects-map)
+;;  (evil-define-key 'normal 'tree-sitter-mode
+;;    "[g" +tree-sitter-goto-previous-map
+
+;;    "]g" +tree-sitter-goto-next-map))
