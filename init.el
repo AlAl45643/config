@@ -20,7 +20,11 @@
   (load bootstrap-file nil 'nomessage))
 
 
-;;; keybinding core
+(use-package use-package-core
+  :custom
+  (use-package-always-defer t))
+
+;;; keybinding
 
 (use-package general
   :ensure t
@@ -39,7 +43,6 @@
 (general-create-definer global-definer
   :wk-full-keys nil
   :keymaps 'my/prefix-map)
-
 
 
 (general-define-key
@@ -230,8 +233,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 
-;;; global commands
-
 ;; miscaleanous commands
 
 (general-def 'insert
@@ -246,6 +247,11 @@ things you want byte-compiled in them! Like function/macro definitions."
 (general-def
   "C-<tab>" 'yas-expand)
 
+(general-unbind iedit-mode-keymap
+  "TAB"
+  "<tab>"
+  "<backtab")
+
 (after! yasnippet
   (general-def yas-keymap
     "<tab>" nil
@@ -253,8 +259,27 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-<tab>" 'yas-next-field
     "C-<iso-lefttab>" 'yas-prev-field))
 
-;; evil commands
+(general-def
+  "C-RET" 'embark-act
+  "C-<return>" 'embark-act
+  "M-RET" 'embark-dwim
+  "C-h b" 'embark-bindings)
 
+
+;; character navigaiton
+;;
+
+;; inline navigation
+;; s $ 0 e b A I
+
+;; in viewport navigation
+;; 2-4jk 123G
+
+;; out of viewport within buffer navigation
+
+;; out of file navigaiton
+
+;; evil commands
 (general-def 'normal
   "g h" (lambda () (interactive) (let (sym)
                                    ;; sigh, function-at-point is too clever.  we want only the first half.
@@ -276,24 +301,24 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (general-nmap "=" (general-key-dispatch 'evil-indent
                     "=" (lambda () (interactive) (indent-region (point-min) (point-max)))))
-(after! lsp-mode
-  (general-def 'normal lsp-mode-map
-    "g h" 'lsp-describe-thing-at-point
-    "g r" 'lsp-find-references)
-  (general-nmap lsp-mode-map "=" (general-key-dispatch 'evil-indent
-                                   "=" 'lsp-format-buffer)))
+
 
 (after! eglot
   (general-def 'normal eglot-mode-map
-    "g h" 'eldoc-doc-buffer)
+    "g h" 'eldoc-doc-buffer
+    "?" 'consult-eglot-symbols
+    "[ m" 'treesit-beginning-of-defun
+    "] m" 'treesit-end-of-defun)
   (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
                                      "=" 'eglot-format-buffer)))
+
 ;; evil , key commands
 
 (global-evil-definer
+  "," 'evil-snipe-repeat-reverse
   "s" 'switch-to-buffer
   "f" 'find-file
-  "e" 'save-some-buffers
+  "e" (lambda () (interactive) (save-some-buffers "!"))
   "l" 'eshell
   "k" 'kill-buffer
   "a" '("make-all-cursors" . evil-mc-make-all-cursors)
@@ -303,10 +328,11 @@ things you want byte-compiled in them! Like function/macro definitions."
   "v" 'eval-expression
   "t" 'toggle-truncate-lines
   "g" 'org-agenda
-  "d" 'project-dired
+  "d" 'dired-jump
   "u" 'evil-mc-undo-last-added-cursor
   "h" 'evil-mc-make-cursor-here
   )
+
 
 (general-def 'normal emacs-lisp-mode-map
   ", m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
@@ -315,8 +341,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   "C-, m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
 
 (after! csharp-mode
-  (global-leader csharp-ts-mode-map
-    "d" '("dotnet-ui" . sharper-main-transient))
   (general-def 'normal csharp-ts-mode-map
     ", m" '("browse-documentation" . (lambda () (interactive) (browse-url "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/"))))
   (general-def 'insert csharp-ts-mode-map
@@ -336,19 +360,23 @@ things you want byte-compiled in them! Like function/macro definitions."
   "p" '("skip-and-goto-prev-cursor" . evil-mc-skip-and-goto-prev-cursor))
 
 (+general-global-menu! "code" "e")
-(after! lsp-mode
-  (general-def 'normal lsp-mode-map
-    "SPC e a" 'lsp-execute-code-action
-    "SPC e s" 'lsp-signature-activate)
-  (general-def 'insert lsp-mode-map
-    "M-SPC e a" 'lsp-execute-code-action
-    "M-SPC e s" 'lsp-signature-activate))
-
 (after! eglot
   (general-def 'normal eglot-mode-map
     "SPC e a" 'eglot-code-actions)
   (general-def 'insert eglot-mode-map
     "M-SPC e a" 'eglot-code-actions))
+
+(after! csharp-mode
+  (general-def 'normal csharp-ts-mode-map
+    "SPC e r" 'sharper-transient-run
+    "SPC e t" 'sharper-transient-test
+    "SPC e b" 'sharper-transient-build
+    "SPC e m" 'sharper-main-transient)
+  (general-def 'insert csharp-ts-mode-map
+    "M-SPC e r" 'sharper-transient-run
+    "M-SPC e t" 'sharper-transient-test
+    "M-SPC e b" 'sharper-transient-build
+    "M-SPC e m" 'sharper-main-transient))
 
 (+general-global-menu! "completion" "p")
 (+general-global-completion
@@ -363,12 +391,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 
-   ;;; config for installed packages
-
-(use-package use-package-core
-  :custom
-  (use-package-always-defer t))
-
+;;; text editing
 
 (use-package evil
   :ensure t
@@ -390,6 +413,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   :ensure t
   :init
   (evil-collection-init)
+  :diminish evil-collection-unimpaired-mode
   )
 
 
@@ -398,6 +422,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   :init
   (evil-snipe-mode +1)
   (evil-snipe-override-mode +1)
+  :diminish evil-snipe-local-mode
   )
 
 (use-package evil-owl
@@ -409,6 +434,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (evil-owl-idle-delay 0.5)
   :init
   (evil-owl-mode)
+  :diminish evil-owl-mode
   )
 
 
@@ -417,15 +443,24 @@ things you want byte-compiled in them! Like function/macro definitions."
   :ensure t
   :init
   (global-evil-mc-mode)
-
-
+  :diminish evil-mc-mode
   )
 
 (use-package evil-commentary
   :ensure t
   :hook (prog-mode . evil-commentary-mode)
+  :diminish evil-commentary-mode
   )
 
+(use-package evil-multiedit
+  :ensure t
+  :demand t
+  :config
+  (evil-multiedit-default-keybinds)
+  )
+
+
+;;; org
 
 ;;;###autoload
 (defun my/org-agenda-to-appt ()
@@ -453,7 +488,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   (org-agenda-files nil)
   (org-log-into-drawer t)
   ;; file path for plantuml
-  (org-plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
   ;; ask before killing a pomodora timer
   (org-src-lang-modes
    '(("C" . c)
@@ -473,6 +507,9 @@ things you want byte-compiled in them! Like function/macro definitions."
      ("sqlite" . sql)
      ("toml" . conf-toml)
      ("plantuml" . plantuml)))
+  (org-plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
+  :config
+  (org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)))
   )
 
 
@@ -505,6 +542,90 @@ things you want byte-compiled in them! Like function/macro definitions."
   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
   )
 
+;;; code
+
+
+;;;###autoload
+(defvar my/eglot-completion-functions (list #'cape-file #'yasnippet-capf #'eglot-completion-at-point))
+
+;;;###autoload
+(defun my/eglot-capf ()
+  "Configure eglot corfu completion display with multiple backends such as yasnippet"
+  (setq-local completion-at-point-functions
+              (list (apply 'cape-capf-super my/eglot-completion-functions))))
+
+
+(use-package eglot
+  :init
+  (add-to-list 'exec-path (concat user-emacs-directory "langservers/omnisharp/"))
+  :hook (csharp-ts-mode . eglot-ensure)
+  :config
+  (setq completion-category-defaults nil)
+
+  ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
+  ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
+                                        ;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
+  (add-hook 'eglot-managed-mode-hook #'my/eglot-capf))
+
+
+
+(use-package eldoc
+  :custom
+  (eldoc-echo-area-prefer-doc-buffer t)
+  (eldoc-echo-area-use-multiline-p nil)
+  :diminish eldoc-mode
+  )
+
+(use-package php-mode
+  :ensure t
+  :mode ("\\.php\\'" . php-ts-mode)
+  )
+
+(use-package js2-mode
+  :ensure t
+  :mode ("\\.js\\'" . js2-mode))
+
+
+(use-package rainbow-delimiters
+  :ensure t
+  :hook ((html-ts-mode prog-mode) . rainbow-delimiters-mode))
+
+
+(use-package web-mode
+  :ensure t
+  :mode ((("\\.phtml\\'") . web-mode)
+         (("\\page\\'") . web-mode))
+  )
+
+
+(use-package plantuml-mode
+  :ensure t
+  :custom
+  (plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
+  )
+
+(use-package treesit-auto
+  :ensure t
+  :config
+  (global-treesit-auto-mode))
+
+(use-package sharper
+  :ensure t
+  :demand t
+  )
+
+(use-package xref-union
+  :ensure t
+  :hook ((prog-mode . xref-union-mode)
+         (prog-mode . (lambda () (remove-hook 'xref-backend-functions #'etags--xref-backend))))
+  )
+
+(use-package dumb-jump
+  :ensure t
+  :hook (prog-mode . (lambda () (add-hook 'xref-backend-functions #'dumb-jump-xref-activate nil t)))
+  )
+
+;;; completion
 
 (use-package corfu
   :ensure t
@@ -537,75 +658,31 @@ things you want byte-compiled in them! Like function/macro definitions."
   (setq hippie-expand-try-functions-list '(try-expand-dabbrev try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill try-complete-file-name-partially try-complete-file-name try-expand-all-abbrevs try-expand-list try-expand-line try-complete-lisp-symbol-partially try-complete-lisp-symbol))
   )
 
-;;;###autoload
-(defvar my/eglot-completion-functions (list #'yasnippet-capf #'eglot-completion-at-point))
-
-;;;###autoload
-(defun my/eglot-capf ()
-  "Configure eglot corfu completion display with multiple backends such as yasnippet"
-  (setq-local completion-at-point-functions
-              (list (apply 'cape-capf-super my/eglot-completion-functions))))
-
-(use-package eglot
-  :init
-  (add-to-list 'exec-path (concat user-emacs-directory "langservers/omnisharp/"))
-                                        ; ; prog-mode causes a wrong type argument warning from eglot but you can just ignore it
-  :config
-                                        ;TODO ; turn off eglots completion categories so we can add our own
-  (with-eval-after-load 'eglot
-    (setq completion-category-defaults nil))
-
-  ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
-  ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
-                                        ;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
-  (add-hook 'eglot-managed-mode-hook #'my/eglot-capf)
-  )
-
-
-;;;###autoload
-(defun my/lsp-mode-setup-completion ()
-  " Configure orderless "
-  (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-        '(orderless)))
-
-(use-package lsp-mode
+(use-package yasnippet
   :ensure t
   :init
-  :hook (((csharp-ts-mode php-ts-mode) . lsp)
-         (lsp-completion-mode . my/lsp-mode-setup-completion)
-         ;;         ;; This code makes lsp-completion-at-point more likely to give way control to other completion functions
-         ;;         (lsp-completion-mode . (lambda () (progn
-         ;;                                            (fset 'non-greedy-lsp (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
-         ;;                                            (setq completion-at-point-functions (delq #'lsp-completion-at-point completion-at-point-functions))
-         ;;                                            (add-to-list 'completion-at-point-functions #'non-greedy-lsp)))))
-         ;; This code makes lsp-completion-at-point only run after other completion functions cannot match.
-         (lsp-completion-mode . (lambda () (progn
-                                             (setq completion-at-point-functions (delq #'lsp-completion-at-point completion-at-point-functions))
-                                             (add-to-list 'completion-at-point-functions #'lsp-completion-at-point t)))))
+  (yas-global-mode 1)
   :custom
-  (lsp-completion-provider :none)
-  (lsp-signature-cycle t)
-  (lsp-enable-suggest-server-download nil)
-
-  :config
-  ;; enable which-key
-  (with-eval-after-load 'lsp-mode
-    (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
-  ;; get rid of lsp warnings
-  (add-to-list 'warning-suppress-log-types '(lsp-mode))
-  (add-to-list 'warning-suppress-types '(lsp-mode)))
-
-(use-package eldoc
-  :custom
-  (eldoc-echo-area-prefer-doc-buffer t)
-  (eldoc-echo-area-use-multiline-p nil)
+  (yas-also-auto-indent-first-line t)
+  :diminish yas-minor-mode
   )
 
-
-(use-package treesit-auto
+(use-package yasnippet-snippets
   :ensure t
-  :config
-  (global-treesit-auto-mode))
+  )
+
+;;;###autoload
+(defun my/yasnippet-add-completion-functions ()
+  "This function adds yasnippet-capf to completion-at-point-functions."
+  (add-to-list 'completion-at-point-functions #'yasnippet-capf)
+  )
+
+(use-package yasnippet-capf
+  :ensure t
+  :init
+  :hook ((prog-mode org-mode) . my/yasnippet-add-completion-functions)
+  )
+
 
 (use-package vertico
   :ensure t
@@ -637,6 +714,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (completion-in-region-function 'consult-completion-in-region)
   )
 
+
 (use-package cape
   :ensure t
   :init
@@ -648,12 +726,11 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; ...
   (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
   (advice-add #'lsp-completion-at-point :around #'cape-wrap-nonexclusive)
-  (advice-add #'comint-completion-at-point :around #'cape-wrap-nonexclusive)
-  (advice-add #'eglot-completion-at-point :around #'cape-wrap-nonexclusive)
   (advice-add #'pcomplete-completions-at-point :around #'cape-wrap-nonexclusive)
   (add-hook 'completion-at-point-functions #'cape-file)
   )
 
+;;; ui
 (use-package kind-icon
   :ensure t
   :after corfu
@@ -742,50 +819,41 @@ things you want byte-compiled in them! Like function/macro definitions."
   (marginalia-mode)
   )
 
+(use-package embark
+  :ensure t
+  :init
+  :init
 
+  ;; Optionally replace the key help with a completing-read interface
+  (setq prefix-help-command #'embark-prefix-help-command)
+
+  ;; Show the Embark target at point via Eldoc. You may adjust the
+  ;; Eldoc strategy, if you want to see the documentation from
+  ;; multiple providers. Beware that using this can be a little
+  ;; jarring since the message shown in the minibuffer can be more
+  ;; than one line, causing the modeline to move up and down:
+
+  ;; (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
+  ;; (setq eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
+
+  :config
+
+  ;; Hide the mode line of the Embark live/completions buffers
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
+
+(use-package consult-eglot
+  :ensure t
+  )
 
 (use-package posframe
   :ensure t
   )
 
-;;;###autoload
-(defun my/yasnippet-add-completion-functions ()
-  "This function adds yasnippet-capf to completion-at-point-functions."
-  (add-to-list 'completion-at-point-functions #'yasnippet-capf)
-  )
 
-(use-package yasnippet-capf
-  :ensure t
-  :init
-  :hook ((prog-mode org-mode) . my/yasnippet-add-completion-functions)
-  )
-
-(use-package yasnippet
-  :ensure t
-  :init
-  (yas-global-mode 1)
-  )
-
-
-(use-package yasnippet-snippets
-  :ensure t
-  )
-
-
-(use-package php-mode
-  :ensure t
-  :mode ("\\.php\\'" . php-ts-mode)
-  )
-
-(use-package js2-mode
-  :ensure t
-  :mode ("\\.js\\'" . js2-mode))
-
-
-(use-package rainbow-delimiters
-  :ensure t
-  :hook ((html-ts-mode prog-mode) . rainbow-delimiters-mode)
-  )
 
 (use-package adaptive-wrap
   :ensure t
@@ -793,10 +861,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
-(use-package sharper
-  :ensure t
-  :demand t
-  )
 
 (use-package which-key
   :init
@@ -813,16 +877,149 @@ things you want byte-compiled in them! Like function/macro definitions."
   (which-key-allow-multiple-replacements t)
   :init
   (which-key-mode)
+  :diminish which-key-mode
   )
 
-
-
-(use-package web-mode
+(use-package diminish
   :ensure t
-  :mode ((("\\.phtml\\'") . web-mode)
-         (("\\page\\'") . web-mode))
   )
 
+
+;;; miscaleanous
+
+
+(use-package savehist
+  :init
+  (savehist-mode))
+
+
+
+;;; emacs default
+
+;;;###autoload
+(defun my/set-font ()
+  (when (find-font (font-spec :name phundrak/default-font-name))
+    (set-face-attribute 'default nil
+                        :font phundrak/default-font-name
+                        :height phundrak/default-font-size)))
+
+
+
+(use-package emacs
+  :mode ("\\.sql\\'" . sql-mode)
+  :hook (((help-mode prog-mode evil-org-mode html-ts-mode) . display-line-numbers-mode)
+         (server-after-make-frame . my/set-font)
+         (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
+         ((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))
+         (before-save . whitespace-cleanup))
+  :config
+  (defvar phundrak/default-font-size 90
+    "Default font size.")
+
+  (defvar phundrak/default-font-name "Cascadia Code"
+    "Default font.")
+  (my/set-font)
+  ;; ellipsis marker single character of three dots in org
+  (with-eval-after-load 'mule-util
+    (setq truncate-string-ellipsis "…"))
+  ;; disable transparency
+  (add-to-list 'default-frame-alist '(alpha-background . 1.0))
+  ;; yes or no now y or n
+  (if (version<= emacs-version "28")
+      (defalias 'yes-or-no-p 'y-or-n-p)
+    (setopt use-short-answers t))
+
+  (when scroll-bar-mode
+    (scroll-bar-mode -1))
+
+  (add-to-list 'custom-enabled-themes 'tango-dark)
+  (load-theme 'tango-dark)
+
+  :custom
+  (undo-limit 400000)           ;; 400kb (default is 160kb)
+  (undo-strong-limit 3000000)   ;; 3mb   (default is 240kb)
+  (undo-outer-limit 48000000)  ;; 48mb  (default is 24mb)
+
+
+  ;; turn off comp warnings
+  (native-comp-async-report-warnings-error nil)
+  ;; get rid of menu bar, tab bar, and tool bar
+  (menu-bar-mode nil)
+  (tab-bar-mode nil)
+  (tool-bar-mode nil)
+  (line-number-mode nil)
+  ;; ;; setup differnet directoy for backups and autosaves
+  (backup-directory-alist (concat user-emacs-directory "backups/"))
+  ;; tabs insert spaces
+  (indent-tabs-mode nil)
+  ;; cursor over actual space of character
+  (x-stretch-cursor t)
+  (window-combination-resize t) ;; take new window space from all other windows
+  ;; buffer is same version as file when opened
+  (global-auto-revert-mode 1)
+  ;; end double space between sentences
+  (sentence-end-double-space nil)
+
+  (desktop-save-mode 1)
+
+  (doc-view-resolution 200)
+  ;; support opening new minibuffers from inside existing minibuffers for evil :
+  (enable-recursive-minibuffers t)
+  ;; hide commands in M-x which do not work in current mode.
+  (read-extended-command-predicate #'command-completion-default-include-p)
+  ;; do not allow cursor in the minibuffer prompt
+  (minibuffer-prompt-properties
+   '(read-only t cursor-intangible t face minibuffer-prompt))
+
+  )
+
+;;; archive
+
+
+;; (use-package iedit
+;;   :ensure t)
+
+;;(defun tree-sitter! ()
+;;  "Dispatch to turn on tree sitter.
+;;
+;;Used as a hook function which turns on `tree-sitter-mode'
+;;and selectively turn on `tree-sitter-hl-mode'.
+;;according to `+tree-sitter-hl-enabled-modes'"
+;;  (turn-on-tree-sitter-mode)
+;;  ;; conditionally enable `tree-sitter-hl-mode'
+;;  (let ((mode (bound-and-true-p tree-sitter-hl-mode)))
+;;    (when-let (mode (if (pcase +tree-sitter-hl-enabled-modes
+;;                          (`(not . ,modes) (not (memq major-mode modes)))
+;;                          ((and `(,_ . ,_) modes) (memq major-mode modes))
+;;                          (bool bool))
+;;                        (unless mode +1)
+;;                      (if mode -1)))
+;;      (tree-sitter-hl-mode mode))))                             #'cape-file))
+;;(use-package tree-sitter-langs
+;;  :ensure t)
+;;
+;;(use-package tree-sitter
+;;  :config
+;;  (require 'tree-sitter-langs)
+;;  (setq tree-sitter-debug-jump-buttons t
+;;        tree-sitter-debug-highlight-jump-region))
+;;
+;;
+;;(use-package evil-textobj-tree-sitter
+;;  :ensure t
+;;  :config
+;;  (defvar +tree-sitter-inner-text-objects-map (make-sparse-keymap))
+;;  (defvar +tree-sitter-outer-text-objects-map (make-sparse-keymap))
+;;  (defvar +tree-sitter-goto-previous-map (make-sparse-keymap))
+;;  (defvar +tree-sitter-goto-next-map (make-sparse-keymap))
+;;
+;;  (evil-define-key '(visual operator) 'tree-sitter-mode
+;;    "i" +tree-sitter-inner-text-objects-map
+;;    "a" +tree-sitter-outer-text-objects-map)
+;;  (evil-define-key 'normal 'tree-sitter-mode
+;;    "[g" +tree-sitter-goto-previous-map
+
+;;    "]g" +tree-sitter-goto-next-map))
 
 ;;(use-package minuet
 ;;  :ensure t
@@ -876,141 +1073,3 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;   :template)
 ;;
 ;;  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
-
-
-;;; config for default emacs packages
-
-;;;###autoload
-(defun my/set-font ()
-  (when (find-font (font-spec :name phundrak/default-font-name))
-    (set-face-attribute 'default nil
-                        :font phundrak/default-font-name
-                        :height phundrak/default-font-size)))
-
-(use-package savehist
-  :init
-  (savehist-mode))
-
-(use-package emacs
-  :mode ("\\.sql\\'" . sql-mode)
-  :hook (((help-mode prog-mode evil-org-mode html-ts-mode) . display-line-numbers-mode)
-         (server-after-make-frame . my/set-font)
-         (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
-         ((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))
-         (before-save . whitespace-cleanup)
-         (prog-mode . electric-pair-mode))
-  :config
-  (defvar phundrak/default-font-size 90
-    "Default font size.")
-
-  (defvar phundrak/default-font-name "Cascadia Code"
-    "Default font.")
-  (my/set-font)
-  ;; ellipsis marker single character of three dots in org
-  (with-eval-after-load 'mule-util
-    (setq truncate-string-ellipsis "…"))
-  ;; disable transparency
-  (add-to-list 'default-frame-alist '(alpha-background . 1.0))
-  ;; yes or no now y or n
-  (if (version<= emacs-version "28")
-      (defalias 'yes-or-no-p 'y-or-n-p)
-    (setopt use-short-answers t))
-  ;; set theme to tango dark
-  (add-to-list 'custom-enabled-themes 'tango-dark)
-  (load-theme 'tango-dark)
-
-  (when scroll-bar-mode
-    (scroll-bar-mode -1))
-
-  :custom
-  (undo-limit 400000)           ;; 400kb (default is 160kb)
-  (undo-strong-limit 3000000)   ;; 3mb   (default is 240kb)
-  (undo-outer-limit 48000000)  ;; 48mb  (default is 24mb)
-
-
-  ;; turn off comp warnings
-  (native-comp-async-report-warnings-error nil)
-  ;; get rid of menu bar, tab bar, and tool bar
-  (menu-bar-mode nil)
-  (tab-bar-mode nil)
-  (tool-bar-mode nil)
-  ;; setup differnet directoy for backups and autosaves
-  (backup-directory-alist (concat user-emacs-directory "backups/"))
-  ;; tabs insert spaces
-  (indent-tabs-mode nil)
-  ;; cursor over actual space of character
-  (x-stretch-cursor t)
-  (window-combination-resize t) ;; take new window space from all other windows
-  ;; buffer is same version as file when opened
-  (global-auto-revert-mode 1)
-  ;; end double space between sentences
-  (sentence-end-double-space nil)
-
-  (desktop-save-mode 1)
-
-  (doc-view-resolution 200)
-  ;; support opening new minibuffers from inside existing minibuffers for evil :
-  (enable-recursive-minibuffers t)
-  ;; hide commands in M-x which do not work in current mode.
-  (read-extended-command-predicate #'command-completion-default-include-p)
-  ;; do not allow cursor in the minibuffer prompt
-  (minibuffer-prompt-properties
-   '(read-only t cursor-intangible t face minibuffer-prompt))
-
-
-
-  )
-
-;;; archive
-
-(use-package evil-multiedit
-  :ensure t
-  :demand t
-  :config
-  (evil-multiedit-default-keybinds)
-  )
-
-;; (use-package iedit
-;;   :ensure t)
-
-;;(defun tree-sitter! ()
-;;  "Dispatch to turn on tree sitter.
-;;
-;;Used as a hook function which turns on `tree-sitter-mode'
-;;and selectively turn on `tree-sitter-hl-mode'.
-;;according to `+tree-sitter-hl-enabled-modes'"
-;;  (turn-on-tree-sitter-mode)
-;;  ;; conditionally enable `tree-sitter-hl-mode'
-;;  (let ((mode (bound-and-true-p tree-sitter-hl-mode)))
-;;    (when-let (mode (if (pcase +tree-sitter-hl-enabled-modes
-;;                          (`(not . ,modes) (not (memq major-mode modes)))
-;;                          ((and `(,_ . ,_) modes) (memq major-mode modes))
-;;                          (bool bool))
-;;                        (unless mode +1)
-;;                      (if mode -1)))
-;;      (tree-sitter-hl-mode mode))))                             #'cape-file))
-;;(use-package tree-sitter-langs
-;;  :ensure t)
-;;
-;;(use-package tree-sitter
-;;  :config
-;;  (require 'tree-sitter-langs)
-;;  (setq tree-sitter-debug-jump-buttons t
-;;        tree-sitter-debug-highlight-jump-region))
-;;
-;;
-;;(use-package evil-textobj-tree-sitter
-;;  :ensure t
-;;  :config
-;;  (defvar +tree-sitter-inner-text-objects-map (make-sparse-keymap))
-;;  (defvar +tree-sitter-outer-text-objects-map (make-sparse-keymap))
-;;  (defvar +tree-sitter-goto-previous-map (make-sparse-keymap))
-;;  (defvar +tree-sitter-goto-next-map (make-sparse-keymap))
-;;
-;;  (evil-define-key '(visual operator) 'tree-sitter-mode
-;;    "i" +tree-sitter-inner-text-objects-map
-;;    "a" +tree-sitter-outer-text-objects-map)
-;;  (evil-define-key 'normal 'tree-sitter-mode
-;;    "[g" +tree-sitter-goto-previous-map
-
-;;    "]g" +tree-sitter-goto-next-map))
