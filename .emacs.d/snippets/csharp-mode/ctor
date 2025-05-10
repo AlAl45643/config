@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: public constructor() { }
+# key: ctor
+# --
+/// <summary>
+/// $2
+/// </summary>
+public `(progn (re-search-backward "class \\([A-Z]+\\)") (match-string-no-properties 1))`($1)
+{
+$0
+}

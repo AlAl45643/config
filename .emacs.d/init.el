@@ -161,24 +161,20 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;
 ;; module specific command priority
-;; TAB corfu-insert
 ;; C-SPC corfu-insert-separator
 ;; C-h corfu-popupinfo-toggle
 ;; C-S-j corfu-popupinfo-scroll-up
 ;; C-S-k corfu-popupinfo-scroll-down
-;;
-;; mode specific commands
-;; php-search-documentation // add to lookups
-;; php-browse-manual // add to lookups
-;; d sharper-main-transient
+;; Enter ibuffer-visit-buffer quit-ibuffer
 ;;
 ;; global key commands priority
 ;; M-x execute-extended command
 ;; TAB smart-tab (vertico / eshell/ corfu/ indent / hippie-expand)
 ;; ,s switch-to-buffer
-;; ,f find-file
 ;; ,e save-some-buffers
 ;; == format-buffer
+;; ,f project-find-file
+;; ,i imenu-list-smart-toggle
 ;; ,l eshell
 ;; ,a evil-mc-make-all-cursors
 ;; C-<tab> yas-expand
@@ -188,6 +184,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; ,u evil-mc-undo-all-cursors
 ;; ,P evil-mc-skip-and-goto-prev-cursor
 ;; ,p evil-mc-skip-and-goto-next-cursor
+;; ]x xref-go-forward
+;; [x xref-go-back
 ;; SPC c p evil-mc-pause-cursors
 ;; SPC c r evil-mc-resume-cursors
 ;; ,v eval-expression
@@ -198,26 +196,42 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; C-<iso-lefttab> yas-prev-field
 ;; SPC e a execute-code-action // eglot
 ;; g d goto-definition-at-point // eglot
+;; g D xref-go-back
 ;; g r find-references // eglot
 ;; g c evil-commentary
 ;; , u evil-mc-undo-last-added-cursor
 ;; , h evil-mc-make-cursor-here
 ;; SPC e asignature-activate
 ;; SPC p p completion-at-point
-;; SPC j fproject-find-file
+;; SPC j f project-find-file
 ;; SPC j h project-search
 ;; SPC j s project-switch-to-buffer
 ;; SPC j j project-switch-project
 
+;; added but unsorted
+;; embark-act
+;; embark-dwim
+;; embark-bindings
+;; evil-snipe-repeat-reverse
+;; sharper-transient-run
+;; sharper-transient-test
+;; sharper-transient-build
+;; sharper-main-transient
+;; delete-file
+;; evil-scroll-up
+;; xref-go-backward
+
+;; needs to be added
+;; eval-defun
 
 ;; minibuffer
 (general-def vertico-map
   "C-j" 'vertico-next
   "C-k" 'vertico-previous
-  "C-S-j" 'scroll-down-command
+  "C-S-j" 'scroll-up-command
   "C-b" 'evil-backward-char
   "C-f" 'evil-forward-char
-  "C-S-k" 'scroll-up-command)
+  "C-S-k" 'scroll-down-command)
 
 ;; module specific keybinds
 (general-def corfu-map
@@ -231,8 +245,19 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-S-j" 'corfu-popupinfo-scroll-up
     "C-S-k" 'corfu-popupinfo-scroll-down))
 
+(after! ibuffer
+  (general-def ibuffer-mode-map
+    "<return>" (lambda (arg) (interactive "P")
+                 (if arg
+                     (progn (evil-goto-line arg) (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*"))
+                   (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*")))))
 
-
+(after! imenu-list
+  (general-def imenu-list-major-mode-map
+    "<return>" (lambda (arg) (interactive "P")
+                 (if arg
+                     (progn (evil-goto-line arg) (imenu-list-goto-entry))
+                   (imenu-list-goto-entry)))))
 ;; miscaleanous commands
 
 (general-def 'insert
@@ -245,7 +270,11 @@ things you want byte-compiled in them! Like function/macro definitions."
                 (t (indent-for-tab-command)))))
 
 (general-def
-  "C-<tab>" 'yas-expand)
+  "C-<tab>" 'yas-expand
+  "C-RET" 'embark-act
+  "C-<return>" 'embark-act
+  "M-RET" 'embark-dwim
+  "C-h b" 'embark-bindings)
 
 (general-unbind iedit-mode-keymap
   "TAB"
@@ -259,12 +288,10 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-<tab>" 'yas-next-field
     "C-<iso-lefttab>" 'yas-prev-field))
 
-(general-def
-  "C-RET" 'embark-act
-  "C-<return>" 'embark-act
-  "M-RET" 'embark-dwim
-  "C-h b" 'embark-bindings)
-
+(after! evil-org
+  (general-def org-mode-map
+    "C-<tab>" 'org-cycle
+    "C-<iso-lefttab>" 'org-shifttab))
 
 ;; character navigaiton
 ;;
@@ -276,6 +303,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; 2-4jk 123G
 
 ;; out of viewport within buffer navigation
+;; needs a way to see what i am going to
+;; navigate by methods? should not be a list but a keybind something like , n 1
+;; should create its own buffer so we can view a lot
+;; consult-imenu
 
 ;; out of file navigaiton
 
@@ -297,7 +328,13 @@ things you want byte-compiled in them! Like function/macro definitions."
                                          ((setq sym (variable-at-point)) (describe-variable sym))
                                          ;; now let it operate fully -- i.e. also check the
                                          ;; surrounding sexp for a function call.
-                                         ((setq sym (function-at-point)) (describe-function sym))))))
+                                         ((setq sym (function-at-point)) (describe-function sym)))))
+  "C-S-d" 'evil-scroll-up
+  "g d" 'xref-find-definitions
+  "g D" 'xref-find-definitions-other-window
+  "] x" 'xref-go-forward
+  "[ x" 'xref-go-back)
+
 
 (general-nmap "=" (general-key-dispatch 'evil-indent
                     "=" (lambda () (interactive) (indent-region (point-min) (point-max)))))
@@ -305,10 +342,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (after! eglot
   (general-def 'normal eglot-mode-map
-    "g h" 'eldoc-doc-buffer
-    "?" 'consult-eglot-symbols
-    "[ m" 'treesit-beginning-of-defun
-    "] m" 'treesit-end-of-defun)
+    "g h" 'eldoc-doc-buffer)
+  ;;    "?" 'consult-eglot-symbols
   (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
                                      "=" 'eglot-format-buffer)))
 
@@ -317,9 +352,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 (global-evil-definer
   "," 'evil-snipe-repeat-reverse
   "s" 'switch-to-buffer
-  "f" 'find-file
   "e" (lambda () (interactive) (save-some-buffers "!"))
+  "f" 'project-find-file
   "l" 'eshell
+  "i" 'imenu-list-smart-toggle
   "k" 'kill-buffer
   "a" '("make-all-cursors" . evil-mc-make-all-cursors)
   "q" '("quit-all-cursors" . evil-mc-undo-all-cursors)
@@ -388,7 +424,9 @@ things you want byte-compiled in them! Like function/macro definitions."
   "s" 'project-switch-to-buffer
   "j" 'project-switch-project
   "h" 'project-search)
-
+(+general-global-menu! "file" "f")
+(+general-global-file
+  "d" 'delete-file)
 
 
 ;;; text editing
@@ -589,7 +627,21 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package rainbow-delimiters
   :ensure t
   :hook ((html-ts-mode prog-mode) . rainbow-delimiters-mode)
-  :config
+  :custom-face
+  (rainbow-delimiters-base-error-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ff0000"))))
+  (rainbow-delimiters-depth-1-face ((t (:inherit rainbow-delimiters-base-face :foreground "white"))))
+  (rainbow-delimiters-depth-2-face ((t (:inherit rainbow-delimiters-base-face :foreground "#006400"))))
+  (rainbow-delimiters-depth-3-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ffd700"))))
+  (rainbow-delimiters-depth-4-face ((t (:inherit rainbow-delimiters-base-face :foreground "#6a5acd"))))
+  (rainbow-delimiters-depth-5-face ((t (:inherit rainbow-delimiters-base-face :foreground "#00ff00"))))
+  (rainbow-delimiters-depth-6-face ((t (:inherit rainbow-delimiters-base-face :foreground "#00ffff"))))
+  (rainbow-delimiters-depth-7-face ((t (:inherit rainbow-delimiters-base-face :foreground "#0000ff"))))
+  (rainbow-delimiters-depth-8-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ff1493"))))
+  (rainbow-delimiters-depth-9-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ffc0cb"))))
+  )
+
+(use-package elisp-mode
+  :hook (emacs-lisp-mode . (lambda () (setq imenu-generic-expression (append (list  (list "Use Package" "^(use-package \\(.+\\)" 1)) imenu-generic-expression))))
   )
 
 
@@ -608,6 +660,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package treesit-auto
   :ensure t
+  :demand t
   :config
   (global-treesit-auto-mode))
 
@@ -616,16 +669,17 @@ things you want byte-compiled in them! Like function/macro definitions."
   :demand t
   )
 
-(use-package xref-union
-  :ensure t
-  :hook ((prog-mode . xref-union-mode)
-         (prog-mode . (lambda () (remove-hook 'xref-backend-functions #'etags--xref-backend))))
-  )
-
-(use-package dumb-jump
-  :ensure t
-  :hook (prog-mode . (lambda () (add-hook 'xref-backend-functions #'dumb-jump-xref-activate nil t)))
-  )
+;;(use-package xref-union
+;;  :ensure t
+;;  :hook ((prog-mode . xref-union-mode)
+;;         (prog-mode . (lambda () (remove-hook 'xref-backend-functions #'etags--xref-backend))))
+;;  )
+;;
+;;;; install rip-grep
+;;(use-package dumb-jump
+;;  :ensure t
+;;  :hook (prog-mode . (lambda () (add-hook 'xref-backend-functions #'dumb-jump-xref-activate nil t)))
+;;  )
 
 ;;; completion
 
@@ -736,6 +790,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package kind-icon
   :ensure t
   :after corfu
+  :demand t
   :custom
                                         ; (kind-icon-blend-background t)
                                         ; (kind-icon-default-face 'corfu-default) ; only needed with blend-background
@@ -801,6 +856,13 @@ things you want byte-compiled in them! Like function/macro definitions."
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)
   )
 
+(use-package imenu-list
+  :ensure t
+  :hook ((imenu-list-after-jump . (lambda () (imenu-list-smart-toggle))))
+  :custom
+  (imenu-list-focus-after-activation t)
+  (imenu-list-auto-resize t)
+  (imenu-list-position 'left))
 
 
 ;;Enable rich annotations using the Marginalia package
@@ -895,21 +957,56 @@ things you want byte-compiled in them! Like function/macro definitions."
   (savehist-mode))
 
 
+(use-package window
+  :hook (ibuffer-mode . (lambda () (setq-local display-buffer-base-action '((display-buffer-use-some-window)))))
+  :custom
+  (menu-bar-mode nil)
+  (tab-bar-mode nil)
+  (tool-bar-mode nil)
+  (line-number-mode nil)
+  (switch-to-buffer-in-dedicated-window 'pop)
+  (switch-to-buffer-obey-display-actions t)
+  (window-sides-slots '(2 2 2 2))
+  (display-buffer-alist
+   ;; '(("\\*Ibuffer\\*"
+   ;;    (display-buffer-in-side-window)
+   ;;    (side . left)
+   ;;    (slot . 0)
+   ;;    (window-width . 0.20)))
+   '(("\\*eshell\\*"
+     (display-buffer-in-side-window)
+     (side . bottom)
+     (slot . 0)
+     (window-height . 0.25))
+   ("\\*info\\*"
+     (display-buffer-in-side-window)
+     (side . right)
+     (slot . 0)
+     (window-width . 0.50))
+   ("\\*help\\*"
+    (display-buffer-in-side-window)
+    (side . right)
+    (slot . -1)
+    (window-width . 0.50))
+   ("\\*dotnet"
+    (display-buffer-reuse-window display-buffer-in-side-window)
+    (side . bottom)
+    (slot . -1)
+    (window-height 0.25))))
+)
+
+(use-package font-core
+  :config
+  (cond
+   ((find-font (font-spec :name "JetBrains Mono"))
+    (set-frame-font "JetBrains Mono 11" nil t)))
+  )
 
 ;;; emacs default
 
-;;;###autoload
-(defun my/set-font ()
-  (when (find-font (font-spec :name phundrak/default-font-name))
-    (set-face-attribute 'default nil
-                        :font phundrak/default-font-name
-                        :height phundrak/default-font-size)))
-
-
-
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((help-mode prog-mode evil-org-mode html-ts-mode) . display-line-numbers-mode)
+  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode) . display-line-numbers-mode)
          (server-after-make-frame . my/set-font)
          (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
          ((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))
@@ -941,10 +1038,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; turn off comp warnings
   (native-comp-async-report-warnings-error nil)
   ;; get rid of menu bar, tab bar, and tool bar
-  (menu-bar-mode nil)
-  (tab-bar-mode nil)
-  (tool-bar-mode nil)
-  (line-number-mode nil)
   ;; ;; setup differnet directoy for backups and autosaves
   (backup-directory-alist (concat user-emacs-directory "backups/"))
   ;; tabs insert spaces
@@ -967,6 +1060,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; do not allow cursor in the minibuffer prompt
   (minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt))
+
 
   )
 
@@ -1070,25 +1164,3 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;   :template)
 ;;
 ;;  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :background "#2e3436" :foreground "#eeeeec" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 105 :width normal :foundry "JB" :family "Jetbrains Mono"))))
- '(rainbow-delimiters-base-error-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ff0000"))))
- '(rainbow-delimiters-depth-1-face ((t (:inherit rainbow-delimiters-base-face :foreground "white"))))
- '(rainbow-delimiters-depth-2-face ((t (:inherit rainbow-delimiters-base-face :foreground "#006400"))))
- '(rainbow-delimiters-depth-3-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ffd700"))))
- '(rainbow-delimiters-depth-4-face ((t (:inherit rainbow-delimiters-base-face :foreground "#6a5acd"))))
- '(rainbow-delimiters-depth-5-face ((t (:inherit rainbow-delimiters-base-face :foreground "#00ff00"))))
- '(rainbow-delimiters-depth-6-face ((t (:inherit rainbow-delimiters-base-face :foreground "#00ffff"))))
- '(rainbow-delimiters-depth-7-face ((t (:inherit rainbow-delimiters-base-face :foreground "#0000ff"))))
- '(rainbow-delimiters-depth-8-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ff1493"))))
- '(rainbow-delimiters-depth-9-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ffc0cb")))))
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
