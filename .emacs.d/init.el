@@ -24,7 +24,7 @@
   :custom
   (use-package-always-defer t))
 
-;;; keybinding
+;;; keybinds
 
 (use-package general
   :ensure t
@@ -128,7 +128,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 
-;;; rules
+;; rules
 ;; binding rules
 ;; 1. All commands should be be classified as minibuffer, module, mode, and global.
 ;; 2. Any command that is to be bound should be prioritized based on its frequency of use against all other commands within their type.
@@ -223,6 +223,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;; needs to be added
 ;; eval-defun
+;; evaluate sexp
 
 ;; minibuffer
 (general-def vertico-map
@@ -245,20 +246,36 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-S-j" 'corfu-popupinfo-scroll-up
     "C-S-k" 'corfu-popupinfo-scroll-down))
 
-(after! ibuffer
-  (general-def ibuffer-mode-map
-    "<return>" (lambda (arg) (interactive "P")
-                 (if arg
-                     (progn (evil-goto-line arg) (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*"))
-                   (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*")))))
+;; (after! ibuffer
+;;   (general-def ibuffer-mode-map
+;;     "<return>" (lambda (arg) (interactive "P")
+;;                  (if arg
+;;                      (progn (evil-goto-line arg) (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*"))
+;;                    (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*")))))
 
 (after! imenu-list
   (general-def imenu-list-major-mode-map
     "<return>" (lambda (arg) (interactive "P")
                  (if arg
-                     (progn (evil-goto-line arg) (imenu-list-goto-entry))
-                   (imenu-list-goto-entry)))))
-;; miscaleanous commands
+                     (progn (evil-goto-line arg) (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos)))
+                   (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos))))
+    "C-j" 'evil-next-line
+    "C-k" 'evil-previous-line
+    "C-g" 'imenu-list-quit-window))
+
+(after! evil-org
+  (general-def org-mode-map
+    "C-<tab>" 'org-cycle
+    "C-<iso-lefttab>" 'org-shifttab))
+
+(after! yasnippet
+  (general-def yas-keymap
+    "<tab>" nil
+    "TAB" nil
+    "C-<tab>" 'yas-next-field
+    "C-<iso-lefttab>" 'yas-prev-field))
+
+;; miscaleanous global commands
 
 (general-def 'insert
   "TAB" (lambda () (interactive)
@@ -270,65 +287,27 @@ things you want byte-compiled in them! Like function/macro definitions."
                 (t (indent-for-tab-command)))))
 
 (general-def
-  "C-<tab>" 'yas-expand
-  "C-RET" 'embark-act
-  "C-<return>" 'embark-act
-  "M-RET" 'embark-dwim
-  "C-h b" 'embark-bindings)
+  "C-<tab>" 'yas-expand)
 
 (general-unbind iedit-mode-keymap
   "TAB"
   "<tab>"
   "<backtab")
 
-(after! yasnippet
-  (general-def yas-keymap
-    "<tab>" nil
-    "TAB" nil
-    "C-<tab>" 'yas-next-field
-    "C-<iso-lefttab>" 'yas-prev-field))
 
-(after! evil-org
-  (general-def org-mode-map
-    "C-<tab>" 'org-cycle
-    "C-<iso-lefttab>" 'org-shifttab))
+(after! helpful
+  (general-def
+    "C-h f" 'helpful-callable
+    "C-h v" 'helpful-variable
+    "C-h k" 'helpful-key
+    "C-h x" 'helpful-command
+    "C-h F" 'helpful-function))
 
-;; character navigaiton
-;;
 
-;; inline navigation
-;; s $ 0 e b A I
 
-;; in viewport navigation
-;; 2-4jk 123G
-
-;; out of viewport within buffer navigation
-;; needs a way to see what i am going to
-;; navigate by methods? should not be a list but a keybind something like , n 1
-;; should create its own buffer so we can view a lot
-;; consult-imenu
-
-;; out of file navigaiton
-
-;; evil commands
+;; evil global commands
 (general-def 'normal
-  "g h" (lambda () (interactive) (let (sym)
-                                   ;; sigh, function-at-point is too clever.  we want only the first half.
-                                   (cond ((setq sym (ignore-errors
-                                                      (with-syntax-table emacs-lisp-mode-syntax-table
-                                                        (save-excursion
-                                                          (or (not (zerop (skip-syntax-backward "_w")))
-                                                              (eq (char-syntax (char-after (point))) ?w)
-                                                              (eq (char-syntax (char-after (point))) ?_)
-                                                              (forward-sexp -1))
-                                                          (skip-chars-forward "`'")
-                                                          (let ((obj (read (current-buffer))))
-                                                            (and (symbolp obj) (fboundp obj) obj))))))
-                                          (describe-function sym))
-                                         ((setq sym (variable-at-point)) (describe-variable sym))
-                                         ;; now let it operate fully -- i.e. also check the
-                                         ;; surrounding sexp for a function call.
-                                         ((setq sym (function-at-point)) (describe-function sym)))))
+  "g h" 'helpful-at-point
   "C-S-d" 'evil-scroll-up
   "g d" 'xref-find-definitions
   "g D" 'xref-find-definitions-other-window
@@ -347,7 +326,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
                                      "=" 'eglot-format-buffer)))
 
-;; evil , key commands
+;; evil , global key commands
 
 (global-evil-definer
   "," 'evil-snipe-repeat-reverse
@@ -378,9 +357,9 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (after! csharp-mode
   (general-def 'normal csharp-ts-mode-map
-    ", m" '("browse-documentation" . (lambda () (interactive) (browse-url "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/"))))
+    ", m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com")))))
   (general-def 'insert csharp-ts-mode-map
-    "C-, m" '("browse-documentation" . (lambda () (interactive) (browse-url "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/")))))
+    "C-, m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
 
 (after! php-ts-mode
   (general-def 'normal php-ts-mode-map
@@ -388,7 +367,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (general-def 'insert php-ts-mode-map
     "C-, m" 'php-browse-manual))
 
-;; space commands
+;; space global commands
 
 (+general-global-menu! "cursor" "c")
 (+general-global-cursor
@@ -428,6 +407,32 @@ things you want byte-compiled in them! Like function/macro definitions."
 (+general-global-file
   "d" 'delete-file)
 
+(+general-global-menu! "debug" "d")
+(+general-global-debug
+  "<" 'dape-stack-select-up
+  ">" 'dape-stack-select-down
+  "B" 'dape-breakpoint-remove-all
+  "D" 'dape-disconnect-quit
+  "M" 'dape-disassemble
+  "R" 'dape-repl
+  "S" 'dape-select-stack
+  "b" 'dape-breakpoint-toggle
+  "c" 'dape-continue
+  "d" 'dape
+  "e" 'dape-breakpoint-expression
+  "h" 'dape-breakpoint-hits
+  "i" 'dape-info
+  "l" 'dape-breakpoint-log
+  "m" 'dape-memory
+  "n" 'dape-next
+  "o" 'dape-step-out
+  "p" 'dape-pause
+  "q" 'dape-quit
+  "r" 'dape-restart
+  "s" 'dape-step-in
+  "t" 'dape-select-thread
+  "w" 'dape-watch-dwim
+  "x" 'dape-evaluate-expression)
 
 ;;; text editing
 
@@ -582,6 +587,26 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;; code
 
+(use-package dape
+  :ensure t
+  :init
+  (add-to-list 'exec-path (concat user-emacs-directory "debug-adapters/netcoredbg/"))
+  :hook
+  (kill-emacs . dape-breakpoint-save)
+  (after-init . dape-breakpoint-load)
+  (dape-display-source . pulse-momentary-highlight-one-line)
+  (dape-start . (lambda () (save-some-buffers t t)))
+  (dape-start . (lambda () (repeat-mode 1)))
+  (dape-stopped . (lambda () (repeat-mode -1)))
+  (dape-compile . kill-buffer)
+  :custom
+  (dape-key-prefix nil)
+  (dape-buffer-window-arrangement 'gud)
+  (dape-breakpoint-global-mode)
+  (dape-info-hide-mode-line nil)
+
+  )
+
 
 ;;;###autoload
 (defvar my/eglot-completion-functions (list #'cape-file #'yasnippet-capf #'eglot-completion-at-point))
@@ -661,6 +686,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package treesit-auto
   :ensure t
   :demand t
+  :custom
+  (treesit-font-lock-level 4)
   :config
   (global-treesit-auto-mode))
 
@@ -699,7 +726,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (corfu-auto t)
   ;; if it doesn't work it is probably because the lsp is overriding it with :company-prefix-length
   (corfu-auto-prefix 2)
-  (corfu-auto-delay 0.5)
+  (corfu-auto-delay 0.3)
   (corfu-min-width 80)
   (corfu-max-width corfu-min-width)
   (corfu-count 14)
@@ -787,6 +814,52 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 ;;; ui
+
+(use-package window
+  :custom
+  (menu-bar-mode nil)
+  (tab-bar-mode nil)
+  (tool-bar-mode nil)
+  (line-number-mode nil)
+  (switch-to-buffer-in-dedicated-window 'pop)
+  (switch-to-buffer-obey-display-actions t)
+  (window-sides-slots '(2 2 2 2))
+  (display-buffer-alist
+   '(("\\*eshell\\*"
+      (display-buffer-in-side-window)
+      (side . bottom)
+      (slot . 0)
+      (window-height . 0.25))
+     ("\\*info\\*"
+      (display-buffer-in-side-window)
+      (side . right)
+      (slot . 0)
+      (window-width . 0.33))
+     ("\\*helpful\\|\\*Help\\*\\|\\*eldoc\\*"
+      (display-buffer-in-side-window)
+      (side . right)
+      (slot . -1)
+      (window-width . 0.33))
+     ("\\*dotnet"
+      (display-buffer-reuse-window display-buffer-in-side-window)
+      (side . bottom)
+      (slot . -1)
+      (window-height 0.25))
+     ((eat-mode)
+      (display-buffer-in-side-window)
+      (side . bottom)
+      (slot . 0)
+      (window-height . 0.25))))
+  )
+
+
+(use-package font-core
+  :config
+  (cond
+   ((find-font (font-spec :name "JetBrains Mono"))
+    (set-frame-font "JetBrains Mono 11" nil t)))
+  )
+
 (use-package kind-icon
   :ensure t
   :after corfu
@@ -883,35 +956,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   (marginalia-mode)
   )
 
-(use-package embark
-  :ensure t
-  :init
-  :init
-
-  ;; Optionally replace the key help with a completing-read interface
-  (setq prefix-help-command #'embark-prefix-help-command)
-
-  ;; Show the Embark target at point via Eldoc. You may adjust the
-  ;; Eldoc strategy, if you want to see the documentation from
-  ;; multiple providers. Beware that using this can be a little
-  ;; jarring since the message shown in the minibuffer can be more
-  ;; than one line, causing the modeline to move up and down:
-
-  ;; (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
-  ;; (setq eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
-
-  :config
-
-  ;; Hide the mode line of the Embark live/completions buffers
-  (add-to-list 'display-buffer-alist
-               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                 nil
-                 (window-parameters (mode-line-format . none)))))
-
-
-(use-package consult-eglot
-  :ensure t
-  )
 
 (use-package posframe
   :ensure t
@@ -921,7 +965,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package adaptive-wrap
   :ensure t
-  :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode dired-mode) . adaptive-wrap-prefix-mode)
+  :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode dired-mode helpful-mode info-mode) . adaptive-wrap-prefix-mode)
   )
 
 
@@ -939,6 +983,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (which-key-idle-delay 0.5)
   (which-key-separator ":")
   (which-key-allow-multiple-replacements t)
+  (which-key-popup-type 'minibuffer)
   :init
   (which-key-mode)
   :diminish which-key-mode
@@ -956,50 +1001,25 @@ things you want byte-compiled in them! Like function/macro definitions."
   :init
   (savehist-mode))
 
+(use-package eat
+  :ensure t
+  :hook ((eshell-first-time-mode . eat-eshell-visual-command-mode)
+         (eshell-first-time-mode . eat-eshell-mode))
+  )
 
-(use-package window
-  :hook (ibuffer-mode . (lambda () (setq-local display-buffer-base-action '((display-buffer-use-some-window)))))
-  :custom
-  (menu-bar-mode nil)
-  (tab-bar-mode nil)
-  (tool-bar-mode nil)
-  (line-number-mode nil)
-  (switch-to-buffer-in-dedicated-window 'pop)
-  (switch-to-buffer-obey-display-actions t)
-  (window-sides-slots '(2 2 2 2))
-  (display-buffer-alist
-   ;; '(("\\*Ibuffer\\*"
-   ;;    (display-buffer-in-side-window)
-   ;;    (side . left)
-   ;;    (slot . 0)
-   ;;    (window-width . 0.20)))
-   '(("\\*eshell\\*"
-     (display-buffer-in-side-window)
-     (side . bottom)
-     (slot . 0)
-     (window-height . 0.25))
-   ("\\*info\\*"
-     (display-buffer-in-side-window)
-     (side . right)
-     (slot . 0)
-     (window-width . 0.50))
-   ("\\*help\\*"
-    (display-buffer-in-side-window)
-    (side . right)
-    (slot . -1)
-    (window-width . 0.50))
-   ("\\*dotnet"
-    (display-buffer-reuse-window display-buffer-in-side-window)
-    (side . bottom)
-    (slot . -1)
-    (window-height 0.25))))
-)
+(use-package eshell
+  :hook ((eshell-first-time-mode . (lambda () (yas-minor-mode -1)))
+         (((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))))
+  )
 
-(use-package font-core
-  :config
-  (cond
-   ((find-font (font-spec :name "JetBrains Mono"))
-    (set-frame-font "JetBrains Mono 11" nil t)))
+(use-package helpful
+  :ensure t
+  :demand t
+  :init
+  (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update))
+
+(use-package elisp-demos
+  :ensure t
   )
 
 ;;; emacs default
@@ -1009,7 +1029,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode) . display-line-numbers-mode)
          (server-after-make-frame . my/set-font)
          (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
-         ((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))
          (before-save . whitespace-cleanup))
   :config
   ;; ellipsis marker single character of three dots in org
@@ -1039,7 +1058,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (native-comp-async-report-warnings-error nil)
   ;; get rid of menu bar, tab bar, and tool bar
   ;; ;; setup differnet directoy for backups and autosaves
-  (backup-directory-alist (concat user-emacs-directory "backups/"))
+  (backup-directory-alist '(("." . (concat user-emacs-directory "backups/"))))
   ;; tabs insert spaces
   (indent-tabs-mode nil)
   ;; cursor over actual space of character
@@ -1164,3 +1183,15 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;   :template)
 ;;
 ;;  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(which-key-popup-type 'minibuffer))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
