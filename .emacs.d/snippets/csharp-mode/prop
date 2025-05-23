@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# contributor : Alejandro Espinoza Esparza <aespinoza@structum.com.mx>
+# name: public property ....;
+# key: prop
+# --
+/// <summary>
+/// $3
+/// </summary>
+public $1 $2 { get; set; }

@@ -172,36 +172,39 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; TAB smart-tab (vertico / eshell/ corfu/ indent / hippie-expand)
 ;; ,s switch-to-buffer
 ;; ,e save-some-buffers
+;; ,t popper-toggle
+;; ,c popper-cycle
 ;; == format-buffer
-;; ,f project-find-file
+;; ,f find-file
 ;; ,i imenu-list-smart-toggle
 ;; ,l eshell
-;; ,a evil-mc-make-all-cursors
+;; ,o online-search
 ;; C-<tab> yas-expand
 ;; C-<tab> yas-next-field
 ;; g h description-at-point
-;; ,k kill-buffer
+;; ,g magit-status
+;; ,a evil-mc-make-all-cursors
 ;; ,u evil-mc-undo-all-cursors
-;; ,P evil-mc-skip-and-goto-prev-cursor
-;; ,p evil-mc-skip-and-goto-next-cursor
+;; ,k kill-buffer
+;; ,n eval-defun
 ;; ]x xref-go-forward
 ;; [x xref-go-back
+;; ,v eval-expression
 ;; SPC c p evil-mc-pause-cursors
 ;; SPC c r evil-mc-resume-cursors
-;; ,v eval-expression
-;; ,t toggle-truncate-lines
+;; SPC b t toggle-truncate-lines
 ;; ,u search-documentation
-;; ,g org-agenda
+;; SPC o a org-agenda
+;; SPC c p evil-mc-skip-and-goto-prev-cursor
+;; SPC c n evil-mc-skip-and-goto-next-cursor
 ;; ,d project-dired
 ;; C-<iso-lefttab> yas-prev-field
 ;; SPC e a execute-code-action // eglot
 ;; g d goto-definition-at-point // eglot
-;; g D xref-go-back
 ;; g r find-references // eglot
 ;; g c evil-commentary
 ;; , u evil-mc-undo-last-added-cursor
 ;; , h evil-mc-make-cursor-here
-;; SPC e asignature-activate
 ;; SPC p p completion-at-point
 ;; SPC j f project-find-file
 ;; SPC j h project-search
@@ -209,9 +212,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC j j project-switch-project
 
 ;; added but unsorted
-;; embark-act
-;; embark-dwim
-;; embark-bindings
 ;; evil-snipe-repeat-reverse
 ;; sharper-transient-run
 ;; sharper-transient-test
@@ -219,11 +219,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; sharper-main-transient
 ;; delete-file
 ;; evil-scroll-up
-;; xref-go-backward
 
 ;; needs to be added
-;; eval-defun
 ;; evaluate sexp
+;; evil-mc-make-next-line
 
 ;; minibuffer
 (general-def vertico-map
@@ -297,17 +296,17 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (after! helpful
   (general-def
-    "C-h f" 'helpful-callable
-    "C-h v" 'helpful-variable
-    "C-h k" 'helpful-key
-    "C-h x" 'helpful-command
-    "C-h F" 'helpful-function))
+    "C-h f" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-callable)))
+    "C-h v" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-variable)))
+    "C-h k" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-key)))
+    "C-h x" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-command)))
+    "C-h F" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-function)))))
 
 
 
 ;; evil global commands
 (general-def 'normal
-  "g h" 'helpful-at-point
+  "g h" (lambda () (interactive) (save-selected-window (helpful-at-point)))
   "C-S-d" 'evil-scroll-up
   "g d" 'xref-find-definitions
   "g D" 'xref-find-definitions-other-window
@@ -331,41 +330,40 @@ things you want byte-compiled in them! Like function/macro definitions."
 (global-evil-definer
   "," 'evil-snipe-repeat-reverse
   "s" 'switch-to-buffer
-  "e" (lambda () (interactive) (save-some-buffers "!"))
-  "f" 'project-find-file
+  "e" '("save-all-buffers" . (lambda () (interactive) (save-some-buffers "!")))
+  "t" 'popper-toggle
+  "c" 'popper-cycle
+  "f" 'find-file
   "l" 'eshell
+  "o" '("online-search" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x))))
   "i" 'imenu-list-smart-toggle
   "k" 'kill-buffer
+  "n" 'eval-defun
   "a" '("make-all-cursors" . evil-mc-make-all-cursors)
   "q" '("quit-all-cursors" . evil-mc-undo-all-cursors)
   "p" '("pause-cursors" . evil-mc-pause-cursors)
   "r" '("resume-cursors" . evil-mc-resume-cursors)
   "v" 'eval-expression
-  "t" 'toggle-truncate-lines
-  "g" 'org-agenda
-  "d" 'dired-jump
+  "d" 'dired
   "u" 'evil-mc-undo-last-added-cursor
   "h" 'evil-mc-make-cursor-here
   )
 
 
-(general-def 'normal emacs-lisp-mode-map
-  ", m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
-
-(general-def 'insert emacs-lisp-mode-map
-  "C-, m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
+(global-evil-definer
+  "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
 
 (after! csharp-mode
-  (general-def 'normal csharp-ts-mode-map
-    ", m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com")))))
-  (general-def 'insert csharp-ts-mode-map
-    "C-, m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
+  (global-evil-definer
+    "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
 
 (after! php-ts-mode
-  (general-def 'normal php-ts-mode-map
-    ", m" 'php-browse-manual)
-  (general-def 'insert php-ts-mode-map
-    "C-, m" 'php-browse-manual))
+  (global-evil-definer
+    "m" 'php-browse-manual))
+
+(after! magit-autoloads
+  (global-evil-definer
+    "g" 'magit-status))
 
 ;; space global commands
 
@@ -398,41 +396,53 @@ things you want byte-compiled in them! Like function/macro definitions."
   "p" 'completion-at-point)
 
 (+general-global-menu! "project" "j")
-(+general-global-project
-  "f" 'project-find-file
-  "s" 'project-switch-to-buffer
-  "j" 'project-switch-project
-  "h" 'project-search)
+(after! project
+  (+general-global-project
+    "f" 'project-find-file
+    "s" 'project-switch-to-buffer
+    "j" 'project-switch-project
+    "h" 'project-search))
+
 (+general-global-menu! "file" "f")
 (+general-global-file
   "d" 'delete-file)
 
 (+general-global-menu! "debug" "d")
-(+general-global-debug
-  "<" 'dape-stack-select-up
-  ">" 'dape-stack-select-down
-  "B" 'dape-breakpoint-remove-all
-  "D" 'dape-disconnect-quit
-  "M" 'dape-disassemble
-  "R" 'dape-repl
-  "S" 'dape-select-stack
-  "b" 'dape-breakpoint-toggle
-  "c" 'dape-continue
-  "d" 'dape
-  "e" 'dape-breakpoint-expression
-  "h" 'dape-breakpoint-hits
-  "i" 'dape-info
-  "l" 'dape-breakpoint-log
-  "m" 'dape-memory
-  "n" 'dape-next
-  "o" 'dape-step-out
-  "p" 'dape-pause
-  "q" 'dape-quit
-  "r" 'dape-restart
-  "s" 'dape-step-in
-  "t" 'dape-select-thread
-  "w" 'dape-watch-dwim
-  "x" 'dape-evaluate-expression)
+(after! dape
+  (+general-global-debug
+    "<" 'dape-stack-select-up
+    ">" 'dape-stack-select-down
+    "B" 'dape-breakpoint-remove-all
+    "D" 'dape-disconnect-quit
+    "M" 'dape-disassemble
+    "R" 'dape-repl
+    "S" 'dape-select-stack
+    "b" 'dape-breakpoint-toggle
+    "c" 'dape-continue
+    "d" 'dape
+    "e" 'dape-breakpoint-expression
+    "h" 'dape-breakpoint-hits
+    "i" 'dape-info
+    "l" 'dape-breakpoint-log
+    "m" 'dape-memory
+    "n" 'dape-next
+    "o" 'dape-step-out
+    "p" 'dape-pause
+    "q" 'dape-quit
+    "r" 'dape-restart
+    "s" 'dape-step-in
+    "t" 'dape-select-thread
+    "w" 'dape-watch-dwim
+    "x" 'dape-evaluate-expression))
+
+(+general-global-menu! "buffer" "b")
+(+general-global-buffer
+  "t" 'toggle-truncate-lines)
+
+(+general-global-menu! "org" "o")
+(after! org
+  (+general-global-org
+    "a" 'org-agenda))
 
 ;;; text editing
 
@@ -587,6 +597,9 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;; code
 
+(use-package magit
+  :ensure t)
+
 (use-package dape
   :ensure t
   :init
@@ -620,7 +633,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package eglot
   :init
-  (add-to-list 'exec-path (concat user-emacs-directory "langservers/omnisharp/"))
+  (add-to-list 'exec-path (concat user-emacs-directory "langservers/csharp/omnisharp/"))
   :hook (csharp-ts-mode . eglot-ensure)
   :config
   (setq completion-category-defaults nil)
@@ -736,9 +749,13 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package hippie-exp
-  :commands (hippie-expand)
+  :custom
+  (hippie-expand-try-functions-list '(try-expand-dabbrev try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill try-complete-file-name-partially try-complete-file-name try-expand-all-abbrevs try-expand-list try-expand-line try-complete-lisp-symbol-partially try-complete-lisp-symbol))
   :config
-  (setq hippie-expand-try-functions-list '(try-expand-dabbrev try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill try-complete-file-name-partially try-complete-file-name try-expand-all-abbrevs try-expand-list try-expand-line try-complete-lisp-symbol-partially try-complete-lisp-symbol))
+  (defadvice hippie-expand (around hippie-expand-case-fold)
+    (let ((case-fold-search nil))
+      ad-do-it))
+  (ad-activate 'hippie-expand)
   )
 
 (use-package yasnippet
@@ -815,6 +832,23 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;; ui
 
+(use-package popper
+  :ensure t ; or :straight t
+  :init
+  (setq popper-display-control 'user)
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          "\\*eshell\\*"
+          "\\*dotnet"
+          "events\\*"
+          "\\*shell\\*"
+          dired-mode
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))
+
 (use-package window
   :custom
   (menu-bar-mode nil)
@@ -824,13 +858,9 @@ things you want byte-compiled in them! Like function/macro definitions."
   (switch-to-buffer-in-dedicated-window 'pop)
   (switch-to-buffer-obey-display-actions t)
   (window-sides-slots '(2 2 2 2))
+  (magit-display-buffer-function 'display-buffer)
   (display-buffer-alist
-   '(("\\*eshell\\*"
-      (display-buffer-in-side-window)
-      (side . bottom)
-      (slot . 0)
-      (window-height . 0.25))
-     ("\\*info\\*"
+   '(("\\*info\\*"
       (display-buffer-in-side-window)
       (side . right)
       (slot . 0)
@@ -840,16 +870,11 @@ things you want byte-compiled in them! Like function/macro definitions."
       (side . right)
       (slot . -1)
       (window-width . 0.33))
-     ("\\*dotnet"
-      (display-buffer-reuse-window display-buffer-in-side-window)
-      (side . bottom)
-      (slot . -1)
-      (window-height 0.25))
-     ((eat-mode)
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (derived-mode . magit-mode))
       (display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
-      (window-height . 0.25))))
+      (window-height 0.30))))
   )
 
 
@@ -1026,7 +1051,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode) . display-line-numbers-mode)
+  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode) . display-line-numbers-mode)
          (server-after-make-frame . my/set-font)
          (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
          (before-save . whitespace-cleanup))
