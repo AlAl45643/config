@@ -212,6 +212,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC j j project-switch-project
 
 ;; added but unsorted
+;; 
 ;; evil-snipe-repeat-reverse
 ;; sharper-transient-run
 ;; sharper-transient-test
@@ -856,9 +857,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   (tool-bar-mode nil)
   (line-number-mode nil)
   (switch-to-buffer-in-dedicated-window 'pop)
-  (switch-to-buffer-obey-display-actions t)
+  (switch-to-buffer-obey-display-actions nil)
   (window-sides-slots '(2 2 2 2))
-  (magit-display-buffer-function 'display-buffer)
   (display-buffer-alist
    '(("\\*info\\*"
       (display-buffer-in-side-window)
@@ -870,11 +870,18 @@ things you want byte-compiled in them! Like function/macro definitions."
       (side . right)
       (slot . -1)
       (window-width . 0.33))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (derived-mode . magit-mode))
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*" (major-mode . compilation-mode) (major-mode . dired-mode))
       (display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
-      (window-height 0.30))))
+      (window-height 0.30))
+     ((derived-mode . magit-mode)
+      (display-buffer-reuse-window
+       display-buffer-in-direction)
+      (mode magit-mode)
+      (window . root)
+      (window-width . 0.30)
+      (direction . left))))
   )
 
 
@@ -1026,11 +1033,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   :init
   (savehist-mode))
 
-(use-package eat
-  :ensure t
-  :hook ((eshell-first-time-mode . eat-eshell-visual-command-mode)
-         (eshell-first-time-mode . eat-eshell-mode))
-  )
 
 (use-package eshell
   :hook ((eshell-first-time-mode . (lambda () (yas-minor-mode -1)))
@@ -1052,9 +1054,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
   :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode) . display-line-numbers-mode)
-         (server-after-make-frame . my/set-font)
-         (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
-         (before-save . whitespace-cleanup))
+         (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil)))))
   :config
   ;; ellipsis marker single character of three dots in org
   (with-eval-after-load 'mule-util
