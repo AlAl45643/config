@@ -166,7 +166,9 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; C-S-j corfu-popupinfo-scroll-up
 ;; C-S-k corfu-popupinfo-scroll-down
 ;; Enter ibuffer-visit-buffer quit-ibuffer
-;;
+;; Enter visual org-remark-mark
+;; o org-remark-open
+
 ;; global key commands priority
 ;; M-x execute-extended command
 ;; TAB smart-tab (vertico / eshell/ corfu/ indent / hippie-expand)
@@ -212,7 +214,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC j j project-switch-project
 
 ;; added but unsorted
-;; 
+;;
 ;; evil-snipe-repeat-reverse
 ;; sharper-transient-run
 ;; sharper-transient-test
@@ -252,6 +254,15 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;                  (if arg
 ;;                      (progn (evil-goto-line arg) (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*"))
 ;;                    (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*")))))
+
+(after! org-remark
+  (general-def 'visual org-remark-mode-map 
+    "<return>" 'org-remark-mark)
+  (general-def 'normal org-remark-mode-map
+    "o" 'org-remark-open
+    "]m" 'org-remark-view-next
+    "[m" 'org-remark-view-prev
+    "r" 'org-remark-delete))
 
 (after! imenu-list
   (general-def imenu-list-major-mode-map
@@ -314,6 +325,10 @@ things you want byte-compiled in them! Like function/macro definitions."
   "] x" 'xref-go-forward
   "[ x" 'xref-go-back)
 
+(after! org-remark-info
+  (general-def 'normal Info-mode-map
+    "s" 'evil-snipe-s
+    "S" 'evil-snipe-S))
 
 (general-nmap "=" (general-key-dispatch 'evil-indent
                     "=" (lambda () (interactive) (indent-region (point-min) (point-max)))))
@@ -492,7 +507,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
-
 (use-package evil-mc
   :ensure t
   :init
@@ -516,6 +530,15 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;; org
 
+
+(use-package org-remark
+  :ensure t
+  :hook ((after-init . org-remark-global-tracking-mode)
+         (Info-mode . org-remark-info-mode))
+  :diminish org-remark-global-tracking-mode
+  :diminish org-remark-mode
+  )
+
 ;;;###autoload
 (defun my/org-agenda-to-appt ()
   " Erase all reminders and rebuilt reminders for today from the agenda"
@@ -525,19 +548,18 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package org
-  :hook ((org-agenda-finalize . bh/org-agenda-to-appt)
+  :hook ((org-agenda-finalize . my/org-agenda-to-appt)
          (org-agenda-finalize . append))
   :mode ("\\.org\\'" . org-mode)
   :custom
-  (bh/org-agenda-to-appt)
+  (org-clock-sound (concat user-emacs-directory "bell.wav"))
+  (org-agenda-timegrid-use-ampm t)
   ;; Activate appointments so we get notifications
   (appt-activate t)
   ;; If we leave Emacs running overnight - reset the appointments one minute after midnight
-  (run-at-time "24:01" nil 'bh/org-agenda-to-appt)
+  (run-at-time "24:01" nil 'my/org-agenda-to-appt)
   ;; keep track of when todo is finished when created
   (org-log-done 'time)
-  ;; change org clock sound for
-  (org-clock-sound (concat user-emacs-directory "bell.wav"))
   ;; set agenda files
   (org-agenda-files nil)
   (org-log-into-drawer t)
@@ -563,8 +585,11 @@ things you want byte-compiled in them! Like function/macro definitions."
      ("plantuml" . plantuml)))
   (org-plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
   :config
-  (org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)))
+  (org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)
+                                                           (dot . t)))
+  (setq org-agenda-files '("~/org/TODO.org"))
   )
+
 
 
 ;;;###autoload
@@ -582,7 +607,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; change finish sound to differentiate between starting and stopping
   (org-pomodoro-finished-sound (concat user-emacs-directory "bell.wav"))
   ;; change pomo length and pomo break length
-  (org-pomodoro-length 25)
+  (org-pomodoro-length 30)
   (org-pomodoro-long-break-length 15)
   )
 
@@ -1049,6 +1074,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   :ensure t
   )
 
+
 ;;; emacs default
 
 (use-package emacs
@@ -1213,10 +1239,10 @@ things you want byte-compiled in them! Like function/macro definitions."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(which-key-popup-type 'minibuffer))
+ )
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:inherit nil :extend nil :stipple nil :background "#2e3436" :foreground "#eeeeec" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 95 :width normal :foundry "JB" :family "JetBrains Mono")))))
