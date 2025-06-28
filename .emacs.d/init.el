@@ -1053,6 +1053,9 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;; miscaleanous
 
+(use-package eat
+  :ensure t
+  )
 
 (use-package savehist
   :init
