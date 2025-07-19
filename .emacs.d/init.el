@@ -175,7 +175,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; ,s switch-to-buffer
 ;; ,e save-some-buffers
 ;; ,t popper-toggle
-;; ,c popper-cycle
 ;; == format-buffer
 ;; ,f find-file
 ;; ,i imenu-list-smart-toggle
@@ -196,6 +195,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC c r evil-mc-resume-cursors
 ;; SPC b t toggle-truncate-lines
 ;; ,u search-documentation
+;; SPC s t toggle-theme
 ;; SPC o a org-agenda
 ;; SPC c p evil-mc-skip-and-goto-prev-cursor
 ;; SPC c n evil-mc-skip-and-goto-next-cursor
@@ -214,7 +214,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC j j project-switch-project
 
 ;; added but unsorted
-;;
 ;; evil-snipe-repeat-reverse
 ;; sharper-transient-run
 ;; sharper-transient-test
@@ -348,7 +347,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   "s" 'switch-to-buffer
   "e" '("save-all-buffers" . (lambda () (interactive) (save-some-buffers "!")))
   "t" 'popper-toggle
-  "c" 'popper-cycle
   "f" 'find-file
   "l" 'eshell
   "o" '("online-search" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x))))
@@ -460,6 +458,15 @@ things you want byte-compiled in them! Like function/macro definitions."
   (+general-global-org
     "a" 'org-agenda))
 
+(+general-global-menu! "miscellaneous" "s")
+(+general-global-miscellaneous
+  "t" '("toggle-theme" . (lambda ()
+                           "Toggle theme"
+                           (interactive)
+                           (cond ((equal custom-enabled-themes '(modus-vivendi)) (disable-theme 'modus-vivendi) (load-theme 'tango-dark))
+                                 ((equal custom-enabled-themes '(tango-dark)) (disable-theme 'tango-dark) (load-theme 'modus-operandi-tinted))
+                                 ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
+                                 ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))))
 ;;; text editing
 
 (use-package evil
@@ -858,6 +865,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;; ui
 
+;; modus-operandi-tinted python
+;; modus-viviendi-tinted C#
+;; modus-viviendi Elisp
+
 (use-package popper
   :ensure t ; or :straight t
   :init
@@ -914,7 +925,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   :config
   (cond
    ((find-font (font-spec :name "JetBrains Mono"))
-    (set-frame-font "JetBrains Mono 11" nil t)))
+    (set-frame-font "JetBrains Mono 10" nil t)))
   )
 
 (use-package kind-icon
@@ -1248,4 +1259,4 @@ things you want byte-compiled in them! Like function/macro definitions."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :background "#2e3436" :foreground "#eeeeec" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 95 :width normal :foundry "JB" :family "JetBrains Mono")))))
+ )
