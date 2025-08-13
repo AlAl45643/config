@@ -1,5 +1,6 @@
 #! /bin/bash
 
+# setup C#
 mkdir langservers/
 cd langservers
 mkdir csharp
@@ -20,3 +21,6 @@ chmod +x ./dotnet-install.sh
 ./dotnet-install.sh --version latest
 echo 'export DOTNET_ROOT=$HOME/.dotnet' >> ~/.bashrc 
 echo 'export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools' >> ~/.bashrc 
+
+# setup python
+pip install "python-lsp-server[all]"

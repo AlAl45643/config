@@ -667,7 +667,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package eglot
   :init
   (add-to-list 'exec-path (concat user-emacs-directory "langservers/csharp/omnisharp/"))
-  :hook (csharp-ts-mode . eglot-ensure)
+  :hook ((csharp-ts-mode . eglot-ensure)
+         (python-ts-mode . eglot-ensure))
   :config
   (setq completion-category-defaults nil)
 
