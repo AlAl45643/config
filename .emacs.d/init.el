@@ -405,6 +405,26 @@ things you want byte-compiled in them! Like function/macro definitions."
     "M-SPC e b" 'sharper-transient-build
     "M-SPC e m" 'sharper-main-transient))
 
+
+(after! python
+  (general-def 'normal python-ts-mode-map
+    "SPC e r" '("python-run-script" . (lambda ()
+                                        "Run python script"
+                                        (interactive)
+                                        (if (get-buffer "*Python*")
+                                            (run-python "python3 -i" nil t))
+                                        (python-shell-send-buffer)
+                                        (pop-to-buffer "*Python*")
+                                        )))
+  (general-def 'insert python-ts-mode-map
+    "M-SPC e r" '("python-run-script" . (lambda ()
+                                          "Run python script"
+                                          (interactive)
+                                          (if (get-buffer "*Python*")
+                                              (run-python "python3 -i" nil t))
+                                          (python-shell-send-buffer)
+                                          (pop-to-buffer "*Python*") ))))
+
 (+general-global-menu! "completion" "p")
 (+general-global-completion
   "p" 'completion-at-point)
@@ -882,6 +902,7 @@ things you want byte-compiled in them! Like function/macro definitions."
           "\\*dotnet"
           "events\\*"
           "\\*shell\\*"
+          "\\*Python\\*"
           dired-mode
           compilation-mode))
   (popper-mode +1)
@@ -907,7 +928,7 @@ things you want byte-compiled in them! Like function/macro definitions."
       (side . right)
       (slot . -1)
       (window-width . 0.33))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*" (major-mode . compilation-mode) (major-mode . dired-mode))
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python*" (major-mode . compilation-mode) (major-mode . dired-mode))
       (display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
