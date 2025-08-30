@@ -411,7 +411,7 @@ things you want byte-compiled in them! Like function/macro definitions."
     "SPC e r" '("python-run-script" . (lambda ()
                                         "Run python script"
                                         (interactive)
-                                        (if (get-buffer "*Python*")
+                                        (if (not (get-buffer "*Python*"))
                                             (run-python "python3 -i" nil t))
                                         (python-shell-send-buffer)
                                         (pop-to-buffer "*Python*")
@@ -420,7 +420,7 @@ things you want byte-compiled in them! Like function/macro definitions."
     "M-SPC e r" '("python-run-script" . (lambda ()
                                           "Run python script"
                                           (interactive)
-                                          (if (get-buffer "*Python*")
+                                          (if (not (get-buffer "*Python*"))
                                               (run-python "python3 -i" nil t))
                                           (python-shell-send-buffer)
                                           (pop-to-buffer "*Python*") ))))
@@ -649,6 +649,11 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 ;;; code
+
+(use-package pet
+  :ensure t
+  :config
+  (add-hook 'python-base-mode-hook 'pet-mode -10))
 
 (use-package magit
   :ensure t)
