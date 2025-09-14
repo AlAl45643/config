@@ -424,6 +424,11 @@ things you want byte-compiled in them! Like function/macro definitions."
                                               (run-python "python3 -i" nil t))
                                           (python-shell-send-buffer)
                                           (pop-to-buffer "*Python*") ))))
+(after! auctex
+  (general-def 'normal LaTeX-mode-map
+    "SPC e r" 'TeX-command-master)
+  (general-def 'insert LaTeX-mode-map
+    "M-SPC e r" 'TeX-command-master))
 
 (+general-global-menu! "completion" "p")
 (+general-global-completion
@@ -692,15 +697,20 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package eglot
   :init
   (add-to-list 'exec-path (concat user-emacs-directory "langservers/csharp/omnisharp/"))
+  (add-to-list 'exec-path (concat user-emacs-directory "langservers/LaTeX/"))
   :hook ((csharp-ts-mode . eglot-ensure)
-         (python-ts-mode . eglot-ensure))
+         (python-ts-mode . eglot-ensure)
+         (LaTeX-mode . eglot-ensure))
   :config
   (setq completion-category-defaults nil)
 
   ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
   ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
                                         ;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
-  (add-hook 'eglot-managed-mode-hook #'my/eglot-capf))
+  (add-hook 'eglot-managed-mode-hook #'my/eglot-capf)
+  (add-to-list 'eglot-server-programs
+               '(LaTeX-mode . ("texlab"))))
+
 
 
 
@@ -1091,6 +1101,14 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;; miscaleanous
 
+(use-package tex
+  :ensure auctex
+  :custom
+  (TeX-auto-save t)
+  (TeX-parse-self t)
+  )
+
+
 (use-package eat
   :ensure t
   )
@@ -1120,7 +1138,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode) . display-line-numbers-mode)
+  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . display-line-numbers-mode)
          (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil)))))
   :config
   ;; ellipsis marker single character of three dots in org
@@ -1275,15 +1293,3 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;   :template)
 ;;
 ;;  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
