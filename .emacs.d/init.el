@@ -578,6 +578,85 @@ things you want byte-compiled in them! Like function/macro definitions."
   (setq appt-time-msg-list nil)
   (org-agenda-to-appt))
 
+;;;###autoload
+(defun my-org-inf-repeat ()
+  (interactive)
+  "Treat the TODO as a repeater by logging it"
+  (if (org-element-property :REPEAT (org-element-at-point))
+      (let ((note (cdr (assq org-log-note-purpose org-log-note-headings)))
+            lines)
+        (setq org-log-note-marker (set-marker (make-marker) (aref (plist-get (plist-get (org-element-at-point) 'headline) :standard-properties) 0)))
+        (setq org-log-note-return-to (set-marker (make-marker) (aref (plist-get (plist-get (org-element-at-point) 'headline) :standard-properties) 0)))
+        (setq note
+              (org-replace-escapes
+               note
+               (list (cons "%u" (user-login-name))
+		     (cons "%U" user-full-name)
+		     (cons "%t" (format-time-string
+			         (org-time-stamp-format 'long 'inactive)
+			         (current-time)))
+		     (cons "%T" (format-time-string
+			         (org-time-stamp-format 'long nil)
+			         (current-time)))
+		     (cons "%d" (format-time-string
+			         (org-time-stamp-format nil 'inactive)
+			         (current-time)))
+		     (cons "%D" (format-time-string
+			         (org-time-stamp-format nil nil)
+			         (current-time)))
+		     (cons "%s" (cond
+			         ((not org-log-note-state) "")
+			         ((string-match-p org-ts-regexp
+						  org-log-note-state)
+				  (format "\"[%s]\""
+					  (substring org-log-note-state 1 -1)))
+			         (t (format "\"%s\"" org-log-note-state))))
+		     (cons "%S"
+			   (cond
+			    ((not org-log-note-previous-state) "")
+			    ((string-match-p org-ts-regexp
+					     org-log-note-previous-state)
+			     (format "\"[%s]\""
+				     (substring
+				      org-log-note-previous-state 1 -1)))
+			    (t (format "\"%s\""
+				       org-log-note-previous-state)))))))
+        (push note lines)
+        (org-fold-core-ignore-modifications
+          (org-with-wide-buffer
+           ;; Find location for the new note.
+           (goto-char org-log-note-marker)
+           (set-marker org-log-note-marker nil)
+           ;; Note associated to a clock is to be located right after
+           ;; the clock.  Do not move point.
+           (unless (eq org-log-note-purpose 'clock-out)
+             (goto-char (org-log-beginning t)))
+           ;; Make sure point is at the beginning of an empty line.
+           (cond ((not (bolp)) (let ((inhibit-read-only t)) (insert-and-inherit "\n")))
+	         ((looking-at "[ \t]*\\S-") (save-excursion (insert-and-inherit "\n"))))
+           ;; In an existing list, add a new item at the top level.
+           ;; Otherwise, indent line like a regular one.
+           (let ((itemp (org-in-item-p)))
+             (if itemp
+	         (indent-line-to
+	          (let ((struct (save-excursion
+			          (goto-char itemp) (org-list-struct))))
+	            (org-list-get-ind (org-list-get-top-point struct) struct)))
+	       (org-indent-line)))
+           (insert-and-inherit (org-list-bullet-string "-") (pop lines))
+           (let ((ind (org-list-item-body-column (line-beginning-position))))
+             (dolist (line lines)
+	       (insert-and-inherit "\n")
+               (unless (string-empty-p line)
+	         (indent-line-to ind)
+	         (insert-and-inherit line))))
+           (run-hooks 'org-after-note-stored-hook)
+           (message "Note stored")
+           (org-back-to-heading t)))
+        (with-current-buffer (marker-buffer org-log-note-return-to)
+          (goto-char org-log-note-return-to)))))
+
+
 
 (use-package org
   :hook ((org-agenda-finalize . my/org-agenda-to-appt)
@@ -620,6 +699,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)
                                                            (dot . t)))
   (setq org-agenda-files '("~/org/TODO.org"))
+  (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
   )
 
 
@@ -640,6 +720,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (org-pomodoro-finished-sound (concat user-emacs-directory "bell.wav"))
   ;; change pomo length and pomo break length
   (org-pomodoro-length 30)
+  (org-pomodoro-short-break-length 7)
   (org-pomodoro-long-break-length 15)
   )
 
@@ -1121,6 +1202,13 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package eshell
   :hook ((eshell-first-time-mode . (lambda () (yas-minor-mode -1)))
          (((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))))
+  :config
+  (require 'em-tramp)
+  (setq password-cache-expiry 3600)
+  (setq eshell-prefer-lisp-functions t)
+  (setq eshell-prefer-lisp-variables t)
+  (setq password-cache t) 
+  (setq password-cache-expiry 3600) 
   )
 
 (use-package helpful
