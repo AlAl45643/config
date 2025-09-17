@@ -44,17 +44,11 @@
   :wk-full-keys nil
   :keymaps 'my/prefix-map)
 
-
-(general-define-key
- :keymaps 'override
- :states '(insert emacs normal hybrid motion visual operator)
- :prefix-map 'my/evil-prefix-map
- :prefix-command 'my/evil-prefix-map
- :prefix ","
- :non-normal-prefix "C-,")
 (general-create-definer global-evil-definer
-  :wk-full-keys nil
-  :keymaps 'my/evil-prefix-map)
+  :keymaps 'override
+  :states '(insert emacs normal hybrid motion visual operator)
+  :prefix ","
+  :non-normal-prefix "C-,")
 
 
 (general-create-definer global-leader
@@ -342,6 +336,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;; evil , global key commands
 
+
+
 (global-evil-definer
   "," 'evil-snipe-repeat-reverse
   "s" 'switch-to-buffer
@@ -368,11 +364,11 @@ things you want byte-compiled in them! Like function/macro definitions."
   "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
 
 (after! csharp-mode
-  (global-evil-definer
+  (global-evil-definer csharp-ts-mode-map
     "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
 
 (after! php-ts-mode
-  (global-evil-definer
+  (global-evil-definer php-ts-mode-map
     "m" 'php-browse-manual))
 
 (after! magit-autoloads
@@ -702,6 +698,21 @@ things you want byte-compiled in them! Like function/macro definitions."
   (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
   )
 
+;;;###autoload 
+(defun my-org-pomodoro-choose-break-time (arg)
+  "Choose break time for pomodoro"
+  (interactive "nBreak time: ")
+  (setq org-pomodoro-short-break-length arg))
+
+;;;###autoload
+(defun my-org-pomodoro-around-finished (orig-fun &rest args)
+  "Choose break time unless we've reached a long break for pomodoro"
+  (if (zerop (mod (+ org-pomodoro-count 1) org-pomodoro-long-break-frequency))
+      (apply orig-fun args)
+    (org-pomodoro-maybe-play-sound :pomodoro)
+    (call-interactively #'my-org-pomodoro-choose-break-time)
+    (apply orig-fun args)
+    ))
 
 
 ;;;###autoload
@@ -722,6 +733,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   (org-pomodoro-length 30)
   (org-pomodoro-short-break-length 7)
   (org-pomodoro-long-break-length 15)
+  :config
+  (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-around-finished)
   )
 
 (use-package evil-org
