@@ -33,28 +33,11 @@
   (general-evil-setup)
   )
 
-(general-define-key
- :keymaps 'override
- :states  '(insert emacs normal hybrid motion visual operator)
- :prefix-map 'my/prefix-map
- :prefix-command 'my/prefix-map
- :prefix "SPC"
- :non-normal-prefix "M-SPC")
-(general-create-definer global-definer
-  :wk-full-keys nil
-  :keymaps 'my/prefix-map)
-
-
-(general-define-key
- :keymaps 'override
- :states '(insert emacs normal hybrid motion visual operator)
- :prefix-map 'my/evil-prefix-map
- :prefix-command 'my/evil-prefix-map
- :prefix ","
- :non-normal-prefix "C-,")
 (general-create-definer global-evil-definer
-  :wk-full-keys nil
-  :keymaps 'my/evil-prefix-map)
+  :keymaps 'override
+  :states '(insert emacs normal hybrid motion visual operator)
+  :prefix ","
+  :non-normal-prefix "C-,")
 
 
 (general-create-definer global-leader
@@ -64,6 +47,13 @@
   :non-normal-prefix "M-SPC m"
   "" '(:ignore t :which-key (lambda (arg) (cons (cadr (split-string (car arg) " ")) (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))))
 
+(general-create-definer global-definer
+  :keymaps 'override
+  :states  '(insert emacs normal hybrid motion visual operator)
+  :prefix "SPC"
+  :non-normal-prefix "M-SPC"
+  )
+
 (defmacro +general-global-menu! (name infix-key &rest body)
   "Create a definer named +general-global-NAME wrapping global-definer.
 Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY."
@@ -71,14 +61,15 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
   `(progn
      ;; don't use :which-key it is less performant according to general.el author
      ;; also for some reason which-key duplicates keybindings
-     (which-key-add-keymap-based-replacements my/prefix-map ,infix-key ,name)
+     (which-key-add-key-based-replacements (concat "SPC " ,infix-key) ,name)  
+     (which-key-add-key-based-replacements (concat "M-SPC " ,infix-key) ,name)  
      (general-create-definer ,(intern (concat "+general-global-" name))
        :wrapping global-definer
-       :prefix-map (quote ,(intern (concat "+general-global-" name "-map")))
        :infix ,infix-key
-       :wk-full-keys nil)
+       )
      (,(intern (concat "+general-global-" name))
       ,@body)))
+
 
 (defmacro after! (package &rest body)
   "Evaluate BODY after PACKAGE have loaded.
@@ -247,13 +238,6 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-S-j" 'corfu-popupinfo-scroll-up
     "C-S-k" 'corfu-popupinfo-scroll-down))
 
-;; (after! ibuffer
-;;   (general-def ibuffer-mode-map
-;;     "<return>" (lambda (arg) (interactive "P")
-;;                  (if arg
-;;                      (progn (evil-goto-line arg) (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*"))
-;;                    (ibuffer-visit-buffer) (kill-buffer "*Ibuffer*")))))
-
 (after! org-remark
   (general-def 'visual org-remark-mode-map 
     "<return>" 'org-remark-mark)
@@ -314,7 +298,6 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-h F" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-function)))))
 
 
-
 ;; evil global commands
 (general-def 'normal
   "g h" (lambda () (interactive) (save-selected-window (helpful-at-point)))
@@ -363,16 +346,15 @@ things you want byte-compiled in them! Like function/macro definitions."
   "h" 'evil-mc-make-cursor-here
   )
 
-
 (global-evil-definer
   "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
 
 (after! csharp-mode
-  (global-evil-definer
+  (global-evil-definer csharp-ts-mode-map
     "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
 
 (after! php-ts-mode
-  (global-evil-definer
+  (global-evil-definer php-ts-mode-map
     "m" 'php-browse-manual))
 
 (after! magit-autoloads
@@ -388,47 +370,27 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (+general-global-menu! "code" "e")
 (after! eglot
-  (general-def 'normal eglot-mode-map
-    "SPC e a" 'eglot-code-actions)
-  (general-def 'insert eglot-mode-map
-    "M-SPC e a" 'eglot-code-actions))
-
+  (+general-global-code eglot-mode-map
+    "a" 'eglot-code-actions))
 (after! csharp-mode
-  (general-def 'normal csharp-ts-mode-map
-    "SPC e r" 'sharper-transient-run
-    "SPC e t" 'sharper-transient-test
-    "SPC e b" 'sharper-transient-build
-    "SPC e m" 'sharper-main-transient)
-  (general-def 'insert csharp-ts-mode-map
-    "M-SPC e r" 'sharper-transient-run
-    "M-SPC e t" 'sharper-transient-test
-    "M-SPC e b" 'sharper-transient-build
-    "M-SPC e m" 'sharper-main-transient))
-
-
+  (+general-global-code csharp-ts-mode-map
+    "r" 'sharper-transient-run
+    "t" 'sharper-transient-test
+    "b" 'sharper-transient-build
+    "m" 'sharper-main-transient))
 (after! python
-  (general-def 'normal python-ts-mode-map
-    "SPC e r" '("python-run-script" . (lambda ()
-                                        "Run python script"
-                                        (interactive)
-                                        (if (not (get-buffer "*Python*"))
-                                            (run-python "python3 -i" nil t))
-                                        (python-shell-send-buffer)
-                                        (pop-to-buffer "*Python*")
-                                        )))
-  (general-def 'insert python-ts-mode-map
-    "M-SPC e r" '("python-run-script" . (lambda ()
-                                          "Run python script"
-                                          (interactive)
-                                          (if (not (get-buffer "*Python*"))
-                                              (run-python "python3 -i" nil t))
-                                          (python-shell-send-buffer)
-                                          (pop-to-buffer "*Python*") ))))
+  (+general-global-code python-ts-mode-map
+    "r" '("python-run-script" . (lambda ()                            
+                                  "Run python script"                 
+                                  (interactive)                       
+                                  (if (not (get-buffer "*Python*"))   
+                                      (run-python "python3 -i" nil t))
+                                  (python-shell-send-buffer)          
+                                  (pop-to-buffer "*Python*")          
+                                  ))))                                 
 (after! auctex
-  (general-def 'normal LaTeX-mode-map
-    "SPC e r" 'TeX-command-master)
-  (general-def 'insert LaTeX-mode-map
-    "M-SPC e r" 'TeX-command-master))
+  (+general-global-code LaTeX-mode-map
+    "r" 'TeX-command-master))
 
 (+general-global-menu! "completion" "p")
 (+general-global-completion
@@ -583,7 +545,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (interactive)
   "Treat the TODO as a repeater by logging it"
   (if (org-element-property :REPEAT (org-element-at-point))
-      (let ((note (cdr (assq org-log-note-purpose org-log-note-headings)))
+      (let ((note (cdr (assq 'state org-log-note-headings)))
             lines)
         (setq org-log-note-marker (set-marker (make-marker) (aref (plist-get (plist-get (org-element-at-point) 'headline) :standard-properties) 0)))
         (setq org-log-note-return-to (set-marker (make-marker) (aref (plist-get (plist-get (org-element-at-point) 'headline) :standard-properties) 0)))
@@ -605,7 +567,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 			         (org-time-stamp-format nil nil)
 			         (current-time)))
 		     (cons "%s" (cond
-			         ((not org-log-note-state) "")
+			         ((not org-log-note-state) "\"DONE\"")
 			         ((string-match-p org-ts-regexp
 						  org-log-note-state)
 				  (format "\"[%s]\""
@@ -613,7 +575,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 			         (t (format "\"%s\"" org-log-note-state))))
 		     (cons "%S"
 			   (cond
-			    ((not org-log-note-previous-state) "")
+			    ((not org-log-note-previous-state) "\"TODO\"")
 			    ((string-match-p org-ts-regexp
 					     org-log-note-previous-state)
 			     (format "\"[%s]\""
@@ -702,6 +664,21 @@ things you want byte-compiled in them! Like function/macro definitions."
   (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
   )
 
+;;;###autoload 
+(defun my-org-pomodoro-choose-break-time (arg)
+  "Choose break time for pomodoro"
+  (interactive "nBreak time: ")
+  (setq org-pomodoro-short-break-length arg))
+
+;;;###autoload
+(defun my-org-pomodoro-around-finished (orig-fun &rest args)
+  "Choose break time unless we've reached a long break for pomodoro"
+  (if (zerop (mod (+ org-pomodoro-count 1) org-pomodoro-long-break-frequency))
+      (apply orig-fun args)
+    (org-pomodoro-maybe-play-sound :pomodoro)
+    (call-interactively #'my-org-pomodoro-choose-break-time)
+    (apply orig-fun args)
+    ))
 
 
 ;;;###autoload
@@ -722,6 +699,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   (org-pomodoro-length 30)
   (org-pomodoro-short-break-length 7)
   (org-pomodoro-long-break-length 15)
+  :config
+  (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-around-finished)
   )
 
 (use-package evil-org
