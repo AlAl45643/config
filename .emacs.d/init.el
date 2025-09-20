@@ -812,21 +812,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   :mode ("\\.js\\'" . js2-mode))
 
 
-(use-package rainbow-delimiters
-  :ensure t
-  :hook ((html-ts-mode prog-mode) . rainbow-delimiters-mode)
-  :custom-face
-  (rainbow-delimiters-base-error-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ff0000"))))
-  (rainbow-delimiters-depth-1-face ((t (:inherit rainbow-delimiters-base-face :foreground "white"))))
-  (rainbow-delimiters-depth-2-face ((t (:inherit rainbow-delimiters-base-face :foreground "#006400"))))
-  (rainbow-delimiters-depth-3-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ffd700"))))
-  (rainbow-delimiters-depth-4-face ((t (:inherit rainbow-delimiters-base-face :foreground "#6a5acd"))))
-  (rainbow-delimiters-depth-5-face ((t (:inherit rainbow-delimiters-base-face :foreground "#00ff00"))))
-  (rainbow-delimiters-depth-6-face ((t (:inherit rainbow-delimiters-base-face :foreground "#00ffff"))))
-  (rainbow-delimiters-depth-7-face ((t (:inherit rainbow-delimiters-base-face :foreground "#0000ff"))))
-  (rainbow-delimiters-depth-8-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ff1493"))))
-  (rainbow-delimiters-depth-9-face ((t (:inherit rainbow-delimiters-base-face :foreground "#ffc0cb"))))
-  )
 
 (use-package elisp-mode
   :hook (emacs-lisp-mode . (lambda () (setq imenu-generic-expression (append (list  (list "Use Package" "^(use-package \\(.+\\)" 1)) imenu-generic-expression))))
