@@ -346,12 +346,16 @@ things you want byte-compiled in them! Like function/macro definitions."
   "h" 'evil-mc-make-cursor-here
   )
 
-(global-evil-definer
+(global-evil-definer emacs-lisp-mode-map
   "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
 
 (after! csharp-mode
   (global-evil-definer csharp-ts-mode-map
     "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
+
+(after! python
+  (global-evil-definer python-ts-mode-map
+    "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Adocs.python.org"))))))
 
 (after! php-ts-mode
   (global-evil-definer php-ts-mode-map
@@ -718,7 +722,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package pet
   :ensure t
   :config
-  (add-hook 'python-base-mode-hook 'pet-mode -10))
+  (add-hook 'python-ts-mode-hook 'pet-mode -10))
 
 (use-package magit
   :ensure t)
