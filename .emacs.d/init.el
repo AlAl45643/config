@@ -1,6 +1,7 @@
 ;;; PACKAGE management
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
 (package-initialize)
 
 (defvar bootstrap-version)
@@ -32,6 +33,7 @@
   :config
   (general-evil-setup)
   )
+
 
 (general-create-definer global-evil-definer
   :keymaps 'override
@@ -159,63 +161,69 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; Enter ibuffer-visit-buffer quit-ibuffer
 ;; Enter visual org-remark-mark
 ;; o org-remark-open
+;; M-n dape-next
+;; M-p dape-step-in TODO 
+;; M-t dape-continue TODO 
+;; M-I dape-info TODO 
+;; M-<escape> dape-quit TODO 
+;; M-P dape-step-out TODO 
+
 
 ;; global key commands priority
 ;; M-x execute-extended command
 ;; TAB smart-tab (vertico / eshell/ corfu/ indent / hippie-expand)
-;; ,s switch-to-buffer
-;; ,e save-some-buffers
-;; ,t popper-toggle
-;; == format-buffer
-;; ,f find-file
-;; ,i imenu-list-smart-toggle
-;; ,l eshell
-;; ,o online-search
-;; C-<tab> yas-expand
-;; C-<tab> yas-next-field
+;; , s switch-to-buffer
+;; , r run-program
+;; , t popper-toggle
+;; , e save-some-buffers
 ;; g h description-at-point
-;; ,g magit-status
-;; ,a evil-mc-make-all-cursors
-;; ,u evil-mc-undo-all-cursors
-;; ,k kill-buffer
-;; ,n eval-defun
-;; ]x xref-go-forward
-;; [x xref-go-back
-;; ,v eval-expression
-;; SPC c p evil-mc-pause-cursors
-;; SPC c r evil-mc-resume-cursors
-;; SPC b t toggle-truncate-lines
-;; ,u search-documentation
+;; , b dape-breakpoint
+;; SPC e t test-code 
+;; == format-buffer
+;; , f find-file
+;; , l eshell
+;; , d project-dired
+;; , n eval-defun
+;; , i imenu-list-smart-toggle
+;; C-<tab> yas-expand / yas-next-field
+;; SPC e d dape TODO 
+;; , g magit-status
+;; , k kill-buffer
+;; , v eval-expression / dape-eval-expression / edebug TODO 
+;; , p evaluate sexp TODO 
 ;; SPC s t toggle-theme
-;; SPC o a org-agenda
-;; SPC c p evil-mc-skip-and-goto-prev-cursor
-;; SPC c n evil-mc-skip-and-goto-next-cursor
-;; ,d project-dired
-;; C-<iso-lefttab> yas-prev-field
-;; SPC e a execute-code-action // eglot
-;; g d goto-definition-at-point // eglot
-;; g r find-references // eglot
+;; , c toggle-truncate-lines TODO 
+;; , a org-agenda TODO 
 ;; g c evil-commentary
-;; , u evil-mc-undo-last-added-cursor
-;; , h evil-mc-make-cursor-here
+;; , B dape-breakpoint-remove-all TODO 
+;; g d goto-definition-at-point // eglot // xref
+;; SPC e a execute-code-action // eglot
+;; C-<iso-lefttab> yas-prev-field
+;; , m search-documentation
+;; SPC e b build-program TODO 
+;; SPC c u evil-mc-undo-all-cursors TODO 
+;; [ x xref-go-back
+;; ] x xref-go-forward
+;; SPC c a evil-mc-make-all-cursors TODO 
+;; SPC c o evil-mc-make-next-line TODO 
+;; g r find-references // eglot
 ;; SPC p p completion-at-point
-;; SPC j f project-find-file
-;; SPC j h project-search
+;; , o online-search
+;; SPC f d delete-file
+;; SPC c h evil-mc-make-cursor-here TODO 
+;; SPC c r evil-mc-resume-cursors TODO 
+;; SPC c p evil-mc-pause-cursors TODO 
+;; SPC e m sharper-main-transient
 ;; SPC j s project-switch-to-buffer
+;; SPC j f project-find-file
+;; ,, evil-snipe-repeat-reverse
+;; g D xref-find-definitions-other-window
 ;; SPC j j project-switch-project
-
-;; added but unsorted
-;; evil-snipe-repeat-reverse
-;; sharper-transient-run
-;; sharper-transient-test
-;; sharper-transient-build
-;; sharper-main-transient
-;; delete-file
-;; evil-scroll-up
+;; SPC j h project-search
 
 ;; needs to be added
-;; evaluate sexp
-;; evil-mc-make-next-line
+;; shell-command with project root
+
 
 ;; minibuffer
 (general-def vertico-map
@@ -268,6 +276,16 @@ things you want byte-compiled in them! Like function/macro definitions."
     "TAB" nil
     "C-<tab>" 'yas-next-field
     "C-<iso-lefttab>" 'yas-prev-field))
+
+(after! dape
+  (general-def dape-active-mode-map 
+    "M-n" 'dape-next
+    "M-p" 'dape-step-in
+    "M-<escape>" 'dape-quit
+    "M-c" 'dape-continue
+    "M-i" 'dape-info
+    "M-S-p" 'dape-step-out)
+  )
 
 ;; miscaleanous global commands
 
@@ -339,20 +357,17 @@ things you want byte-compiled in them! Like function/macro definitions."
   "a" '("make-all-cursors" . evil-mc-make-all-cursors)
   "q" '("quit-all-cursors" . evil-mc-undo-all-cursors)
   "p" '("pause-cursors" . evil-mc-pause-cursors)
-  "r" '("resume-cursors" . evil-mc-resume-cursors)
   "v" 'eval-expression
   "d" 'dired
-  "u" 'evil-mc-undo-last-added-cursor
   "h" 'evil-mc-make-cursor-here
+  "b" 'dape-breakpoint-toggle
   )
 
 (global-evil-definer emacs-lisp-mode-map
   "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
-
 (after! csharp-mode
   (global-evil-definer csharp-ts-mode-map
     "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
-
 (after! python
   (global-evil-definer python-ts-mode-map
     "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Adocs.python.org"))))))
@@ -365,12 +380,26 @@ things you want byte-compiled in them! Like function/macro definitions."
   (global-evil-definer
     "g" 'magit-status))
 
+(after! csharp-mode
+  (global-evil-definer csharp-ts-mode-map
+    "r" 'sharper-transient-run))
+(after! python
+  (global-evil-definer python-ts-mode-map
+    "r" '("python-run-script" . (lambda ()                             
+                                  "Run python script"                  
+                                  (interactive)                        
+                                  (if (not (get-buffer "*Python*"))    
+                                      (run-python "python3 -i" nil t)) 
+                                  (python-shell-send-buffer)           
+                                  (pop-to-buffer "*Python*")           
+                                  ))))                                 
+(after! auctex
+  (global-evil-definer LaTeX-mode-map
+    "r" 'TeX-command-master))
+
 ;; space global commands
 
 (+general-global-menu! "cursor" "c")
-(+general-global-cursor
-  "n" '("skip-and-goto-next-cursor" . evil-mc-skip-and-goto-next-cursor)
-  "p" '("skip-and-goto-prev-cursor" . evil-mc-skip-and-goto-prev-cursor))
 
 (+general-global-menu! "code" "e")
 (after! eglot
@@ -378,23 +407,10 @@ things you want byte-compiled in them! Like function/macro definitions."
     "a" 'eglot-code-actions))
 (after! csharp-mode
   (+general-global-code csharp-ts-mode-map
-    "r" 'sharper-transient-run
     "t" 'sharper-transient-test
     "b" 'sharper-transient-build
     "m" 'sharper-main-transient))
-(after! python
-  (+general-global-code python-ts-mode-map
-    "r" '("python-run-script" . (lambda ()                            
-                                  "Run python script"                 
-                                  (interactive)                       
-                                  (if (not (get-buffer "*Python*"))   
-                                      (run-python "python3 -i" nil t))
-                                  (python-shell-send-buffer)          
-                                  (pop-to-buffer "*Python*")          
-                                  ))))                                 
-(after! auctex
-  (+general-global-code LaTeX-mode-map
-    "r" 'TeX-command-master))
+
 
 (+general-global-menu! "completion" "p")
 (+general-global-completion
@@ -411,34 +427,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 (+general-global-menu! "file" "f")
 (+general-global-file
   "d" 'delete-file)
-
-(+general-global-menu! "debug" "d")
-(after! dape
-  (+general-global-debug
-    "<" 'dape-stack-select-up
-    ">" 'dape-stack-select-down
-    "B" 'dape-breakpoint-remove-all
-    "D" 'dape-disconnect-quit
-    "M" 'dape-disassemble
-    "R" 'dape-repl
-    "S" 'dape-select-stack
-    "b" 'dape-breakpoint-toggle
-    "c" 'dape-continue
-    "d" 'dape
-    "e" 'dape-breakpoint-expression
-    "h" 'dape-breakpoint-hits
-    "i" 'dape-info
-    "l" 'dape-breakpoint-log
-    "m" 'dape-memory
-    "n" 'dape-next
-    "o" 'dape-step-out
-    "p" 'dape-pause
-    "q" 'dape-quit
-    "r" 'dape-restart
-    "s" 'dape-step-in
-    "t" 'dape-select-thread
-    "w" 'dape-watch-dwim
-    "x" 'dape-evaluate-expression))
 
 (+general-global-menu! "buffer" "b")
 (+general-global-buffer
@@ -663,7 +651,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   (org-plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
   :config
   (org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)
-                                                           (dot . t)))
+                                                           (dot . t)
+                                                           (scheme . t)))
   (setq org-agenda-files '("~/org/TODO.org"))
   (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
   )
@@ -718,6 +707,9 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 ;;; code
+
+(use-package geiser-mit
+  :ensure t)
 
 (use-package pet
   :ensure t
@@ -1009,10 +1001,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package font-core
   :config
-  (cond
-   ((find-font (font-spec :name "JetBrains Mono"))
-    (set-frame-font "JetBrains Mono 10" nil t)))
-  )
+  (set-frame-font "JetBrains Mono 10" nil t))
+
 
 (use-package kind-icon
   :ensure t
