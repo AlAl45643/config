@@ -143,6 +143,23 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;
 ;; evil semantic rules
 ;; 1. All keys bound outside of the global menu and evil menu should follow evil semantic rules.
+;;
+;; general.el rules
+;; + Use definers when , prefix or SPC prefix.
+;; + Use mode-map with #'evil-make-intercept-map and #'evil-normalize hook instead of 'override with :predicate unless mode keymap does not exist
+;; 
+;;
+;; Active keymap hiearchy
+;; overriding-terminal-local-map
+;; overriding-local-map
+;; (get-char-property (point) 'keymap)
+;; emulation-mode-map-alists == general-override-mode-map (copying the ones with state) then evil-mode-maps
+;; minor-mode-overriding-map-alist
+;; minor-mode-map-alist == general-override-mode-map then minor-mode-maps
+;; (get-char-property (point) 'local-map)
+;; current-local-map
+;; current-global-map == emacs insert keys
+
 
 ;; minibuffer specific command priority
 ;; C-j vertico-next
