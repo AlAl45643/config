@@ -1,4 +1,4 @@
-;;; PACKAGE management
+;;;; PACKAGE management
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
@@ -25,7 +25,7 @@
   :custom
   (use-package-always-defer t))
 
-;;; keybinds
+;;;; keybinds
 
 (use-package general
   :ensure t
@@ -41,24 +41,17 @@
   :prefix ","
   :non-normal-prefix "C-,")
 
-
-(general-create-definer global-leader
-  :keymaps 'override
-  :states '(insert normal hybrid motion visual operator)
-  :prefix "SPC m"
-  :non-normal-prefix "M-SPC m"
-  "" '(:ignore t :which-key (lambda (arg) (cons (cadr (split-string (car arg) " ")) (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))))
-
-(general-create-definer global-definer
-  :keymaps 'override
-  :states  '(insert emacs normal hybrid motion visual operator)
-  :prefix "SPC"
-  :non-normal-prefix "M-SPC"
-  )
+;; may use someday
+;; (general-create-definer global-leader
+;;   :keymaps 'override
+;;   :states '(insert normal hybrid motion visual operator)
+;;   :prefix "SPC m"
+;;   :non-normal-prefix "M-SPC m"
+;;   "" '(:ignore t :which-key (lambda (arg) (cons (cadr (split-string (car arg) " ")) (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))))
 
 (defmacro +general-global-menu! (name infix-key &rest body)
-  "Create a definer named +general-global-NAME wrapping global-definer.
-Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY."
+  "Create a definer named +general-global-NAME.
+ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY."
   (declare (indent 2))
   `(progn
      ;; don't use :which-key it is less performant according to general.el author
@@ -66,7 +59,10 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
      (which-key-add-key-based-replacements (concat "SPC " ,infix-key) ,name)  
      (which-key-add-key-based-replacements (concat "M-SPC " ,infix-key) ,name)  
      (general-create-definer ,(intern (concat "+general-global-" name))
-       :wrapping global-definer
+       :keymaps 'override
+       :states '(insert emacs normal hybrid motion visual operator)
+       :prefix "SPC"
+       :non-normal-prefix "M-SPC"
        :infix ,infix-key
        )
      (,(intern (concat "+general-global-" name))
@@ -146,6 +142,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;
 ;; general.el rules
 ;; + Use definers when , prefix or SPC prefix.
+;; + Use mode-maps for mode-specific keybinds instead of :predicate or hooks unless mode-maps do not exist
 ;; + Use mode-map with #'evil-make-intercept-map and #'evil-normalize hook instead of 'override with :predicate unless mode keymap does not exist
 ;; 
 ;;
@@ -177,13 +174,22 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; C-S-k corfu-popupinfo-scroll-down
 ;; Enter ibuffer-visit-buffer quit-ibuffer
 ;; Enter visual org-remark-mark
+;; Enter imenu-goto-node
+;; C-j imenu evil-next-line
+;; C-k imenu evil-previous-line
+;; C-g imenu-list-quit-window
 ;; o org-remark-open
-;; M-n dape-next
-;; M-p dape-step-in TODO 
-;; M-t dape-continue TODO 
-;; M-I dape-info TODO 
-;; M-<escape> dape-quit TODO 
-;; M-P dape-step-out TODO 
+;; C-n dape-next
+;; C-p dape-step-in  
+;; C-t dape-continue  
+;; C-I dape-info  
+;; C-<escape> dape-quit  
+;; C-P dape-step-out  
+;; C-<tab> org-cycle
+;; C-<iso-lefttab> org-shifttab
+;; C-<tab> yas-keymap
+;; C-<iso-lefttab> 'yas-prev-field
+
 
 
 ;; global key commands priority
@@ -194,7 +200,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; , t popper-toggle
 ;; , e save-some-buffers
 ;; g h description-at-point
-;; , b dape-breakpoint
+;; , b dape-breakpoint 
 ;; SPC e t test-code 
 ;; == format-buffer
 ;; , f find-file
@@ -203,33 +209,33 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; , n eval-defun
 ;; , i imenu-list-smart-toggle
 ;; C-<tab> yas-expand / yas-next-field
-;; SPC e d dape TODO 
+;; SPC e d dape 
 ;; , g magit-status
 ;; , k kill-buffer
-;; , v eval-expression / dape-eval-expression / edebug TODO 
-;; , p evaluate sexp TODO 
+;; , v eval-expression / dape-eval-expression / edebug 
+;; , p evaluate sexp 
 ;; SPC s t toggle-theme
-;; , c toggle-truncate-lines TODO 
-;; , a org-agenda TODO 
+;; , c toggle-truncate-lines 
+;; , a org-agenda 
 ;; g c evil-commentary
-;; , B dape-breakpoint-remove-all TODO 
+;; , B dape-breakpoint-remove-all 
 ;; g d goto-definition-at-point // eglot // xref
 ;; SPC e a execute-code-action // eglot
 ;; C-<iso-lefttab> yas-prev-field
 ;; , m search-documentation
-;; SPC e b build-program TODO 
-;; SPC c u evil-mc-undo-all-cursors TODO 
+;; SPC e b build-program 
+;; SPC c u evil-mc-undo-all-cursors 
 ;; [ x xref-go-back
 ;; ] x xref-go-forward
-;; SPC c a evil-mc-make-all-cursors TODO 
-;; SPC c o evil-mc-make-next-line TODO 
+;; SPC c a evil-mc-make-all-cursors
+;; SPC c o evil-mc-make-cursor-move-next-line
 ;; g r find-references // eglot
 ;; SPC p p completion-at-point
 ;; , o online-search
 ;; SPC f d delete-file
-;; SPC c h evil-mc-make-cursor-here TODO 
-;; SPC c r evil-mc-resume-cursors TODO 
-;; SPC c p evil-mc-pause-cursors TODO 
+;; SPC c h evil-mc-make-cursor-here 
+;; SPC c r evil-mc-resume-cursors 
+;; SPC c p evil-mc-pause-cursors 
 ;; SPC e m sharper-main-transient
 ;; SPC j s project-switch-to-buffer
 ;; SPC j f project-find-file
@@ -240,9 +246,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;; needs to be added
 ;; shell-command with project root
+;; evil close window
 
 
-;; minibuffer
+;;; minibuffer
 (general-def vertico-map
   "C-j" 'vertico-next
   "C-k" 'vertico-previous
@@ -251,7 +258,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "C-f" 'evil-forward-char
   "C-S-k" 'scroll-down-command)
 
-;; module specific keybinds
+;;; module specific keybinds
 (general-def corfu-map
   "C-SPC" 'corfu-insert-separator
   "RET" nil)
@@ -294,8 +301,12 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-<tab>" 'yas-next-field
     "C-<iso-lefttab>" 'yas-prev-field))
 
+
 (after! dape
+  ;; 'override mode is an alias for general-override-mode-map 
+  ;; '(insert normal) state is required for general.el to override evil keybindings
   (general-def '(insert normal) 'override
+    ;; dape doesn't have keymaps
     :predicate 'dape-active-mode
     "C-n" 'dape-next
     "C-p" 'dape-step-in
@@ -305,7 +316,7 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-S-p" 'dape-step-out)
   )
 
-;; miscaleanous global commands
+;;; miscaleanous global commands
 
 (general-def 'insert
   "TAB" (lambda () (interactive)
@@ -316,8 +327,6 @@ things you want byte-compiled in them! Like function/macro definitions."
                 ((looking-at "\\_>") (hippie-expand nil))
                 (t (indent-for-tab-command)))))
 
-(general-def
-  "C-<tab>" 'yas-expand)
 
 (general-unbind iedit-mode-keymap
   "TAB"
@@ -334,7 +343,7 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-h F" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-function)))))
 
 
-;; evil global commands
+;;; evil global commands
 (general-def 'normal
   "g h" (lambda () (interactive) (save-selected-window (helpful-at-point)))
   "C-S-d" 'evil-scroll-up
@@ -359,7 +368,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
                                      "=" 'eglot-format-buffer)))
 
-;; evil , global key commands
+;;; evil , global key commands
 
 (global-evil-definer
   "," 'evil-snipe-repeat-reverse
@@ -372,17 +381,16 @@ things you want byte-compiled in them! Like function/macro definitions."
   "i" 'imenu-list-smart-toggle
   "k" 'kill-buffer
   "n" 'eval-defun
-  "a" '("make-all-cursors" . evil-mc-make-all-cursors)
-  "q" '("quit-all-cursors" . evil-mc-undo-all-cursors)
-  "p" '("pause-cursors" . evil-mc-pause-cursors)
-  "v" 'eval-expression
   "d" 'dired
-  "h" 'evil-mc-make-cursor-here
   "b" 'dape-breakpoint-toggle
+  "p" 'eval-last-sexp
+  "c" 'toggle-truncate-lines
+  "a" 'org-agenda
+  "B" 'dape-breakpoint-remove-all
   )
 
 (global-evil-definer emacs-lisp-mode-map
-  "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp") (call-interactively 'Info-index))))
+  "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp"))))
 (after! csharp-mode
   (global-evil-definer csharp-ts-mode-map
     "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
@@ -411,26 +419,52 @@ things you want byte-compiled in them! Like function/macro definitions."
   (global-evil-definer LaTeX-mode-map
     "r" 'TeX-command-master))
 
-;; space global commands
+(global-evil-definer emacs-lisp-mode-map
+  "v" 'eval-expression)
+(after! dape
+  (global-evil-definer
+    ;; dape doesn't have an active mode-map
+    :predicate 'dape-active-mode
+    "v" 'dape-evaluate-expression))
+(after! edebug
+  (global-evil-definer
+    "v" 'edebug-eval))
+
+
+;;; space global commands
 
 (+general-global-menu! "cursor" "c")
+(+general-global-cursor
+  "u" 'evil-mc-undo-all-cursors
+  "a" 'evil-mc-make-all-cursors
+  "o" 'evil-mc-make-cursor-move-next-line
+  "c" 'evil-mc-make-cursor-here
+  "r" 'evil-mc-resume-cursors
+  "p" 'evil-mc-pause-cursors)
 
 (+general-global-menu! "code" "e")
+
 (after! eglot
   (+general-global-code eglot-mode-map
     "a" 'eglot-code-actions))
+
 (after! csharp-mode
   (+general-global-code csharp-ts-mode-map
     "t" 'sharper-transient-test
     "b" 'sharper-transient-build
     "m" 'sharper-main-transient))
 
+(after! dape
+  (+general-global-code
+    "d" 'dape))
 
 (+general-global-menu! "completion" "p")
+
 (+general-global-completion
   "p" 'completion-at-point)
 
 (+general-global-menu! "project" "j")
+
 (after! project
   (+general-global-project
     "f" 'project-find-file
@@ -439,19 +473,12 @@ things you want byte-compiled in them! Like function/macro definitions."
     "h" 'project-search))
 
 (+general-global-menu! "file" "f")
+
 (+general-global-file
   "d" 'delete-file)
 
-(+general-global-menu! "buffer" "b")
-(+general-global-buffer
-  "t" 'toggle-truncate-lines)
-
-(+general-global-menu! "org" "o")
-(after! org
-  (+general-global-org
-    "a" 'org-agenda))
-
 (+general-global-menu! "miscellaneous" "s")
+
 (+general-global-miscellaneous
   "t" '("toggle-theme" . (lambda ()
                            "Toggle theme"
@@ -460,7 +487,7 @@ things you want byte-compiled in them! Like function/macro definitions."
                                  ((equal custom-enabled-themes '(tango-dark)) (disable-theme 'tango-dark) (load-theme 'modus-operandi-tinted))
                                  ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
                                  ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))))
-;;; text editing
+;;;; text editing
 
 (use-package evil
   :ensure t
@@ -528,7 +555,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
-;;; org
+;;;; org
 
 
 (use-package org-remark
@@ -720,7 +747,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
   )
 
-;;; code
+;;;; code
 
 (use-package geiser-mit
   :ensure t)
@@ -854,13 +881,13 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;         (prog-mode . (lambda () (remove-hook 'xref-backend-functions #'etags--xref-backend))))
 ;;  )
 ;;
-;;;; install rip-grep
+;; install rip-grep
 ;;(use-package dumb-jump
 ;;  :ensure t
 ;;  :hook (prog-mode . (lambda () (add-hook 'xref-backend-functions #'dumb-jump-xref-activate nil t)))
 ;;  )
 
-;;; completion
+;;;; completion
 
 (use-package corfu
   :ensure t
@@ -969,7 +996,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (add-hook 'completion-at-point-functions #'cape-file)
   )
 
-;;; ui
+;;;; ui
 
 ;; modus-operandi-tinted python
 ;; modus-viviendi-tinted C#
@@ -1167,7 +1194,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
-;;; miscaleanous
+;;;; miscaleanous
 
 (use-package tex
   :ensure auctex
@@ -1209,7 +1236,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
-;;; emacs default
+;;;; emacs default
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
@@ -1268,7 +1295,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
   )
 
-;;; archive
+;;;; archive
 
 
 ;; (use-package iedit
