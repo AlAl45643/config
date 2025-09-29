@@ -412,7 +412,13 @@ things you want byte-compiled in them! Like function/macro definitions."
                                   "Run python script"                  
                                   (interactive)                        
                                   (if (not (get-buffer "*Python*"))    
-                                      (run-python "python3 -i" nil t)) 
+                                      (run-python "python3 -i" nil t)
+                                    (let ((kill-buffer-query-functions nil))
+                                      (kill-buffer "*Python*"))
+                                    (run-python "python3 -i" nil t)
+                                    )
+                                  ;; Without this line python returns NameError: name '__PYTHON_EL_eval_file' is not defined
+                                  (sit-for 1)
                                   (python-shell-send-buffer)           
                                   (pop-to-buffer "*Python*")           
                                   ))))                                 
@@ -491,10 +497,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 (+general-global-menu! "org" "o")
 (+general-global-org
   "t" '("org-match-sparse-tree-heading" . (lambda ()
-                                          "Check heading of each tag"
-                                          (interactive)
-                                          (org-match-sparse-tree)
-                                          (org-shifttab 1))))
+                                            "Check heading of each tag"
+                                            (interactive)
+                                            (org-match-sparse-tree)
+                                            (org-shifttab 1))))
 
 ;;;; text editing
 
