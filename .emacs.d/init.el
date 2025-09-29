@@ -128,10 +128,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; 3) global menu
 ;;
 ;; global menu semantic rules
-;; 1. Each menu should be named according to the most descriptive adjective that describes every command it contains. A comment description for each menu should also be created to describe exactly what commands are supposed to be put in this menu.
-;; 2. The menu key should be either the first or last character of the descriptive adjective or the first character of each syllable in that adjective. The descriptive function keyword does not have necessarily have to be in the command
-;; 3. Any command bound within a menu should be the smoothest key for the chord that is the first or last character of the most descriptive function keyword in the command or the first character in each syllable of the keyword.
-;; 4. Commands that have similar functionality and adjective but are in different menus should have the same key.
+;; 1. Each menu should be named according to the most descriptive adjective that describes every command it contains. 
+;; 2. Commands that have similar functionality and adjective but are in different menus should have the same key.
+;; 3. The menu key should be either the first or last character of the descriptive adjective or the first character of each syllable in that adjective. The descriptive function keyword does not have necessarily have to be in the command
+;; 4. Any command bound within a menu should be the smoothest key for the chord that is the first or last character of the most descriptive function keyword in the command or the first character in each syllable of the keyword.
 ;;
 ;; evil menu semantic rules
 ;; 1. The evil menu should not have any menus within it.
