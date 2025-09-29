@@ -237,6 +237,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC c r evil-mc-resume-cursors 
 ;; SPC c p evil-mc-pause-cursors 
 ;; SPC e m sharper-main-transient
+;; SPC o t org-sparse-tree-heading-tag
 ;; SPC j s project-switch-to-buffer
 ;; SPC j f project-find-file
 ;; ,, evil-snipe-repeat-reverse
@@ -473,12 +474,11 @@ things you want byte-compiled in them! Like function/macro definitions."
     "h" 'project-search))
 
 (+general-global-menu! "file" "f")
-
 (+general-global-file
   "d" 'delete-file)
 
-(+general-global-menu! "miscellaneous" "s")
 
+(+general-global-menu! "miscellaneous" "s")
 (+general-global-miscellaneous
   "t" '("toggle-theme" . (lambda ()
                            "Toggle theme"
@@ -487,6 +487,15 @@ things you want byte-compiled in them! Like function/macro definitions."
                                  ((equal custom-enabled-themes '(tango-dark)) (disable-theme 'tango-dark) (load-theme 'modus-operandi-tinted))
                                  ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
                                  ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))))
+
+(+general-global-menu! "org" "o")
+(+general-global-org
+  "t" '("org-match-sparse-tree-heading" . (lambda ()
+                                          "Check heading of each tag"
+                                          (interactive)
+                                          (org-match-sparse-tree)
+                                          (org-shifttab 1))))
+
 ;;;; text editing
 
 (use-package evil
@@ -501,7 +510,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   (evil-mode 1)
   :custom
   (evil-want-minibuffer t)
-
   )
 
 
@@ -754,9 +762,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package pet
   :ensure t
+  :after (python)
   :config
-  (add-hook 'python-base-mode-hook 'pet-mode -10))
-
+  (add-hook 'python-base-mode-hook 'pet-mode -10)
+  )
 (use-package magit
   :ensure t)
 
