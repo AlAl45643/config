@@ -753,6 +753,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys)
   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
+  :diminish evil-org-mode
   )
 
 ;;;; code
@@ -1267,7 +1268,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
   (add-to-list 'custom-enabled-themes 'tango-dark)
   (load-theme 'tango-dark)
-
+  (blink-cursor-mode 0)
 
   :custom
   (undo-limit 400000)           ;; 400kb (default is 160kb)
