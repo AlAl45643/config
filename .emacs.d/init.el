@@ -248,6 +248,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; needs to be added
 ;; shell-command with project root
 ;; evil close window
+;; org-next-same-heading
+
 
 
 ;;; minibuffer
@@ -736,6 +738,12 @@ things you want byte-compiled in them! Like function/macro definitions."
     (org-clock-goto)
     (org-pomodoro)))
 
+;;;###autoload
+(defun my-org-pomodoro-clockout-before-kill ()
+  "Clock out time before exiting `org-pomodoro' so time is accurately tracked"
+  (save-window-excursion
+    (org-clock-out)))
+
 (use-package org-pomodoro
   :ensure t
   :hook (org-pomodoro-break-finished . my/org-pomodoro-resume-after-break)
@@ -749,6 +757,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (org-pomodoro-long-break-length 15)
   :config
   (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-around-finished)
+ (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill)
   )
 
 (use-package evil-org
