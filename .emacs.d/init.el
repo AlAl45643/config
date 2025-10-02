@@ -1028,6 +1028,7 @@ things you want byte-compiled in them! Like function/macro definitions."
           "events\\*"
           "\\*shell\\*"
           "\\*Python\\*"
+          debugger-mode
           dired-mode
           compilation-mode))
   (popper-mode +1)
@@ -1053,7 +1054,7 @@ things you want byte-compiled in them! Like function/macro definitions."
       (side . right)
       (slot . -1)
       (window-width . 0.33))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python*" (major-mode . compilation-mode) (major-mode . dired-mode))
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
       (display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
