@@ -325,7 +325,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (general-def 'insert
   "TAB" (lambda () (interactive)
           (cond ((minibufferp) (vertico-insert))
-                ((derived-mode-p 'eshell-mode 'comint-mod) (completion-at-point))
+                ((derived-mode-p 'eshell-mode 'comint-mod) (completion-at-point) (let (completion-exist (completion-at-point)) (if (and (not completion-exist) (looking-at "\\_>")) (hippie-expand nil))))
                 ((and (frame-live-p corfu--frame) (frame-visible-p corfu--frame)) (corfu-insert))
                 (mark-active (indent-region (region-beginning) (region-end)))
                 ((looking-at "\\_>") (hippie-expand nil))
