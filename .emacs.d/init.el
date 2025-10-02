@@ -718,23 +718,23 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;;###autoload 
 (defun my-org-pomodoro-choose-break-time (arg)
   "Choose break time for pomodoro"
-  (interactive "nBreak time: ")
+  (interactive "nBreak time (0 if overtime): ")
   (setq org-pomodoro-short-break-length arg))
 
+
 ;;;###autoload
-(defun my-org-pomodoro-around-finished (orig-fun &rest args)
+(defun my-org-pomodoro-around-finished-with-overtime (orig-fun &rest args)
   "Choose break time unless we've reached a long break for pomodoro"
-  (if (zerop (mod (+ org-pomodoro-count 1) org-pomodoro-long-break-frequency))
-      (apply orig-fun args)
-    (org-pomodoro-maybe-play-sound :pomodoro)
-    (call-interactively #'my-org-pomodoro-choose-break-time)
-    (apply orig-fun args)
-    ))
+  (org-pomodoro-maybe-play-sound :pomodoro)
+  (call-interactively #'my-org-pomodoro-choose-break-time)
+  (cond ((= org-pomodoro-short-break-length 0) (org-pomodoro-overtime))
+        ((zerop (mod (+ org-pomodoro-count 1) org-pomodoro-long-break-frequency)) (apply orig-fun args))
+        (t (apply orig-fun args))))
 
 
 ;;;###autoload
 (defun my/org-pomodoro-resume-after-break ()
-  "Resume pomodoro timer after running it"
+  "Resume pomodoro timer after running it if pomodoro timer is not currently in overtime"
   (save-window-excursion
     (org-clock-goto)
     (org-pomodoro)))
@@ -745,6 +745,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (if (org-clocking-p)
       (save-window-excursion
         (org-clock-out))))
+
 
 (use-package org-pomodoro
   :ensure t
@@ -758,7 +759,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (org-pomodoro-short-break-length 7)
   (org-pomodoro-long-break-length 15)
   :config
-  (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-around-finished)
+  (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-around-finished-with-overtime)
   (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill)
   )
 
