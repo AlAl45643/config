@@ -180,9 +180,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; C-g imenu-list-quit-window
 ;; o org-remark-open
 ;; C-n dape-next
-;; C-p dape-step-in  
+;; C-s dape-step-in  
+;; C-S dape-step-out
 ;; C-t dape-continue  
-;; C-I dape-info  
+;; SPC e i dape-info  
 ;; C-<escape> dape-quit  
 ;; C-P dape-step-out  
 ;; C-<tab> org-cycle
@@ -313,11 +314,11 @@ things you want byte-compiled in them! Like function/macro definitions."
     ;; dape doesn't have keymaps
     :predicate 'dape-active-mode
     "C-n" 'dape-next
-    "C-p" 'dape-step-in
+    "C-s" 'dape-step-in
     "C-<escape>" 'dape-quit
     "C-c" 'dape-continue
-    "C-i" 'dape-info
-    "C-S-p" 'dape-step-out)
+    "C-S-s" 'dape-step-out
+    "C-t" 'dape-continue)
   )
 
 ;;; miscaleanous global commands
@@ -466,7 +467,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (after! dape
   (+general-global-code
-    "d" 'dape))
+    "d" 'dape
+    "i" 'dape-info))
 
 (+general-global-menu! "completion" "p")
 
@@ -790,11 +792,12 @@ things you want byte-compiled in them! Like function/macro definitions."
 	     :files ("*.el" "*.rkt")))
 
 (use-package pet
+  :demand t
   :ensure t
-  :after (python)
   :config
   (add-hook 'python-base-mode-hook 'pet-mode -10)
   )
+
 (use-package magit
   :ensure t)
 
