@@ -250,7 +250,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; evil close window
 ;; org-next-same-heading
 ;; org-stop-clock
-
+;; create new frame
 
 
 ;;; minibuffer
@@ -710,7 +710,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   :config
   (org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)
                                                            (dot . t)
-                                                           (scheme . t)))
+                                                           (scheme . t)
+                                                           (racket . t)))
   (setq org-agenda-files '("~/org/TODO.org"))
   (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
   )
@@ -725,7 +726,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;;###autoload
 (defun my-org-pomodoro-around-finished-with-overtime (orig-fun &rest args)
   "Choose break time unless we've reached a long break for pomodoro"
-  (org-pomodoro-maybe-play-sound :pomodoro)
+  (org-pomodoro-play-sound :pomodoro)
   (call-interactively #'my-org-pomodoro-choose-break-time)
   (cond ((= org-pomodoro-short-break-length 0) (org-pomodoro-overtime))
         ((zerop (mod (+ org-pomodoro-count 1) org-pomodoro-long-break-frequency)) (apply orig-fun args))
@@ -776,8 +777,17 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;;; code
 
-(use-package geiser-mit
+(use-package racket-mode
   :ensure t)
+
+(use-package ob-racket
+  :after org
+  :config
+  (add-hook 'ob-racket-pre-runtime-library-load-hook
+	    #'ob-racket-raco-make-runtime-library)
+  :straight (ob-racket
+	     :type git :host github :repo "hasu/emacs-ob-racket"
+	     :files ("*.el" "*.rkt")))
 
 (use-package pet
   :ensure t
@@ -1028,9 +1038,11 @@ things you want byte-compiled in them! Like function/macro definitions."
           "events\\*"
           "\\*shell\\*"
           "\\*Python\\*"
+          "\\*ielm\\*"
           debugger-mode
           dired-mode
-          compilation-mode))
+          compilation-mode
+          ))
   (popper-mode +1)
   (popper-echo-mode +1))
 
@@ -1054,7 +1066,7 @@ things you want byte-compiled in them! Like function/macro definitions."
       (side . right)
       (slot . -1)
       (window-width . 0.33))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
       (display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
