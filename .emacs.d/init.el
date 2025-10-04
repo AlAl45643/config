@@ -239,6 +239,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC c p evil-mc-pause-cursors 
 ;; SPC e m sharper-main-transient
 ;; SPC o t org-sparse-tree-heading-tag
+;; SPC o f org-forward-heading-same-level
+;; SPC o b org-backward-heading-same-level
 ;; SPC j s project-switch-to-buffer
 ;; SPC j f project-find-file
 ;; ,, evil-snipe-repeat-reverse
@@ -247,9 +249,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC j h project-search
 
 ;; needs to be added
-;; shell-command with project root
 ;; evil close window
-;; org-next-same-heading
 ;; org-stop-clock
 ;; create new frame
 
@@ -512,7 +512,9 @@ things you want byte-compiled in them! Like function/macro definitions."
                                             "Check heading of each tag"
                                             (interactive)
                                             (org-match-sparse-tree)
-                                            (org-shifttab 1))))
+                                            (org-shifttab 1)))
+  "f" 'org-forward-heading-same-level
+  "b" 'org-backward-heading-same-level)
 
 ;;;; text editing
 
