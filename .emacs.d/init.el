@@ -325,7 +325,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (general-def 'insert
   "TAB" (lambda () (interactive)
-          (cond ((minibufferp) (vertico-insert)) 
+          (cond ((buffer-local-value 'vertico--input (current-buffer)) (vertico-insert))
+                ((minibufferp) (completion-at-point)) 
                 ((derived-mode-p 'eshell-mode 'comint-mod) (completion-at-point)) 
                 ((and (frame-live-p corfu--frame) (frame-visible-p corfu--frame)) (corfu-insert))
                 (mark-active (indent-region (region-beginning) (region-end)))
