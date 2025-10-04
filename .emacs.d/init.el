@@ -327,7 +327,10 @@ things you want byte-compiled in them! Like function/macro definitions."
   "TAB" (lambda () (interactive)
           (cond ((buffer-local-value 'vertico--input (current-buffer)) (vertico-insert))
                 ((minibufferp) (completion-at-point)) 
-                ((derived-mode-p 'eshell-mode 'comint-mod) (completion-at-point)) 
+                ((derived-mode-p 'eshell-mode 'comint-mod) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
+                                                             (if res
+                                                                 (completion-at-point)
+                                                               (hippie-expand nil))))
                 ((and (frame-live-p corfu--frame) (frame-visible-p corfu--frame)) (corfu-insert))
                 (mark-active (indent-region (region-beginning) (region-end)))
                 ((looking-at "\\_>") (hippie-expand nil))
@@ -391,7 +394,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "b" 'dape-breakpoint-toggle
   "p" 'eval-last-sexp
   "c" 'toggle-truncate-lines
-  "a" 'org-agenda
+  "a" 'org-agenda-list
   "B" 'dape-breakpoint-remove-all
   )
 
@@ -403,6 +406,9 @@ things you want byte-compiled in them! Like function/macro definitions."
 (after! php-ts-mode
   (global-evil-definer php-ts-mode-map
     "m" 'php-browse-manual))
+(after! python
+  (global-evil-definer python-ts-mode-map
+    "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Adocs.python.org"))))))
 
 (after! magit-autoloads
   (global-evil-definer
@@ -1043,6 +1049,7 @@ things you want byte-compiled in them! Like function/macro definitions."
           "\\*shell\\*"
           "\\*Python\\*"
           "\\*ielm\\*"
+          "\\*dape-shell\\*"
           debugger-mode
           dired-mode
           compilation-mode
@@ -1070,7 +1077,7 @@ things you want byte-compiled in them! Like function/macro definitions."
       (side . right)
       (slot . -1)
       (window-width . 0.33))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*\\|\\*dape-shell\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
       (display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
