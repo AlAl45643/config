@@ -1,8 +1,4 @@
 ;;;; PACKAGE management
-(require 'package)
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-(add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
-(package-initialize)
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -20,15 +16,23 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
+(straight-use-package 'use-package)
+(straight-pull-recipe-repositories)
 
 (use-package use-package-core
   :custom
   (use-package-always-defer t))
 
-;;;; keybinds
+
+;; diminish needs to be here for it to work with straight.el
+(use-package diminish
+  :straight t
+  )
+
+;;; keybinds
 
 (use-package general
-  :ensure t
+  :straight t
   :demand t
   :config
   (general-evil-setup)
@@ -117,28 +121,23 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 
-;; rules
+;;; rules
 ;; binding rules
-;; 1. All commands should be be classified as minibuffer, module, mode, and global.
-;; 2. Any command that is to be bound should be prioritized based on its frequency of use against all other commands within their type.
-;; 3. The commands should then be bound to the shortest semantically correct key binding left for that command in order.
-;; 4. If multiple semantic keybindings for a command are the same length then the keybinding shall be chosen according to this order
-;; 1) evil
-;; 2) evil menu
-;; 3) global menu
+;; 1. All commands should be be classified as minibuffer, module, modification, and global where minibuffer are commands used in the minibuffer, module are commands specific to a state, modification are previous keybinds with improved functionality, and global is the default state,
+;; 2. Module and minibuffer commands should be bound using evil semantic rules while global commands should be bound using , prefix or SPC prefix semantic rules.
+;; 3. Any command that is bound should be prioritized based on its frequency of use against all other commands within their type except modification.
+;; 4. Global commands should be bound to , prefix unless there are no available semantic keybindings in , prefix left, then they should be bound to SPC prefix.
 ;;
-;; global menu semantic rules
-;; 1. Each menu should be named according to the most descriptive adjective that describes every command it contains. 
-;; 2. Commands that have similar functionality and adjective but are in different menus should have the same key.
-;; 3. The menu key should be either the first or last character of the descriptive adjective or the first character of each syllable in that adjective. The descriptive function keyword does not have necessarily have to be in the command
-;; 4. Any command bound within a menu should be the smoothest key for the chord that is the first or last character of the most descriptive function keyword in the command or the first character in each syllable of the keyword.
+;; SPC prefix semantic rules
+;; 1. Each prefix should be named according to the most unique and specific keyword that describes every command it contains. 
+;; 2. Commands that have similar functionality and keyword but are in different prefixes should have the same key.
+;; 3. The command key should be either the first or last character of the keyword or the first character of each syllable in that keyword. The keyword does not have necessarily have to be in the command.
+;; 4. Any command bound within a prefix should be the smoothest possible key.
 ;;
-;; evil menu semantic rules
-;; 1. The evil menu should not have any menus within it.
-;; 2. Any command bound within the evil menu should be the smoothest key for the chord that is the first or last character of the most descriptive function keyword in the command or the first character in each syllable of the keyword.
-;;
-;; evil semantic rules
-;; 1. All keys bound outside of the global menu and evil menu should follow evil semantic rules.
+;; , prefix semantic rules
+;; 1. The , prefix should not have any prefix keys within it except shift.
+;; 2. The command key should be either the first or last character of the keyword or the first character of each syllable in that keyword. The keyword does not have necessarily have to be in the command.
+;; 3. Any command bound should be the smoothest possible key.
 ;;
 ;; general.el rules
 ;; + Use definers when , prefix or SPC prefix.
@@ -158,7 +157,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; current-global-map == emacs insert keys
 
 
-;; minibuffer specific command priority
+;;; minibuffer specific command priority
 ;; C-j vertico-next
 ;; C-k vertico-previous
 ;; C-b evil-backward char
@@ -166,41 +165,52 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; C-S-j scroll-down-command
 ;; C-S-k scroll-up-command
 
-;;
-;; module specific command priority
+;;; module specific command priority
+;; corfu
 ;; C-SPC corfu-insert-separator
 ;; C-h corfu-popupinfo-toggle
 ;; C-S-j corfu-popupinfo-scroll-up
 ;; C-S-k corfu-popupinfo-scroll-down
+
+;; ibuffer
 ;; Enter ibuffer-visit-buffer quit-ibuffer
+
+;; remark
 ;; Enter visual org-remark-mark
+;; o org-remark-open
+
+;; imenu
 ;; Enter imenu-goto-node
 ;; C-j imenu evil-next-line
 ;; C-k imenu evil-previous-line
 ;; C-g imenu-list-quit-window
-;; o org-remark-open
+
+;; dape
 ;; C-n dape-next
 ;; C-s dape-step-in  
 ;; C-S dape-step-out
 ;; C-t dape-continue  
-;; SPC e i dape-info  
 ;; C-<escape> dape-quit  
 ;; C-P dape-step-out  
-;; C-<tab> org-cycle
-;; C-<iso-lefttab> org-shifttab
+
+;; yas
 ;; C-<tab> yas-keymap
 ;; C-<iso-lefttab> 'yas-prev-field
 
 
-
-;; global key commands priority
-;; M-x execute-extended command
+;;; modification keys
 ;; TAB smart-tab (vertico / eshell/ corfu/ indent / hippie-expand)
+;; g d goto-definition-at-point // eglot // xref
+;; g D xref-find-definitions-other-window
+;; ,, evil-snipe-repeat-reverse
+
+
+;;; global key commands priority
 ;; , s switch-to-buffer
 ;; , r run-program
 ;; , t popper-toggle
 ;; , e save-some-buffers
-;; g h description-at-point
+;; , h description-at-point TODO
 ;; , b dape-breakpoint 
 ;; SPC e t test-code 
 ;; == format-buffer
@@ -209,7 +219,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; , d project-dired
 ;; , n eval-defun
 ;; , i imenu-list-smart-toggle
-;; C-<tab> yas-expand / yas-next-field
 ;; SPC e d dape 
 ;; , g magit-status
 ;; , k kill-buffer
@@ -218,19 +227,16 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC s t toggle-theme
 ;; , c toggle-truncate-lines 
 ;; , a org-agenda 
-;; g c evil-commentary
+;; , m evil-commentary TODO
 ;; , B dape-breakpoint-remove-all 
-;; g d goto-definition-at-point // eglot // xref
 ;; SPC e a execute-code-action // eglot
-;; C-<iso-lefttab> yas-prev-field
-;; , m search-documentation
+;; , u search-documentation TODO
 ;; SPC e b build-program 
 ;; SPC c u evil-mc-undo-all-cursors 
-;; [ x xref-go-back
-;; ] x xref-go-forward
+;; , x xref-go-back TODO
+;; , X xref-go-forward TODO
 ;; SPC c a evil-mc-make-all-cursors
 ;; SPC c o evil-mc-make-cursor-move-next-line
-;; g r find-references // eglot
 ;; SPC p p completion-at-point
 ;; , o online-search
 ;; SPC f d delete-file
@@ -243,16 +249,25 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC o b org-backward-heading-same-level
 ;; SPC j s project-switch-to-buffer
 ;; SPC j f project-find-file
-;; ,, evil-snipe-repeat-reverse
-;; g D xref-find-definitions-other-window
 ;; SPC j j project-switch-project
 ;; SPC j h project-search
 
-;; needs to be added
-;; evil close window
-;; org-stop-clock
-;; create new frame
 
+;; forgot to add 
+;; SPC e i dape-info  
+;; C-<tab> org-cycle
+;; C-<iso-lefttab> org-shifttab
+
+;; needs to be added
+;; org-timer-stop
+;; org-timer-set-timer
+;; org-clock-in
+;; org-clock-out
+;; make-frame-command
+;; org-ctrl-c-ctrl-c
+;; org-open-at-point
+;; vterm
+;; org-table-create-or-convert-from-region
 
 ;;; minibuffer
 (general-def vertico-map
@@ -371,8 +386,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (after! eglot
-  (general-def 'normal eglot-mode-map
-    "g h" 'eldoc-doc-buffer)
+  ;; (general-def 'normal eglot-mode-map
+  ;;   "g h" 'eldoc-doc-buffer)
   ;;    "?" 'consult-eglot-symbols
   (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
                                      "=" 'eglot-format-buffer)))
@@ -410,9 +425,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   (global-evil-definer python-ts-mode-map
     "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Adocs.python.org"))))))
 
-(after! magit-autoloads
-  (global-evil-definer
-    "g" 'magit-status))
+(global-evil-definer
+  "g" 'magit-status)
 
 (after! csharp-mode
   (global-evil-definer csharp-ts-mode-map
@@ -519,7 +533,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;;; text editing
 
 (use-package evil
-  :ensure t
+  :straight t
   :init
   (progn
     (setq evil-undo-system 'undo-redo)
@@ -534,7 +548,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package evil-collection
-  :ensure t
+  :straight t
   :init
   (evil-collection-init)
   :diminish evil-collection-unimpaired-mode
@@ -542,15 +556,16 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package evil-snipe
-  :ensure t
+  :straight t
+  :diminish evil-snipe-local-mode
   :init
   (evil-snipe-mode +1)
   (evil-snipe-override-mode +1)
-  :diminish evil-snipe-local-mode
   )
 
 (use-package evil-owl
-  :ensure t
+  :diminish evil-owl-mode
+  :straight t
   :custom
   (evil-owl-display-method 'posframe)
   (evil-owl-extra-posframe-args '(:width 50 :height 20))
@@ -558,25 +573,24 @@ things you want byte-compiled in them! Like function/macro definitions."
   (evil-owl-idle-delay 0.5)
   :init
   (evil-owl-mode)
-  :diminish evil-owl-mode
   )
 
 
 (use-package evil-mc
-  :ensure t
+  :straight t
   :init
   (global-evil-mc-mode)
   :diminish evil-mc-mode
   )
 
 (use-package evil-commentary
-  :ensure t
+  :straight t
   :hook (prog-mode . evil-commentary-mode)
   :diminish evil-commentary-mode
   )
 
 (use-package evil-multiedit
-  :ensure t
+  :straight t
   :demand t
   :config
   (evil-multiedit-default-keybinds)
@@ -586,13 +600,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;;; org
 
 
-(use-package org-remark
-  :ensure t
-  :hook ((after-init . org-remark-global-tracking-mode)
-         (Info-mode . org-remark-info-mode))
-  :diminish org-remark-global-tracking-mode
-  :diminish org-remark-mode
-  )
 
 ;;;###autoload
 (defun my/org-agenda-to-appt ()
@@ -682,6 +689,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package org
+  :straight t
   :hook ((org-agenda-finalize . my/org-agenda-to-appt)
          (org-agenda-finalize . append))
   :mode ("\\.org\\'" . org-mode)
@@ -727,6 +735,17 @@ things you want byte-compiled in them! Like function/macro definitions."
   (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
   )
 
+;; package doesn't work with straight for some reason
+(use-package org-remark
+  :after org
+  :straight t
+  :hook ((after-init . org-remark-global-tracking-mode)
+         (Info-mode . org-remark-info-mode))
+  :diminish org-remark-global-tracking-mode
+  :diminish org-remark-mode
+  )
+
+
 ;;;###autoload 
 (defun my-org-pomodoro-choose-break-time (arg)
   "Choose break time for pomodoro"
@@ -760,7 +779,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package org-pomodoro
-  :ensure t
+  :straight t
+  :after org
   :hook (org-pomodoro-break-finished . my/org-pomodoro-resume-after-break)
   :custom
   (org-pomodoro-ask-upon-killing t)
@@ -776,7 +796,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package evil-org
-  :ensure t
+  :straight t
   :after (evil org)
   :hook (org-mode .  evil-org-mode)
   :config
@@ -789,7 +809,15 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;;; code
 
 (use-package racket-mode
-  :ensure t)
+  :straight t
+  )
+
+(use-package tex
+  :custom
+  (TeX-auto-save t)
+  (TeX-parse-self t)
+  )
+
 
 (use-package ob-racket
   :after org
@@ -802,16 +830,16 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package pet
   :demand t
-  :ensure t
+  :straight t
   :config
   (add-hook 'python-base-mode-hook 'pet-mode -10)
   )
 
 (use-package magit
-  :ensure t)
+  :straight t)
 
 (use-package dape
-  :ensure t
+  :straight t
   :init
   (add-to-list 'exec-path (concat user-emacs-directory "debug-adapters/netcoredbg/"))
   :hook
@@ -843,8 +871,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package eglot
   :init
-  (add-to-list 'exec-path (concat user-emacs-directory "langservers/csharp/omnisharp/"))
-  (add-to-list 'exec-path (concat user-emacs-directory "langservers/LaTeX/"))
+  ;;  (add-to-list 'exec-path (concat user-emacs-directory "langservers/csharp/omnisharp/"))
+  ;;  (add-to-list 'exec-path (concat user-emacs-directory "langservers/LaTeX/"))
   :hook ((csharp-ts-mode . eglot-ensure)
          (python-ts-mode . eglot-ensure)
          (LaTeX-mode . eglot-ensure))
@@ -860,7 +888,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 
-
 (use-package eldoc
   :custom
   (eldoc-echo-area-prefer-doc-buffer t)
@@ -869,12 +896,12 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package php-mode
-  :ensure t
+  :straight t
   :mode ("\\.php\\'" . php-ts-mode)
   )
 
 (use-package js2-mode
-  :ensure t
+  :straight t
   :mode ("\\.js\\'" . js2-mode))
 
 
@@ -885,20 +912,20 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package web-mode
-  :ensure t
+  :straight t
   :mode ((("\\.phtml\\'") . web-mode)
          (("\\page\\'") . web-mode))
   )
 
 
 (use-package plantuml-mode
-  :ensure t
+  :straight t
   :custom
   (plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
   )
 
 (use-package treesit-auto
-  :ensure t
+  :straight t
   :demand t
   :custom
   (treesit-font-lock-level 4)
@@ -906,26 +933,14 @@ things you want byte-compiled in them! Like function/macro definitions."
   (global-treesit-auto-mode))
 
 (use-package sharper
-  :ensure t
+  :straight t
   :demand t
   )
-
-;;(use-package xref-union
-;;  :ensure t
-;;  :hook ((prog-mode . xref-union-mode)
-;;         (prog-mode . (lambda () (remove-hook 'xref-backend-functions #'etags--xref-backend))))
-;;  )
-;;
-;; install rip-grep
-;;(use-package dumb-jump
-;;  :ensure t
-;;  :hook (prog-mode . (lambda () (add-hook 'xref-backend-functions #'dumb-jump-xref-activate nil t)))
-;;  )
 
 ;;;; completion
 
 (use-package corfu
-  :ensure t
+  :straight t
   :init
   (global-corfu-mode)
   (corfu-history-mode)
@@ -960,7 +975,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package yasnippet
-  :ensure t
+  :straight t
   :init
   (yas-global-mode 1)
   :custom
@@ -969,7 +984,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package yasnippet-snippets
-  :ensure t
+  :straight t
   )
 
 ;;;###autoload
@@ -979,14 +994,14 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package yasnippet-capf
-  :ensure t
+  :straight t
   :init
   :hook ((prog-mode org-mode) . my/yasnippet-add-completion-functions)
   )
 
 
 (use-package vertico
-  :ensure t
+  :straight t
   :custom
   (vertico-cycle t)
   :init
@@ -1000,7 +1015,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package orderless
-  :ensure t
+  :straight t
   :custom
   (completion-styles '(orderless partial-completion basic))
   (completion-category-defaults nil)
@@ -1009,15 +1024,15 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package consult
-  :ensure t
+  :straight t
   :custom
-                                        ; turns on vertico for : in evil
+  ;; turns on vertico for : in evil
   (completion-in-region-function 'consult-completion-in-region)
   )
 
 
 (use-package cape
-  :ensure t
+  :straight t
   :init
   ;; Add to the global default value of `completion-at-point-functions' which is
   ;; used by `completion-at-point'.  The order of the functions matters, the
@@ -1038,7 +1053,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; modus-viviendi Elisp
 
 (use-package popper
-  :ensure t ; or :straight t
+  :straight t ; or :straight t
   :init
   (setq popper-display-control 'user)
   (setq popper-reference-buffers
@@ -1052,6 +1067,8 @@ things you want byte-compiled in them! Like function/macro definitions."
           "\\*Python\\*"
           "\\*ielm\\*"
           "\\*dape-shell\\*"
+          "\\*Racket"
+          "\\*vterm\\*"
           debugger-mode
           dired-mode
           compilation-mode
@@ -1079,7 +1096,7 @@ things you want byte-compiled in them! Like function/macro definitions."
       (side . right)
       (slot . -1)
       (window-width . 0.33))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*\\|\\*dape-shell\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*\\|\\*dape-shell\\*\\|\\*Racket\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
       (display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
@@ -1100,12 +1117,12 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package kind-icon
-  :ensure t
+  :straight t
   :after corfu
   :demand t
   :custom
-                                        ; (kind-icon-blend-background t)
-                                        ; (kind-icon-default-face 'corfu-default) ; only needed with blend-background
+  ;; (kind-icon-blend-background t)
+  ;; (kind-icon-default-face 'corfu-default) ; only needed with blend-background
   (kind-icon-mapping
    '((array "a" :icon "code-brackets" :face font-lock-type-face)
      (boolean "b" :icon "circle-half-full" :face
@@ -1169,7 +1186,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package imenu-list
-  :ensure t
+  :straight t
   :hook ((imenu-list-after-jump . (lambda () (imenu-list-smart-toggle))))
   :custom
   (imenu-list-focus-after-activation t)
@@ -1179,16 +1196,12 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;Enable rich annotations using the Marginalia package
 (use-package marginalia
-  :ensure t
+  :straight t
   ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
   ;; available in the *Completions* buffer, add it to the
   ;; `completion-list-mode-map'.
-
-
-
   ;; The :init section is always executed.
   :init
-
   ;; Marginalia must be activated in the :init section of use-package such that
   ;; the mode gets enabled right away. Note that this forces loading the
   ;; package.
@@ -1197,17 +1210,14 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package posframe
-  :ensure t
+  :straight t
   )
-
 
 
 (use-package adaptive-wrap
-  :ensure t
+  :straight t
   :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode dired-mode helpful-mode info-mode) . adaptive-wrap-prefix-mode)
   )
-
-
 
 (use-package which-key
   :init
@@ -1228,24 +1238,11 @@ things you want byte-compiled in them! Like function/macro definitions."
   :diminish which-key-mode
   )
 
-(use-package diminish
-  :ensure t
-  )
-
 
 ;;;; miscaleanous
 
-(use-package tex
-  :ensure auctex
-  :custom
-  (TeX-auto-save t)
-  (TeX-parse-self t)
-  )
-
-
-(use-package eat
-  :ensure t
-  )
+(use-package vterm
+  :straight t)
 
 (use-package savehist
   :init
@@ -1256,6 +1253,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   :hook ((eshell-first-time-mode . (lambda () (yas-minor-mode -1)))
          (((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))))
   :config
+  ;; Setup eshell sudo
   (require 'em-tramp)
   (setq password-cache-expiry 3600)
   (setq eshell-prefer-lisp-functions t)
@@ -1265,22 +1263,21 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package helpful
-  :ensure t
+  :straight t
   :demand t
   :init
   (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update))
 
 (use-package elisp-demos
-  :ensure t
+  :straight t
   )
-
 
 ;;;; emacs default
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
   :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . display-line-numbers-mode)
-         (((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil)))))
+         ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :config
   ;; ellipsis marker single character of three dots in org
   (with-eval-after-load 'mule-util
@@ -1308,18 +1305,18 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; turn off comp warnings
   (native-comp-async-report-warnings-error nil)
   ;; get rid of menu bar, tab bar, and tool bar
-  ;; ;; setup differnet directoy for backups and autosaves
+  ;; setup different directory for backups and autosaves
   (backup-directory-alist '(("." . (concat user-emacs-directory "backups/"))))
   ;; tabs insert spaces
   (indent-tabs-mode nil)
-  ;; cursor over actual space of character
+  ;; cursor over actual space of character ;; doesn't do anything??
   (x-stretch-cursor t)
-  (window-combination-resize t) ;; take new window space from all other windows
+  ;; take new window space from all other windows
+  (window-combination-resize t) 
   ;; buffer is same version as file when opened
   (global-auto-revert-mode 1)
   ;; end double space between sentences
   (sentence-end-double-space nil)
-
   (desktop-save-mode 1)
 
   (doc-view-resolution 200)
@@ -1331,106 +1328,5 @@ things you want byte-compiled in them! Like function/macro definitions."
   (minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt))
 
-
   )
 
-;;;; archive
-
-
-;; (use-package iedit
-;;   :ensure t)
-
-;;(defun tree-sitter! ()
-;;  "Dispatch to turn on tree sitter.
-;;
-;;Used as a hook function which turns on `tree-sitter-mode'
-;;and selectively turn on `tree-sitter-hl-mode'.
-;;according to `+tree-sitter-hl-enabled-modes'"
-;;  (turn-on-tree-sitter-mode)
-;;  ;; conditionally enable `tree-sitter-hl-mode'
-;;  (let ((mode (bound-and-true-p tree-sitter-hl-mode)))
-;;    (when-let (mode (if (pcase +tree-sitter-hl-enabled-modes
-;;                          (`(not . ,modes) (not (memq major-mode modes)))
-;;                          ((and `(,_ . ,_) modes) (memq major-mode modes))
-;;                          (bool bool))
-;;                        (unless mode +1)
-;;                      (if mode -1)))
-;;      (tree-sitter-hl-mode mode))))                             #'cape-file))
-;;(use-package tree-sitter-langs
-;;  :ensure t)
-;;
-;;(use-package tree-sitter
-;;  :config
-;;  (require 'tree-sitter-langs)
-;;  (setq tree-sitter-debug-jump-buttons t
-;;        tree-sitter-debug-highlight-jump-region))
-;;
-;;
-;;(use-package evil-textobj-tree-sitter
-;;  :ensure t
-;;  :config
-;;  (defvar +tree-sitter-inner-text-objects-map (make-sparse-keymap))
-;;  (defvar +tree-sitter-outer-text-objects-map (make-sparse-keymap))
-;;  (defvar +tree-sitter-goto-previous-map (make-sparse-keymap))
-;;  (defvar +tree-sitter-goto-next-map (make-sparse-keymap))
-;;
-;;  (evil-define-key '(visual operator) 'tree-sitter-mode
-;;    "i" +tree-sitter-inner-text-objects-map
-;;    "a" +tree-sitter-outer-text-objects-map)
-;;  (evil-define-key 'normal 'tree-sitter-mode
-;;    "[g" +tree-sitter-goto-previous-map
-
-;;    "]g" +tree-sitter-goto-next-map))
-
-;;(use-package minuet
-;;  :ensure t
-;;  :bind
-;;  (("M-y" . #'minuet-complete-with-minibuffer) ;; use minibuffer for completion
-;;   ("M-i" . #'minuet-show-suggestion) ;; use overlay for completion
-;;   ("C-c m" . #'minuet-configure-provider)
-;;   :map minuet-active-mode-map
-;;    ;; These keymaps activate only when a minuet suggestion is displayed in the current buffer
-;;   ("M-p" . #'minuet-previous-suggestion) ;; invoke completion or cycle to next completion
-;;   ("M-n" . #'minuet-next-suggestion) ;; invoke completion or cycle to previous completion
-;;   ("TAB" . #'minuet-accept-suggestion) ;; accept whole completion
-;;    ;; Accept the first line of completion, or N lines with a numeric-prefix:
-;;    ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
-;;   ("M-a" . #'minuet-accept-suggestion-line)
-;;   ("M-e" . #'minuet-dismiss-suggestion))
-;;
-;;  :init
-;;;; if you want to enable auto suggestion.
-;;;; Note that you can manually invoke completions without enable minuet-auto-suggestion-mode
-;;  (add-hook 'prog-mode-hook #'minuet-auto-suggestion-mode)
-;;  :config
-;;  (setq minuet-provider 'openai-fim-compatible)
-;;  (setq minuet-n-completions 1) ;; recommended for Local LLM for resource saving
-;;;; I recommend beginning with a small context window size and incrementally
-;;;; expanding it, depending on your local computing power. A context window
-;;;; of 512, serves as an good starting point to estimate your computing
-;;;; power. Once you have a reliable estimate of your local computing power,
-;;;; you should adjust the context window to a larger value.
-;;  (setq minuet-context-window 250)
-;;  (plist-put minuet-openai-fim-compatible-options :end-point "http://localhost:8012/v1/completions")
-;;;; an arbitrary non-null environment variable as placeholder
-;;  (plist-put minuet-openai-fim-compatible-options :name "Llama.cpp")
-;;  (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
-;;;; The model is set by the llama-cpp server and cannot be altered
-;;;; post-launch.
-;;  (plist-put minuet-openai-fim-compatible-options :model "PLACEHOLDER")
-;;
-;;;; Llama.cpp does not support the `suffix` option in FIM completion.
-;;;; Therefore, we must disable it and manually populate the special
-;;;; tokens required for FIM completion.
-;;  (minuet-set-optional-options minuet-openai-fim-compatible-options :suffix nil :template)
-;;  (minuet-set-optional-options
-;;   minuet-openai-fim-compatible-options
-;;   :prompt
-;;   (defun minuet-llama-cpp-fim-qwen-prompt-function (ctx)
-;;     (format "<|fim_prefix|>%s\n%s<|fim_suffix|>%s<|fim_middle|>"
-;;             (plist-get ctx :language-and-tab)
-;;             (plist-get ctx :before-cursor)
-;;             (plist-get ctx :after-cursor)))
-;;   :template)
-;;
-;;  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))

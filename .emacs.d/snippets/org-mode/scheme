@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: scheme
+# key: scheme_
+# --
+#+begin_src racket :lang scheme
+$0
+#+end_src
