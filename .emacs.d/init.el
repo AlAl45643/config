@@ -17,7 +17,8 @@
   (load bootstrap-file nil 'nomessage))
 
 (straight-use-package 'use-package)
-(straight-pull-recipe-repositories)
+;; Sometimes necessary
+;; (straight-pull-recipe-repositories)
 
 (use-package use-package-core
   :custom
@@ -232,7 +233,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC e a execute-code-action // eglot
 ;; , u search-documentation TODO
 ;; SPC e b build-program 
-;; SPC c u evil-mc-undo-all-cursors 
+;; SPC c q evil-mc-undo-all-cursors 
 ;; , x xref-go-back TODO
 ;; , X xref-go-forward TODO
 ;; SPC c a evil-mc-make-all-cursors
@@ -411,6 +412,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "c" 'toggle-truncate-lines
   "a" 'org-agenda-list
   "B" 'dape-breakpoint-remove-all
+  "g" 'magit-status
   )
 
 (global-evil-definer emacs-lisp-mode-map
@@ -424,9 +426,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 (after! python
   (global-evil-definer python-ts-mode-map
     "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Adocs.python.org"))))))
-
-(global-evil-definer
-  "g" 'magit-status)
 
 (after! csharp-mode
   (global-evil-definer csharp-ts-mode-map
@@ -447,7 +446,7 @@ things you want byte-compiled in them! Like function/macro definitions."
                                   (python-shell-send-buffer)           
                                   (pop-to-buffer "*Python*")           
                                   ))))                                 
-(after! auctex
+(after! latex
   (global-evil-definer LaTeX-mode-map
     "r" 'TeX-command-master))
 
@@ -467,7 +466,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (+general-global-menu! "cursor" "c")
 (+general-global-cursor
-  "u" 'evil-mc-undo-all-cursors
+  "q" 'evil-mc-undo-all-cursors
   "a" 'evil-mc-make-all-cursors
   "o" 'evil-mc-make-cursor-move-next-line
   "c" 'evil-mc-make-cursor-here
@@ -813,6 +812,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (use-package tex
+  :straight auctex
   :custom
   (TeX-auto-save t)
   (TeX-parse-self t)
