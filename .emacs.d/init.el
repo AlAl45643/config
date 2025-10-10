@@ -20,6 +20,8 @@
 ;; Sometimes necessary
 ;; (straight-pull-recipe-repositories)
 
+(add-to-list 'exec-path (concat user-emacs-directory "bin/"))
+
 (use-package use-package-core
   :custom
   (use-package-always-defer t))
@@ -884,7 +886,8 @@ things you want byte-compiled in them! Like function/macro definitions."
                                         ;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
   (add-hook 'eglot-managed-mode-hook #'my/eglot-capf)
   (add-to-list 'eglot-server-programs
-               '(LaTeX-mode . ("texlab"))))
+               '(LaTeX-mode . ("texlab")))
+  (setf (alist-get '(csharp-mode csharp-ts-mode) eglot-server-programs) '("csharp-language-server")))
 
 
 
