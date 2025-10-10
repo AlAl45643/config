@@ -218,7 +218,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC e t test-code 
 ;; == format-buffer
 ;; , f find-file
-;; , l eshell
+;; , l vterm
 ;; , d project-dired
 ;; , n eval-defun
 ;; , i imenu-list-smart-toggle
@@ -269,8 +269,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; make-frame-command
 ;; org-ctrl-c-ctrl-c
 ;; org-open-at-point
-;; vterm
 ;; org-table-create-or-convert-from-region
+;; org-table-eval-formula
 
 ;;; minibuffer
 (general-def vertico-map
@@ -363,11 +363,11 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (after! helpful
   (general-def
-    "C-h f" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-callable)))
-    "C-h v" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-variable)))
-    "C-h k" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-key)))
-    "C-h x" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-command)))
-    "C-h F" (lambda () (interactive) (save-selected-window (call-interactively 'helpful-function)))))
+    "C-h f" '("helpful-callable" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-callable))))
+    "C-h v" '("helpful-variable" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-variable))))
+    "C-h k" '("helpful-key" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-key))))
+    "C-h x" '("helpful-command" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-command))))
+    "C-h F" '("helpful-function" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-function))))))
 
 
 ;;; evil global commands
@@ -403,7 +403,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "e" '("save-all-buffers" . (lambda () (interactive) (save-some-buffers "!")))
   "t" 'popper-toggle
   "f" 'find-file
-  "l" 'eshell
+  "l" 'vterm
   "o" '("online-search" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x))))
   "i" 'imenu-list-smart-toggle
   "k" 'kill-buffer
@@ -1309,7 +1309,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   (native-comp-async-report-warnings-error nil)
   ;; get rid of menu bar, tab bar, and tool bar
   ;; setup different directory for backups and autosaves
-  (backup-directory-alist '(("." . (concat user-emacs-directory "backups/"))))
+
+  (backup-directory-alist `(("." . ,(concat user-emacs-directory "backups/"))))
   ;; tabs insert spaces
   (indent-tabs-mode nil)
   ;; cursor over actual space of character ;; doesn't do anything??
