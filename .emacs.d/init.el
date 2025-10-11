@@ -344,7 +344,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 (general-def 'insert
   "TAB" (lambda () (interactive)
           (cond ((buffer-local-value 'vertico--input (current-buffer)) (vertico-insert))
-                ((minibufferp) (completion-at-point)) 
+                ((minibufferp) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
+                                 (if res
+                                     (completion-at-point)
+                                   (hippie-expand nil)))) 
                 ((derived-mode-p 'eshell-mode 'comint-mod) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
                                                              (if res
                                                                  (completion-at-point)
