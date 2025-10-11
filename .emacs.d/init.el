@@ -271,6 +271,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; org-open-at-point
 ;; org-table-create-or-convert-from-region
 ;; org-table-eval-formula
+;; org-pomodoro
+;; standarize next-same-heading for magit and org
 
 ;;; minibuffer
 (general-def vertico-map
@@ -344,7 +346,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 (general-def 'insert
   "TAB" (lambda () (interactive)
           (cond ((buffer-local-value 'vertico--input (current-buffer)) (vertico-insert))
-                ((minibufferp) (completion-at-point)) 
+                ((minibufferp) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
+                                 (if res
+                                     (completion-at-point)
+                                   (hippie-expand nil)))) 
                 ((derived-mode-p 'eshell-mode 'comint-mod) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
                                                              (if res
                                                                  (completion-at-point)
@@ -378,8 +383,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "g D" 'xref-find-definitions-other-window
   "] x" 'xref-go-forward
   "[ x" 'xref-go-back)
-
-(after! org-remark-info
+(after! org-remark
   (general-def 'normal Info-mode-map
     "s" 'evil-snipe-s
     "S" 'evil-snipe-S))
@@ -389,14 +393,13 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (after! eglot
-  ;; (general-def 'normal eglot-mode-map
-  ;;   "g h" 'eldoc-doc-buffer)
+  (general-def 'normal eglot-mode-map
+    "g h" 'eldoc-doc-buffer)
   ;;    "?" 'consult-eglot-symbols
   (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
                                      "=" 'eglot-format-buffer)))
 
 ;;; evil , global key commands
-
 (global-evil-definer
   "," 'evil-snipe-repeat-reverse
   "s" 'switch-to-buffer
@@ -416,6 +419,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "B" 'dape-breakpoint-remove-all
   "g" 'magit-status
   )
+
 
 (global-evil-definer emacs-lisp-mode-map
   "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp"))))
@@ -603,8 +607,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 ;;;###autoload
-(defun my/org-agenda-to-appt ()
-  " Erase all reminders and rebuilt reminders for today from the agenda"
+(defun my-org-agenda-to-appt ()
+  "Erase all reminders and rebuilt reminders for today from the agenda."
   (interactive)
   (setq appt-time-msg-list nil)
   (org-agenda-to-appt))
@@ -612,7 +616,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;;;###autoload
 (defun my-org-inf-repeat ()
   (interactive)
-  "Treat the TODO as a repeater by logging it"
+  "Treat the TODO as a repeater by logging it."
   (if (org-element-property :REPEAT (org-element-at-point))
       (let ((note (cdr (assq 'state org-log-note-headings)))
             lines)
@@ -691,7 +695,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package org
   :straight t
-  :hook ((org-agenda-finalize . my/org-agenda-to-appt)
+  :hook ((org-agenda-finalize . my-org-agenda-to-appt)
          (org-agenda-finalize . append))
   :mode ("\\.org\\'" . org-mode)
   :custom
@@ -700,7 +704,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; Activate appointments so we get notifications
   (appt-activate t)
   ;; If we leave Emacs running overnight - reset the appointments one minute after midnight
-  (run-at-time "24:01" nil 'my/org-agenda-to-appt)
+  (run-at-time "24:01" nil 'my-org-agenda-to-appt)
   ;; keep track of when todo is finished when created
   (org-log-done 'time)
   ;; set agenda files
@@ -749,14 +753,14 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;;###autoload 
 (defun my-org-pomodoro-choose-break-time (arg)
-  "Choose break time for pomodoro"
+  "Choose break time for pomodoro."
   (interactive "nBreak time (0 if overtime): ")
   (setq org-pomodoro-short-break-length arg))
 
 
 ;;;###autoload
 (defun my-org-pomodoro-around-finished-with-overtime (orig-fun &rest args)
-  "Choose break time unless we've reached a long break for pomodoro"
+  "Advise around `org-pomodoro-finished' to choose break time"
   (org-pomodoro-play-sound :pomodoro)
   (call-interactively #'my-org-pomodoro-choose-break-time)
   (cond ((= org-pomodoro-short-break-length 0) (org-pomodoro-overtime))
@@ -765,15 +769,15 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 ;;;###autoload
-(defun my/org-pomodoro-resume-after-break ()
-  "Resume pomodoro timer after running it if pomodoro timer is not currently in overtime"
+(defun my-org-pomodoro-resume-after-break ()
+  "Resume pomodoro timer if pomodoro timer is not currently in overtime."
   (save-window-excursion
     (org-clock-goto)
     (org-pomodoro)))
 
 ;;;###autoload
 (defun my-org-pomodoro-clockout-before-kill ()
-  "Clock out time before exiting `org-pomodoro' so time is accurately tracked"
+  "Clock out time before exiting `org-pomodoro' so time is accurately tracked."
   (if (org-clocking-p)
       (save-window-excursion
         (org-clock-out))))
@@ -782,7 +786,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package org-pomodoro
   :straight t
   :after org
-  :hook (org-pomodoro-break-finished . my/org-pomodoro-resume-after-break)
+  :hook (org-pomodoro-break-finished . my-org-pomodoro-resume-after-break)
   :custom
   (org-pomodoro-ask-upon-killing t)
   ;; change finish sound to differentiate between starting and stopping
@@ -862,13 +866,13 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 ;;;###autoload
-(defvar my/eglot-completion-functions (list #'cape-file #'yasnippet-capf #'eglot-completion-at-point))
+(defvar my-eglot-completion-functions (list #'cape-file #'yasnippet-capf #'eglot-completion-at-point))
 
 ;;;###autoload
-(defun my/eglot-capf ()
-  "Configure eglot corfu completion display with multiple backends such as yasnippet"
+(defun my-eglot-capf ()
+  "Configure `completion-at-point-functions' with multiple backends such as yasnippet."
   (setq-local completion-at-point-functions
-              (list (apply 'cape-capf-super my/eglot-completion-functions))))
+              (list (apply 'cape-capf-super my-eglot-completion-functions))))
 
 
 (use-package eglot
@@ -884,7 +888,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
   ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
                                         ;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
-  (add-hook 'eglot-managed-mode-hook #'my/eglot-capf)
+  (add-hook 'eglot-managed-mode-hook #'my-eglot-capf)
   (add-to-list 'eglot-server-programs
                '(LaTeX-mode . ("texlab")))
   (setf (alist-get '(csharp-mode csharp-ts-mode) eglot-server-programs) '("csharp-language-server")))
@@ -991,15 +995,15 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 ;;;###autoload
-(defun my/yasnippet-add-completion-functions ()
-  "This function adds yasnippet-capf to completion-at-point-functions."
+(defun my-yasnippet-add-completion-functions ()
+  "Add yasnippet-capf to `completion-at-point-functions'."
   (add-to-list 'completion-at-point-functions #'yasnippet-capf)
   )
 
 (use-package yasnippet-capf
   :straight t
   :init
-  :hook ((prog-mode org-mode) . my/yasnippet-add-completion-functions)
+  :hook ((prog-mode org-mode) . my-yasnippet-add-completion-functions)
   )
 
 
@@ -1079,9 +1083,17 @@ things you want byte-compiled in them! Like function/macro definitions."
   (popper-mode +1)
   (popper-echo-mode +1))
 
+;;;###autoload
+(defun my-fit-window-to-right-side (window)
+  "Use `fit-window-to-buffer' with right side window specifications."
+  (let ((max-width (floor (* 0.35 (frame-width))))
+        (max-height (floor (* 0.50 (frame-height)))))
+    (fit-window-to-buffer window max-height window-min-height max-width)))
+
 (use-package window
   :custom
   (menu-bar-mode nil)
+  (fit-window-to-buffer-horizontally t)
   (tab-bar-mode nil)
   (tool-bar-mode nil)
   (line-number-mode nil)
@@ -1090,23 +1102,22 @@ things you want byte-compiled in them! Like function/macro definitions."
   (window-sides-slots '(2 2 2 2))
   (display-buffer-alist
    '(("\\*info\\*"
-      (display-buffer-in-side-window)
+      (display-buffer-reuse-window display-buffer-in-side-window)
       (side . right)
       (slot . 0)
-      (window-width . 0.33))
+      (window-width . my-fit-window-to-right-side))
      ("\\*helpful\\|\\*Help\\*\\|\\*eldoc\\*"
-      (display-buffer-in-side-window)
+      (display-buffer-reuse-window display-buffer-in-side-window)
       (side . right)
       (slot . -1)
-      (window-width . 0.33))
+      (window-width . my-fit-window-to-right-side))
      ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*\\|\\*dape-shell\\*\\|\\*Racket\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
-      (display-buffer-in-side-window)
+      (display-buffer-reuse-window display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
       (window-height 0.30))
      ((derived-mode . magit-mode)
-      (display-buffer-reuse-window
-       display-buffer-in-direction)
+      (display-buffer-reuse-window display-buffer-in-direction)
       (mode magit-mode)
       (window . root)
       (window-width . 0.30)
