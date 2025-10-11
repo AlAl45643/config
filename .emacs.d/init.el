@@ -392,8 +392,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (after! eglot
-  ;; (general-def 'normal eglot-mode-map
-  ;;   "g h" 'eldoc-doc-buffer)
+  (general-def 'normal eglot-mode-map
+    "g h" 'eldoc-doc-buffer)
   ;;    "?" 'consult-eglot-symbols
   (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
                                      "=" 'eglot-format-buffer)))
