@@ -271,6 +271,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; org-open-at-point
 ;; org-table-create-or-convert-from-region
 ;; org-table-eval-formula
+;; org-pomodoro
+;; standarize next-same-heading for magit and org
 
 ;;; minibuffer
 (general-def vertico-map
@@ -381,8 +383,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "g D" 'xref-find-definitions-other-window
   "] x" 'xref-go-forward
   "[ x" 'xref-go-back)
-
-(after! org-remark-info
+(after! org-remark
   (general-def 'normal Info-mode-map
     "s" 'evil-snipe-s
     "S" 'evil-snipe-S))
@@ -399,7 +400,6 @@ things you want byte-compiled in them! Like function/macro definitions."
                                      "=" 'eglot-format-buffer)))
 
 ;;; evil , global key commands
-
 (global-evil-definer
   "," 'evil-snipe-repeat-reverse
   "s" 'switch-to-buffer
@@ -419,6 +419,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "B" 'dape-breakpoint-remove-all
   "g" 'magit-status
   )
+
 
 (global-evil-definer emacs-lisp-mode-map
   "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp"))))
@@ -1082,9 +1083,16 @@ things you want byte-compiled in them! Like function/macro definitions."
   (popper-mode +1)
   (popper-echo-mode +1))
 
+;;;###autoload
+(defun fit-window-to-right-side (window)
+  (let ((max-width (floor (* 0.35 (frame-width))))
+        (max-height (floor (* 0.50 (frame-height)))))
+    (fit-window-to-buffer window max-height window-min-height max-width)))
+
 (use-package window
   :custom
   (menu-bar-mode nil)
+  (fit-window-to-buffer-horizontally t)
   (tab-bar-mode nil)
   (tool-bar-mode nil)
   (line-number-mode nil)
@@ -1093,23 +1101,22 @@ things you want byte-compiled in them! Like function/macro definitions."
   (window-sides-slots '(2 2 2 2))
   (display-buffer-alist
    '(("\\*info\\*"
-      (display-buffer-in-side-window)
+      (display-buffer-reuse-window display-buffer-in-side-window)
       (side . right)
       (slot . 0)
-      (window-width . 0.33))
+      (window-width . fit-window-to-right-side))
      ("\\*helpful\\|\\*Help\\*\\|\\*eldoc\\*"
-      (display-buffer-in-side-window)
+      (display-buffer-reuse-window display-buffer-in-side-window)
       (side . right)
       (slot . -1)
-      (window-width . 0.33))
+      (window-width . fit-window-to-right-side))
      ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*\\|\\*dape-shell\\*\\|\\*Racket\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
-      (display-buffer-in-side-window)
+      (display-buffer-reuse-window display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
       (window-height 0.30))
      ((derived-mode . magit-mode)
-      (display-buffer-reuse-window
-       display-buffer-in-direction)
+      (display-buffer-reuse-window display-buffer-in-direction)
       (mode magit-mode)
       (window . root)
       (window-width . 0.30)
