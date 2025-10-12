@@ -277,6 +277,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; , u browse-documentation 
 ;; SPC o s org-timer-stop
 ;; SPC e b build-program 
+;; SPC w 1 window-bookmark-home
 ;; SPC c q evil-mc-undo-all-cursors 
 ;; SPC c a evil-mc-make-all-cursors
 ;; SPC c o evil-mc-make-cursor-move-next-line
@@ -297,7 +298,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC j j project-switch-project
 ;; SPC j h project-search
 
-
+;; to add
 
 ;;; minibuffer
 (general-def vertico-map
@@ -375,12 +376,13 @@ things you want byte-compiled in them! Like function/macro definitions."
   (general-def 'normal org-agenda-mode-map
     "<escape>" 'org-agenda-quit))
 
+
+
 ;;@dape
 (after! dape
   ;; not added yet
   ;; dape-disassemble
   ;; dape-disconnect-quit
-  ;; dape-restart-frame
   ;; dape-memory
   ;; dape-restart-frame
   ;; dape-until
@@ -398,7 +400,7 @@ things you want byte-compiled in them! Like function/macro definitions."
     "<f8>" 'dape-watch-dwim
     "<pause>" 'dape-pause
     )
-  (general-def '(insert normal) prog-mode-map
+  (general-def '(insert normal) dape-breakpoint-global-mode-map
     "<f1>" 'dape
     "<f9>" 'dape-breakpoint-toggle
     "<f10>" 'dape-breakpoint-log
@@ -413,7 +415,8 @@ things you want byte-compiled in them! Like function/macro definitions."
                       (if dape-active-mode
                           "dape-quit"
                         "evil-quit"))))
-        which-key-replacement-alist))
+        which-key-replacement-alist)
+  )
 
 ;;; evil addons
 (general-def 'normal
@@ -632,10 +635,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 (+general-global-menu! "org" "o")
 (+general-global-org org-mode-map
   "t" '("org-match-sparse-tree-same-visibility" . (lambda ()
-                                            "Match tags to headings but don't change the current visibility."
-                                            (interactive)
-                                            (org-save-outline-visibility nil (org-match-sparse-tree))
-                                            ))
+                                                    "Match tags to headings but don't change the current visibility."
+                                                    (interactive)
+                                                    (org-save-outline-visibility nil (org-match-sparse-tree))
+                                                    ))
   "f" 'org-forward-heading-same-level
   "b" 'org-backward-heading-same-level
   "r" 'org-timer-set-timer
@@ -644,7 +647,15 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (+general-global-menu! "window" "w")
 (+general-global-window
-  "f" 'make-frame-command)
+  "f" 'make-frame-command
+  "1" '("open-bookmark-home" . (lambda ()
+                                 "Open home bookmark."
+                                 (interactive)
+                                 (bookmark-maybe-load-default-file)
+                                 ;; work around to get org-agenda buffer working in bookmarks
+                                 (org-agenda-list)
+                                 (bookmark-jump "Burly: home"))))
+
 ;;; fixing overrides
 
 (general-unbind iedit-mode-keymap
@@ -973,7 +984,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package dape
   :straight t
   :init
-  (add-to-list 'exec-path (concat user-emacs-directory "debug-adapters/netcoredbg/"))
   :hook
   (kill-emacs . dape-breakpoint-save)
   (after-init . dape-breakpoint-load)
@@ -982,6 +992,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   (dape-start . (lambda () (repeat-mode 1)))
   (dape-stopped . (lambda () (repeat-mode -1)))
   (dape-compile . kill-buffer)
+  (python-ts-mode . dape-breakpoint-global-mode)
+  (csharp-ts-mode . dape-breakpoint-global-mode)
   :custom
   (dape-key-prefix nil)
   (dape-buffer-window-arrangement 'gud)
@@ -1384,6 +1396,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 ;;;; miscaleanous
+
+(use-package burly
+  :demand t
+  :straight t)
 
 (use-package vterm
   :straight t)
