@@ -1,3 +1,7 @@
+;;;; tags
+;; dape
+;; org
+
 ;;;; PACKAGE management
 
 (defvar bootstrap-version)
@@ -44,7 +48,7 @@
 
 (general-create-definer global-evil-definer
   :keymaps 'override
-  :states '(insert emacs normal hybrid motion visual operator)
+  :states '(insert normal hybrid motion visual operator)
   :prefix ","
   :non-normal-prefix "C-,")
 
@@ -67,7 +71,7 @@
      (which-key-add-key-based-replacements (concat "M-SPC " ,infix-key) ,name)  
      (general-create-definer ,(intern (concat "+general-global-" name))
        :keymaps 'override
-       :states '(insert emacs normal hybrid motion visual operator)
+       :states '(insert normal hybrid motion visual operator)
        :prefix "SPC"
        :non-normal-prefix "M-SPC"
        :infix ,infix-key
@@ -126,28 +130,30 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;; rules
 ;; binding rules
-;; 1. All commands should be be classified as minibuffer, module, modification, and global where minibuffer are commands used in the minibuffer, module are commands specific to a state, modification are previous keybinds with improved functionality, and global is the default state,
-;; 2. Module and minibuffer commands should be bound using evil semantic rules while global commands should be bound using , prefix or SPC prefix semantic rules.
-;; 3. Any command that is bound should be prioritized based on its frequency of use against all other commands within their type except modification.
+;; 1. All commands should be be classified as minibuffer, module, evil addons, modification, and global where minibuffer are commands in the minibuffer, module are commands specific to a state, evil addons are commands that should have been in evil that are not in minibuffer or module, modification are previous keybinds with improved functionality, and global is the default state,
+;; 2. Module, minibuffer, and evil commands should be bound using evil semantic rules while global commands should be bound using , prefix or SPC prefix semantic rules.
+;; 3. Global commands should be prioritized based on their frequency of use.
 ;; 4. Global commands should be bound to , prefix unless there are no available semantic keybindings in , prefix left, then they should be bound to SPC prefix.
+;; 5. Commands must be changed in the notes before you change them in code.
 ;;
 ;; SPC prefix semantic rules
-;; 1. Each prefix should be named according to the most unique and specific keyword that describes every command it contains. 
-;; 2. Commands that have similar functionality and keyword but are in different prefixes should have the same key.
-;; 3. The command key should be either the first or last character of the keyword or the first character of each syllable in that keyword. The keyword does not have necessarily have to be in the command.
-;; 4. Any command bound within a prefix should be the smoothest possible key.
+;; 1. Infix keys should be unique and specific keyword for each command it contains.
+;; 2. Commands with similar functionality and keyword but in different infixes should have the same key.
+;; 3. Command keys should be based on a specific and unique keyword.
+;; 3. Command key should be either the first keyword character, last keyword character, or the first character of each syllable.  
+;; 4. Command keys should be the smoothest possible key.
 ;;
 ;; , prefix semantic rules
-;; 1. The , prefix should not have any prefix keys within it except shift.
-;; 2. The command key should be either the first or last character of the keyword or the first character of each syllable in that keyword. The keyword does not have necessarily have to be in the command.
-;; 3. Any command bound should be the smoothest possible key.
+;; 1. No infix keys except Shift are allowed.
+;; 2. Command keys should be based on a specific and unique keyword.
+;; 3. Command key should be either the first keyword character, last keyword character, or the first character of each syllable.
+;; 4. Command keys should be the smoothest possible key.
 ;;
 ;; general.el rules
 ;; + Use definers when , prefix or SPC prefix.
 ;; + Use mode-maps for mode-specific keybinds instead of :predicate or hooks unless mode-maps do not exist
 ;; + Use mode-map with #'evil-make-intercept-map and #'evil-normalize hook instead of 'override with :predicate unless mode keymap does not exist
 ;; 
-;;
 ;; Active keymap hiearchy
 ;; overriding-terminal-local-map
 ;; overriding-local-map
@@ -159,6 +165,13 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; current-local-map
 ;; current-global-map == emacs insert keys
 
+;;; Evil multi class keybinds (for reference)
+;; <escape> ephermal quit
+;; Z Q non epehermal quit
+;; C-j C-k when j k isn't available
+;; g j g k next same heading
+;; ]] [[ next visible heading
+;; C-S-j C-S-k next grouping or scroll
 
 ;;; minibuffer specific command priority
 ;; C-j vertico-next
@@ -167,6 +180,14 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; C-f evil-forward char
 ;; C-S-j scroll-down-command
 ;; C-S-k scroll-up-command
+;; <escape> abort-recursive-edit
+
+
+;;; evil addons 
+;; = = format-buffer
+;; C-S-d evil-scroll-up
+;; [ x xref-go-backward
+;; ] x xref-go-forward
 
 ;;; module specific command priority
 ;; corfu
@@ -175,49 +196,70 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; C-S-j corfu-popupinfo-scroll-up
 ;; C-S-k corfu-popupinfo-scroll-down
 
-;; ibuffer
-;; Enter ibuffer-visit-buffer quit-ibuffer
-
+;;@org
 ;; remark
 ;; Enter visual org-remark-mark
 ;; o org-remark-open
 
 ;; imenu
-;; Enter imenu-goto-node
-;; C-j imenu evil-next-line
-;; C-k imenu evil-previous-line
-;; C-g imenu-list-quit-window
+;; <return> imenu-goto-node
+;; <escape> imenu-list-quit-window
 
-;; dape
-;; C-n dape-next
-;; C-s dape-step-in  
-;; C-S dape-step-out
-;; C-t dape-continue  
-;; C-<escape> dape-quit  
-;; C-P dape-step-out  
+;;@dape
+;; F1 dape-next / dape-start
+;; F2 dape-continue
+;; F3 dape-step-out
+;; F4 dape-step-in
+;; F5 dape-thread
+;; F6 dape-stack-select-down
+;; F7 dape-stack-select-up
+;; F8 dape-watch-dwim
+;; F9 dape-breakpoint
+;; F10 dape-breakpoint-log
+;; F11 dape-breakpoint-expression
+;; F12 dape-breakpoint-remove-all
+;; <pause> dape-pause
+;; Z Q dape-quit
 
 ;; yas
 ;; C-<tab> yas-keymap
-;; C-<iso-lefttab> 'yas-prev-field
+;; C-<iso-lefttab> yas-prev-field
 
+;; magit
+;; <escape> magit-mode-bury-buffer
+;; ] ] magit-section-forward
+;; [ [ magit-section-backward
+
+;; dired
+;; <escape> quit-window
+
+;; @org
+;; org table 
+;; C-<tab> org-cycle
+;; C-<iso-lefttab> org-shifttab
 
 ;;; modification keys
-;; TAB smart-tab (vertico / eshell/ corfu/ indent / hippie-expand)
-;; g d goto-definition-at-point // eglot // xref
-;; g D xref-find-definitions-other-window
+;; TAB smart-tab 
+;; g d goto-definition-at-point 
 ;; ,, evil-snipe-repeat-reverse
+;; C-h f helpful-callable
+;; C-h v helpful-variable
+;; C-h k helpful-key
+;; C-h x helpful-command
+;; C-h F helpful-function
+;; C-S-d 'evil-scroll-up 
 
-
+;;@dape @org
 ;;; global key commands priority
 ;; , s switch-to-buffer
-;; , r run-program
+;; , r run-at-point
 ;; , t popper-toggle
 ;; , e save-some-buffers
-;; , h description-at-point TODO
-;; , b dape-breakpoint 
+;; , h description-at-point 
+;; , p org-pomodoro 
 ;; SPC e t test-code 
-;; == format-buffer
 ;; , f find-file
+;; , y copy-file 
 ;; , l vterm
 ;; , d project-dired
 ;; , n eval-defun
@@ -225,24 +267,24 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC e d dape 
 ;; , g magit-status
 ;; , k kill-buffer
-;; , v eval-expression / dape-eval-expression / edebug 
 ;; , p evaluate sexp 
 ;; SPC s t toggle-theme
 ;; , c toggle-truncate-lines 
+;; SPC o r org-timer-set-timer 
+;; SPC w f make-frame-command
 ;; , a org-agenda 
-;; , m evil-commentary TODO
-;; , B dape-breakpoint-remove-all 
 ;; SPC e a execute-code-action // eglot
-;; , u search-documentation TODO
+;; , u browse-documentation 
+;; SPC o s org-timer-stop
 ;; SPC e b build-program 
 ;; SPC c q evil-mc-undo-all-cursors 
-;; , x xref-go-back TODO
-;; , X xref-go-forward TODO
 ;; SPC c a evil-mc-make-all-cursors
 ;; SPC c o evil-mc-make-cursor-move-next-line
 ;; SPC p p completion-at-point
-;; , o online-search
+;; SPC s s online-search
+;; SPC e i dape-info
 ;; SPC f d delete-file
+;; SPC o e org-table-create-or-convert-from-region
 ;; SPC c h evil-mc-make-cursor-here 
 ;; SPC c r evil-mc-resume-cursors 
 ;; SPC c p evil-mc-pause-cursors 
@@ -256,23 +298,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC j h project-search
 
 
-;; forgot to add 
-;; SPC e i dape-info  
-;; C-<tab> org-cycle
-;; C-<iso-lefttab> org-shifttab
-
-;; needs to be added
-;; org-timer-stop
-;; org-timer-set-timer
-;; org-clock-in
-;; org-clock-out
-;; make-frame-command
-;; org-ctrl-c-ctrl-c
-;; org-open-at-point
-;; org-table-create-or-convert-from-region
-;; org-table-eval-formula
-;; org-pomodoro
-;; standarize next-same-heading for magit and org
 
 ;;; minibuffer
 (general-def vertico-map
@@ -281,12 +306,18 @@ things you want byte-compiled in them! Like function/macro definitions."
   "C-S-j" 'scroll-up-command
   "C-b" 'evil-backward-char
   "C-f" 'evil-forward-char
-  "C-S-k" 'scroll-down-command)
+  "C-S-k" 'scroll-down-command
+  )
+(general-def 'normal vertico-map
+  "<escape>" 'abort-recursive-edit)
+
 
 ;;; module specific keybinds
-(general-def corfu-map
-  "C-SPC" 'corfu-insert-separator
-  "RET" nil)
+
+(after! corfu
+  (general-def corfu-map
+    "C-SPC" 'corfu-insert-separator
+    "RET" nil))
 
 
 (after! corfu-popupinfo
@@ -295,6 +326,7 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-S-j" 'corfu-popupinfo-scroll-up
     "C-S-k" 'corfu-popupinfo-scroll-down))
 
+;;@org
 (after! org-remark
   (general-def 'visual org-remark-mode-map 
     "<return>" 'org-remark-mark)
@@ -310,10 +342,11 @@ things you want byte-compiled in them! Like function/macro definitions."
                  (if arg
                      (progn (evil-goto-line arg) (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos)))
                    (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos))))
-    "C-j" 'evil-next-line
-    "C-k" 'evil-previous-line
-    "C-g" 'imenu-list-quit-window))
+    )
+  (general-def 'normal imenu-list-major-mode-map
+    "<escape>" 'imenu-list-quit-window))
 
+;;@org
 (after! evil-org
   (general-def org-mode-map
     "C-<tab>" 'org-cycle
@@ -326,45 +359,95 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-<tab>" 'yas-next-field
     "C-<iso-lefttab>" 'yas-prev-field))
 
+(after! magit
+  (general-def 'normal magit-mode-map
+    "<escape>" 'magit-mode-bury-buffer)
+  (general-def magit-section-mode-map
+    "] ]" 'magit-section-forward
+    "[ [" 'magit-section-backward))
 
+(after! dired
+  (general-def 'normal dired-mode-map
+    "<escape>" 'quit-window))
+
+;;@org
+(after! org-agenda
+  (general-def 'normal org-agenda-mode-map
+    "<escape>" 'org-agenda-quit))
+
+;;@dape
 (after! dape
+  ;; not added yet
+  ;; dape-disassemble
+  ;; dape-disconnect-quit
+  ;; dape-restart-frame
+  ;; dape-memory
+  ;; dape-restart-frame
+  ;; dape-until
   ;; 'override mode is an alias for general-override-mode-map 
   ;; '(insert normal) state is required for general.el to override evil keybindings
   (general-def '(insert normal) 'override
-    ;; dape doesn't have keymaps
     :predicate 'dape-active-mode
-    "C-n" 'dape-next
-    "C-s" 'dape-step-in
-    "C-<escape>" 'dape-quit
-    "C-c" 'dape-continue
-    "C-S-s" 'dape-step-out
-    "C-t" 'dape-continue)
-  )
+    "<f1>" 'dape-next
+    "<f2>" 'dape-continue
+    "<f3>" 'dape-step-in
+    "<f4>" 'dape-step-out
+    "<f5>" 'dape-thread
+    "<f6>" 'dape-stack-select-down
+    "<f7>" 'dape-stack-select-up
+    "<f8>" 'dape-watch-dwim
+    "<pause>" 'dape-pause
+    )
+  (general-def '(insert normal) prog-mode-map
+    "<f1>" 'dape
+    "<f9>" 'dape-breakpoint-toggle
+    "<f10>" 'dape-breakpoint-log
+    "<f11>" 'dape-breakpoint-expression
+    "<f12>" 'dape-breakpoint-remove-all)
+  (general-def 'normal 'override
+    :predicate 'dape-active-mode
+    "Z Q" '("dape-quit" . dape-quit))
+  (push (cons '("Z Q" . nil)
+              (lambda (kb)
+                (cons (car kb)
+                      (if dape-active-mode
+                          "dape-quit"
+                        "evil-quit"))))
+        which-key-replacement-alist))
 
-;;; miscaleanous global commands
+;;; evil addons
+(general-def 'normal
+  "C-S-d" 'evil-scroll-up
+  "[ x" 'xref-go-back
+  "] x" 'xref-go-forward)
+
+(general-nmap "=" (general-key-dispatch 'evil-indent
+                    "=" (lambda () (interactive) (indent-region (point-min) (point-max)))))
+(after! eglot
+  (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
+                                     "=" 'eglot-format-buffer)))
+
+
+;;; modification keys
+
+(defun smart-tab ()
+  (interactive)
+  (cond ((buffer-local-value 'vertico--input (current-buffer)) (vertico-insert))
+        ((minibufferp) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
+                         (if res
+                             (completion-at-point)
+                           (hippie-expand nil)))) 
+        ((derived-mode-p 'eshell-mode 'comint-mod) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
+                                                     (if res
+                                                         (completion-at-point)
+                                                       (hippie-expand nil))))
+        ((and (frame-live-p corfu--frame) (frame-visible-p corfu--frame)) (corfu-insert))
+        (mark-active (indent-region (region-beginning) (region-end)))
+        ((looking-at "\\_>") (hippie-expand nil))
+        (t (indent-for-tab-command))))
 
 (general-def 'insert
-  "TAB" (lambda () (interactive)
-          (cond ((buffer-local-value 'vertico--input (current-buffer)) (vertico-insert))
-                ((minibufferp) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
-                                 (if res
-                                     (completion-at-point)
-                                   (hippie-expand nil)))) 
-                ((derived-mode-p 'eshell-mode 'comint-mod) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
-                                                             (if res
-                                                                 (completion-at-point)
-                                                               (hippie-expand nil))))
-                ((and (frame-live-p corfu--frame) (frame-visible-p corfu--frame)) (corfu-insert))
-                (mark-active (indent-region (region-beginning) (region-end)))
-                ((looking-at "\\_>") (hippie-expand nil))
-                (t (indent-for-tab-command)))))
-
-
-(general-unbind iedit-mode-keymap
-  "TAB"
-  "<tab>"
-  "<backtab")
-
+  "TAB" 'smart-tab)
 
 (after! helpful
   (general-def
@@ -374,68 +457,60 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-h x" '("helpful-command" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-command))))
     "C-h F" '("helpful-function" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-function))))))
 
-
-;;; evil global commands
 (general-def 'normal
-  "g h" (lambda () (interactive) (save-selected-window (helpful-at-point)))
-  "C-S-d" 'evil-scroll-up
   "g d" 'xref-find-definitions
-  "g D" 'xref-find-definitions-other-window
-  "] x" 'xref-go-forward
-  "[ x" 'xref-go-back)
-(after! org-remark
-  (general-def 'normal Info-mode-map
-    "s" 'evil-snipe-s
-    "S" 'evil-snipe-S))
+  )
 
-(general-nmap "=" (general-key-dispatch 'evil-indent
-                    "=" (lambda () (interactive) (indent-region (point-min) (point-max)))))
+(global-evil-definer
+  "," 'evil-snipe-repeat-reverse)
 
-
-(after! eglot
-  (general-def 'normal eglot-mode-map
-    "g h" 'eldoc-doc-buffer)
-  ;;    "?" 'consult-eglot-symbols
-  (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
-                                     "=" 'eglot-format-buffer)))
-
+;;@org
 ;;; evil , global key commands
 (global-evil-definer
-  "," 'evil-snipe-repeat-reverse
   "s" 'switch-to-buffer
   "e" '("save-all-buffers" . (lambda () (interactive) (save-some-buffers "!")))
   "t" 'popper-toggle
   "f" 'find-file
   "l" 'vterm
-  "o" '("online-search" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x))))
+  "p" 'org-pomodoro
+  "y" 'copy-file
   "i" 'imenu-list-smart-toggle
   "k" 'kill-buffer
   "n" 'eval-defun
   "d" 'dired
-  "b" 'dape-breakpoint-toggle
   "p" 'eval-last-sexp
   "c" 'toggle-truncate-lines
   "a" 'org-agenda-list
-  "B" 'dape-breakpoint-remove-all
   "g" 'magit-status
   )
 
 
 (global-evil-definer emacs-lisp-mode-map
-  "m" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp"))))
+  "u" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp")))
+  "h" '("helpful-at-point" . (lambda () (interactive) (save-selected-window (helpful-at-point))))
+  "v" 'eval-expression)
+
+(after! eglot
+  (global-evil-definer eglot-mode-map
+    "h" 'eldoc-doc-buffer))
+
 (after! csharp-mode
   (global-evil-definer csharp-ts-mode-map
-    "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
+    "u" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
+
 (after! php-ts-mode
   (global-evil-definer php-ts-mode-map
-    "m" 'php-browse-manual))
+    "u" 'php-browse-manual))
+
 (after! python
   (global-evil-definer python-ts-mode-map
-    "m" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Adocs.python.org"))))))
+    "u" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Adocs.python.org"))))))
 
 (after! csharp-mode
   (global-evil-definer csharp-ts-mode-map
     "r" 'sharper-transient-run))
+
+
 (after! python
   (global-evil-definer python-ts-mode-map
     "r" '("python-run-script" . (lambda ()                             
@@ -456,13 +531,38 @@ things you want byte-compiled in them! Like function/macro definitions."
   (global-evil-definer LaTeX-mode-map
     "r" 'TeX-command-master))
 
+(defun org-run-at-point ()
+  "Run table formula or code block at point."
+  (interactive)
+  (let* ((context
+          (org-element-lineage
+           (org-element-context)
+           '(src-block inline-src-block table-cell) t))
+         (type (org-element-type context)))
+    (pcase type
+      ((or `inline-src-block `src-block)
+       (unless org-babel-no-eval-on-ctrl-c-ctrl-c
+	 (org-babel-eval-wipe-error-buffer)
+	 (org-babel-execute-src-block
+	  current-prefix-arg (org-babel-get-src-block-info nil context))))
+      (`table-cell
+       (call-interactively #'org-table-eval-formula)))))
+;;@org
+(after! org
+  (global-evil-definer org-mode-map
+    "r" 'org-run-at-point
+    "v" 'eval-expression))
+
 (global-evil-definer emacs-lisp-mode-map
   "v" 'eval-expression)
+
+;;@dape
 (after! dape
   (global-evil-definer
     ;; dape doesn't have an active mode-map
     :predicate 'dape-active-mode
     "v" 'dape-evaluate-expression))
+
 (after! edebug
   (global-evil-definer
     "v" 'edebug-eval))
@@ -491,6 +591,7 @@ things you want byte-compiled in them! Like function/macro definitions."
     "b" 'sharper-transient-build
     "m" 'sharper-main-transient))
 
+;;@dape
 (after! dape
   (+general-global-code
     "d" 'dape
@@ -514,26 +615,48 @@ things you want byte-compiled in them! Like function/macro definitions."
 (+general-global-file
   "d" 'delete-file)
 
+(defun cycle-theme ()
+  "Cycle through preferred themes."
+  (interactive)
+  (cond ((equal custom-enabled-themes '(modus-vivendi)) (disable-theme 'modus-vivendi) (load-theme 'tango-dark))
+        ((equal custom-enabled-themes '(tango-dark)) (disable-theme 'tango-dark) (load-theme 'modus-operandi-tinted))
+        ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
+        ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))
 
 (+general-global-menu! "miscellaneous" "s")
 (+general-global-miscellaneous
-  "t" '("toggle-theme" . (lambda ()
-                           "Toggle theme"
-                           (interactive)
-                           (cond ((equal custom-enabled-themes '(modus-vivendi)) (disable-theme 'modus-vivendi) (load-theme 'tango-dark))
-                                 ((equal custom-enabled-themes '(tango-dark)) (disable-theme 'tango-dark) (load-theme 'modus-operandi-tinted))
-                                 ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
-                                 ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))))
+  "t" 'cycle-theme
+  "s" '("online-search" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x)))))
 
+;;@org
 (+general-global-menu! "org" "o")
-(+general-global-org
-  "t" '("org-match-sparse-tree-heading" . (lambda ()
-                                            "Check heading of each tag"
+(+general-global-org org-mode-map
+  "t" '("org-match-sparse-tree-same-visibility" . (lambda ()
+                                            "Match tags to headings but don't change the current visibility."
                                             (interactive)
-                                            (org-match-sparse-tree)
-                                            (org-shifttab 1)))
+                                            (org-save-outline-visibility nil (org-match-sparse-tree))
+                                            ))
   "f" 'org-forward-heading-same-level
-  "b" 'org-backward-heading-same-level)
+  "b" 'org-backward-heading-same-level
+  "r" 'org-timer-set-timer
+  "s" 'org-timer-stop
+  "e" 'org-table-create-or-convert-from-region)
+
+(+general-global-menu! "window" "w")
+(+general-global-window
+  "f" 'make-frame-command)
+;;; fixing overrides
+
+(general-unbind iedit-mode-keymap
+  "TAB"
+  "<tab>"
+  "<backtab")
+
+(after! org-remark
+  (general-def 'normal Info-mode-map
+    "s" 'evil-snipe-s
+    "S" 'evil-snipe-S))
+
 
 ;;;; text editing
 
@@ -544,7 +667,6 @@ things you want byte-compiled in them! Like function/macro definitions."
     (setq evil-undo-system 'undo-redo)
     ;; `evil-collection' assumes `evil-want-keybinding' is set to
     ;; `nil' before loading `evil' and `evil-collection'
-    ;; @see https://github.com/emacs-evil/evil-collection#installation
     (setq evil-want-keybinding nil))
   (evil-mode 1)
   :custom
@@ -603,7 +725,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 ;;;; org
-
 
 
 ;;;###autoload
@@ -693,6 +814,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 
+;;@org
 (use-package org
   :straight t
   :hook ((org-agenda-finalize . my-org-agenda-to-appt)
@@ -740,6 +862,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
   )
 
+;;@org
 ;; package doesn't work with straight for some reason
 (use-package org-remark
   :after org
@@ -783,6 +906,7 @@ things you want byte-compiled in them! Like function/macro definitions."
         (org-clock-out))))
 
 
+;;@org
 (use-package org-pomodoro
   :straight t
   :after org
@@ -800,6 +924,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill)
   )
 
+;;@org
 (use-package evil-org
   :straight t
   :after (evil org)
@@ -824,7 +949,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (TeX-parse-self t)
   )
 
-
+;;@org
 (use-package ob-racket
   :after org
   :config
@@ -844,6 +969,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package magit
   :straight t)
 
+;;@dape
 (use-package dape
   :straight t
   :init
@@ -1000,6 +1126,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (add-to-list 'completion-at-point-functions #'yasnippet-capf)
   )
 
+;;@org
 (use-package yasnippet-capf
   :straight t
   :init
@@ -1059,6 +1186,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; modus-viviendi-tinted C#
 ;; modus-viviendi Elisp
 
+;;@dape
 (use-package popper
   :straight t ; or :straight t
   :init
@@ -1073,7 +1201,7 @@ things you want byte-compiled in them! Like function/macro definitions."
           "\\*shell\\*"
           "\\*Python\\*"
           "\\*ielm\\*"
-          "\\*dape-shell\\*"
+          "\\*dape-shell\\*" 
           "\\*Racket"
           "\\*vterm\\*"
           debugger-mode
@@ -1090,6 +1218,7 @@ things you want byte-compiled in them! Like function/macro definitions."
         (max-height (floor (* 0.50 (frame-height)))))
     (fit-window-to-buffer window max-height window-min-height max-width)))
 
+;;@dape
 (use-package window
   :custom
   (menu-bar-mode nil)
@@ -1111,7 +1240,7 @@ things you want byte-compiled in them! Like function/macro definitions."
       (side . right)
       (slot . -1)
       (window-width . my-fit-window-to-right-side))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*\\|\\*dape-shell\\*\\|\\*Racket\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode))
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*\\|\\*dape-shell\\*\\|\\*Racket\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
       (display-buffer-reuse-window display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
@@ -1228,6 +1357,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
+;;@org
 (use-package adaptive-wrap
   :straight t
   :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode dired-mode helpful-mode info-mode) . adaptive-wrap-prefix-mode)
@@ -1288,6 +1418,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;;; emacs default
 
+;;@org
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
   :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . display-line-numbers-mode)
