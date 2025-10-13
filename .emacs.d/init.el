@@ -43,6 +43,7 @@
   :demand t
   :config
   (general-evil-setup)
+  (general-auto-unbind-keys)
   )
 
 
@@ -214,12 +215,31 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; F6 dape-stack-select-down
 ;; F7 dape-stack-select-up
 ;; F8 dape-watch-dwim
-;; F9 dape-breakpoint
-;; F10 dape-breakpoint-log
+;; F9 dape-breakpoint-toggle
+;; F10 dape-breakpoint-log (logs)
 ;; F11 dape-breakpoint-expression
 ;; F12 dape-breakpoint-remove-all
 ;; <pause> dape-pause
 ;; Z Q dape-quit
+
+;; edebug
+;; F1 edebug-step-mode
+;; F2 edebug-go-mode
+;; F3 edebug-step-out
+;; F4 edebug-step-in
+;; F6 edebug-pop-to-backtrace
+;; F7 edebug-pop-to-backtrace
+;; F8 edebug-visit-eval-list
+;; F9 edebug-set-breakpoint
+;; F10 edebug-unset-breakpoint
+;; F11 edebug-set-conditional-breakpoint
+;; F12 edebug-unset-breakpoints
+;; Z Q top-level
+;; <home> edebug-where
+
+;; edebug-eval-mode-map
+;; <enter> edebug-update-eval-list
+;; <home> edebug-where
 
 ;; yas
 ;; C-<tab> yas-keymap
@@ -267,7 +287,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC e d dape 
 ;; , g magit-status
 ;; , k kill-buffer
-;; , p evaluate sexp 
+;; , v eval-expression / dape-evaluate-expression / edebug-eval-expression (, V eval-expression)
 ;; SPC s t toggle-theme
 ;; , c toggle-truncate-lines 
 ;; SPC o r org-timer-set-timer 
@@ -299,6 +319,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; SPC j h project-search
 
 ;; to add
+;; fit-window-to-buffer
 
 ;;; minibuffer
 (general-def vertico-map
@@ -363,7 +384,10 @@ things you want byte-compiled in them! Like function/macro definitions."
 (after! magit
   (general-def 'normal magit-mode-map
     "<escape>" 'magit-mode-bury-buffer)
-  (general-def magit-section-mode-map
+  (general-def '(visual normal) magit-mode-map
+    "] ]" 'magit-section-forward
+    "[ [" 'magit-section-backward)
+  (general-def 'normal magit-section-mode-map
     "] ]" 'magit-section-forward
     "[ [" 'magit-section-backward))
 
@@ -418,6 +442,30 @@ things you want byte-compiled in them! Like function/macro definitions."
         which-key-replacement-alist)
   )
 
+
+(after! edebug
+  (setq edebug-mode-map (make-sparse-keymap))
+  (general-def '(insert normal) edebug-mode-map
+    "<f1>" 'edebug-step-mode
+    "<f2>" 'edebug-go-mode
+    "<f3>" 'edebug-step-out
+    "<f4>" 'edebug-step-in
+    "<f6>" 'edebug-pop-to-backtrace
+    "<f7>" 'edebug-pop-to-backtrace
+    "<f8>" 'edebug-visit-eval-list
+    "<f9>" 'edebug-set-breakpoint
+    "<f10>" 'edebug-unset-breakpoint
+    "<f11>" 'edebug-set-conditional-breakpoint
+    "<f12>" 'edebug-unset-breakpoints
+    "<home>" 'edebug-where
+    )
+  (general-def 'normal edebug-mode-map
+    "Z Q" 'top-level)
+  (general-def '(normal insert) edebug-eval-mode-map
+    "<enter>" 'edebug-update-eval-list
+    "<home>" 'edebug-where))
+
+
 ;;; evil addons
 (general-def 'normal
   "C-S-d" 'evil-scroll-up
@@ -432,6 +480,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 ;;; modification keys
+
 
 (defun smart-tab ()
   (interactive)
@@ -481,7 +530,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   "k" 'kill-buffer
   "n" 'eval-defun
   "d" 'dired
-  "p" 'eval-last-sexp
   "c" 'toggle-truncate-lines
   "a" 'org-agenda-list
   "g" 'magit-status
@@ -567,8 +615,9 @@ things you want byte-compiled in them! Like function/macro definitions."
     "v" 'dape-evaluate-expression))
 
 (after! edebug
-  (global-evil-definer
-    "v" 'edebug-eval))
+  (global-evil-definer edebug-mode-map
+    "v" 'edebug-eval-expression
+    "V" 'eval-expression))
 
 
 ;;; space global commands
@@ -949,6 +998,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;;; code
 
+
 (use-package racket-mode
   :straight t
   )
@@ -997,7 +1047,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   :custom
   (dape-key-prefix nil)
   (dape-buffer-window-arrangement 'gud)
-  (dape-breakpoint-global-mode)
   (dape-info-hide-mode-line nil)
 
   )
@@ -1014,9 +1063,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 (use-package eglot
-  :init
-  ;;  (add-to-list 'exec-path (concat user-emacs-directory "langservers/csharp/omnisharp/"))
-  ;;  (add-to-list 'exec-path (concat user-emacs-directory "langservers/LaTeX/"))
   :hook ((csharp-ts-mode . eglot-ensure)
          (python-ts-mode . eglot-ensure)
          (LaTeX-mode . eglot-ensure))
@@ -1025,7 +1071,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
   ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
   ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
-                                        ;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
+  ;;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
   (add-hook 'eglot-managed-mode-hook #'my-eglot-capf)
   (add-to-list 'eglot-server-programs
                '(LaTeX-mode . ("texlab")))
