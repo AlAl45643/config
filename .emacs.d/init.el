@@ -1,7 +1,3 @@
-;;;; tags
-;; dape
-;; org
-
 ;;;; PACKAGE management
 
 (defvar bootstrap-version)
@@ -24,7 +20,6 @@
 ;; Sometimes necessary
 ;; (straight-pull-recipe-repositories)
 
-(add-to-list 'exec-path (concat user-emacs-directory "bin/"))
 
 (use-package use-package-core
   :custom
@@ -36,7 +31,216 @@
   :straight t
   )
 
-;;; keybinds
+;;;; personal variables
+(add-to-list 'exec-path (concat user-emacs-directory "bin/"))
+
+;;;; keybinds
+
+;; Keymaps                                  Default binding functions                     General.el functions                   Examples
+;; Overriding terminal-local map                                                                                                 transient
+;; Overriding local map
+;; Point Property keymaps                                                                                                        magit diffs
+;; Emulation mode map alists
+;;; Intercept keymaps              -        evil-make-intercept-map             -         general-def '(states) 'override        edebug-mode-map 
+;;; Local state keymaps            -        evil-local-set-key                  -         general-def '(states) 'local            
+;;; Minor-mode keymaps             -        evil-define-minor-mode-key          -         general-def '(states) minor-mode-map   evil org mode
+;;; Auxiliary/mode keymaps         -        evil-define-key                     -         general-def '(states) major-mode-map   evil commentary
+;;; Overriding keymaps             -        evil-make-overriding-map            -             
+;;; Global state keymaps           -        evil-global-set-key                 -         general-def '(states)...               vim keybindings
+;; Minor mode overriding map alist -                                                      general-def 'override 
+;; Buffer local keymap (general.el)-                                                      general-def 'local
+;; Minor mode keymaps              -        define-key minor-mode-map           -         general-def keymap...                  tab-bar-mode
+;; Local keymaps                   -        define-key major-mode-map           -         general-def keymap...                   
+;; Global keymaps                  -        global-set-key                      -         general-def... 
+
+;; notes
+;; + Using (evil-make-intercept-map) will not place the keymap in evil-intercept-maps as that has no effect but in the minor-mode-keymaps with an intercept state which has the same functionality.
+;; + Keys defined with evil-define-key for a minor-mode and general-def depending on if it uses evil-define-key internally may not work immediately requiring #'evil-normalize-keymaps to be added to the mode's hook. Consider using general-add-hook for its transient feature in removing the function from the hook after running.
+
+;; Keybind conventions
+;; <escape> ephermal quit
+;; Z Q non epehermal quit
+;; C-j C-k when j k isn't available
+;; g j g k next same heading
+;; ]] [[ next visible heading
+;; C-S-j C-S-k next grouping or scroll
+
+
+;;; rules
+;; guiding values 
+;; - A keybind should be 1. useful 2. memorable 3. shorter than less used keybinds and longer than more used keybinds
+;; - How useful a keybind is depends on its mode.
+;; - A keybind should be as textually close to other keybinds as to the degree of their conflict. This is necessary as if new keybinds were to be bound without considering all previously bound keybinds then it cannot possibily be shorter than less used keybinds.
+;; - Emacs prefixes should be incorporated into your keybind scheme so that you can discover more useful keybinds and that your keybind scheme if not optimal is most likely useful.
+;; binding rules
+;; 1. All keybinds shall be categorized by the module keymap they are bounded in. 
+;; 2. , prefix commands should be command with higher frequency of use than SPC prefix commands.
+;; 3. Commands must be changed in the notes before they are changed in the code
+;; 4. Prefer funtions bound to keys rather than lambdas. 
+;; 5. Incorporate emacs prefixes such as C-h and C-x for reliability and discoveribility
+;; 6. Prefer binding to prefix-maps when incorporating emacs prefixes.
+;; 7. when defining a keybind for a command follow these steps: 
+;;    1. is the command useful?
+;;    2. what is the shortest memorable keybind you can think of?
+;;    3. is the keybind available? if it is, then bind the keybind to the command. if not, then is the command currently bound less used than our command? if it is, then replace the command and redo step 7 for the command you replaced. if it is not, then think of the next shortest memorable keybind and redo step 3.
+;; 8. Prefer binding to evil keymaps when possible.
+;; 9. Only defer load for keybinds when keymap isn't available or commands aren't needed until package is loaded.
+;; 10. Don't put functions in after!
+;;
+;; SPC prefix semantic rules
+;; 1. Only infix keys are allowed in the top level SPC- menu.
+;; 2. Infix keys should be a unique and specific keyword for each command it contains.
+;; 3. Commands with similar functionality and keyword but in different infixes should have the same key.
+;;
+;; , prefix semantic rules
+;; 1. No infix keys except modifier keys.
+
+;; my-global-evil-map
+;; all (C-) , s switch-to-buffer
+;; all (C-) , r my-run-program
+;; all (C-) , t popper-toggle
+;; all (C-) , e my-save-all-buffers
+;; all (C-) , f find-file
+;; all (C-) , y copy-file 
+;; all (C-) , l vterm
+;; all (C-) , d dired
+;; all (C-) , n eval-defun
+;; all (C-) , i imenu-list-smart-toggle
+;; all (C-) , k kill-buffer
+;; all (C-) , v my-eval-expression 
+;; all (C-) , u my-browse-documentation 
+;; all (C-) , c toggle-truncate-lines 
+;; all (C-) , 1 my-window-bookmark-home
+;; all (C-) , m make-frame-command
+;; all (C-) , o my-online-search
+;; all (C-) , g magit-status
+;; all (C-) , , evil-snipe-repeat-reverse
+;; all (C-) , p org-pomodoro 
+;; all (C-) , a org-agenda 
+
+;; my-general-global-menu-map
+;; all (M-) SPC e t my-test-code 
+;; all (M-) SPC e b my-build-code
+;; all (M-) SPC e a my-code-action
+;; all (M-) SPC e d dape
+;; all (M-) SPC e i dape-info
+;; all (M-) SPC e m sharper-main-transient
+;; all (M-) SPC s t toggle-theme
+;; all (M-) SPC p p completion-at-point
+;; all (M-) SPC f d delete-file
+;; all (M-) SPC j s project-switch-to-buffer
+;; all (M-) SPC j f project-find-file
+;; all (M-) SPC j j project-switch-project
+;; all (M-) SPC j h project-search
+;; all (M-) SPC v s eval-last-sexp
+;; all (M-) SPC v b eval-buffer
+;; all (M-) SPC v r eval-region
+;; all (M-) SPC m (general-simulate-key "C-c")
+;; all (M-) SPC h help-map
+;; all (M-) SPC x ctl-x-map
+
+
+;; evil-intercept-maps
+;; s evil-snipe-s
+;; S evil-snipe-S
+
+;; evil-normal-state-map evil-insert-state-map
+;; normal = = format-buffer
+;; normal C-S-d evil-scroll-up
+;; [ x xref-go-back
+;; ] x xref-go-forward
+;; g d xref-find-definitions
+;; TAB smart-tab
+;; g h help-at-point
+
+;; help-map
+;; normal insert C-h f helpful-callable
+;; normal insert C-h v helpful-variable
+;; normal insert C-h k helpful-key
+;; normal insert C-h x helpful-command
+;; normal insert C-h F helpful-function
+
+;; vertico-map
+;; C-j vertico-next
+;; C-k vertico-previous
+;; C-b evil-backward char
+;; C-f evil-forward char
+;; C-S-j scroll-down-command
+;; C-S-k scroll-up-command
+;; normal <escape> abort-recursive-edit
+
+;; corfu-mode-map
+;; insert C-SPC corfu-insert-separator
+;; insert RET nil
+
+;; corfu-popupinfo-map
+;; C-h corfu-popupinfo-toggle
+;; C-S-j corfu-popupinfo-scroll-up
+;; C-S-k corfu-popupinfo-scroll-down
+
+;; dape-breakpoint-global-mode-map
+;; insert normal F1 my-dape-start-next
+;; insert normal F2 dape-continue
+;; insert normal F3 dape-step-out
+;; insert normal F4 dape-step-in
+;; insert normal F5 dape-thread
+;; insert normal F6 dape-stack-select-down
+;; insert normal F7 dape-stack-select-up
+;; insert normal F8 dape-watch-dwim
+;; insert normal F9 dape-breakpoint-toggle
+;; insert normal F10 dape-breakpoint-log 
+;; insert normal F11 dape-breakpoint-expression
+;; insert normal F12 dape-breakpoint-remove-all
+;; insert normal <pause> dape-pause
+;; normal Z Q dape-quit
+;; dape minor mode
+
+;; edebug-mode-map
+;; insert normal F1 edebug-step-mode
+;; insert normal F2 edebug-go-mode
+;; insert normal F3 edebug-step-out
+;; insert normal F4 edebug-step-in
+;; insert normal F6 edebug-pop-to-backtrace
+;; insert normal F7 edebug-pop-to-backtrace
+;; insert normal F8 edebug-visit-eval-list
+;; insert normal F9 edebug-set-breakpoint
+;; insert normal F10 edebug-unset-breakpoint
+;; insert normal F11 edebug-set-conditional-breakpoint
+;; insert normal F12 edebug-unset-breakpoints
+;; insert normal <home> edebug-where
+;; normal normal Z Q top-level
+
+;; edebug-eval-mode-map
+;; insert normal RET edebug-update-eval-list
+;; insert normal <home> edebug-where
+;; magit-mode-map magit-section-mode-map
+;; normal <escape> magit-mode-bury-buffer
+;; insert normal visual ] ] magit-section-forward
+;; [ [ magit-section-backward
+
+;; org-mode-map
+;; C-<tab> org-cycle
+;; C-<iso-lefttab> org-shifttab
+
+;; org-agenda-mode-map
+;; normal <escape> org-agenda-quit 
+
+;; org-remark-mode-map
+;; visual Enter org-remark-mark
+;; normal o org-remark-open
+;; normal ]m org-remark-view-next
+
+;; yas-keymap
+;; C-<tab> yas-next-field
+;; C-<iso-lefttab> yas-prev-field
+
+;; imenu-list-major-mode-map
+;; normal <return> imenu-goto-node
+;; normal <escape> imenu-list-quit-window
+
+;; dired-mode-map
+;; normal <escape> quit-window
+
 
 (use-package general
   :straight t
@@ -46,40 +250,19 @@
   (general-auto-unbind-keys)
   )
 
-
-(general-create-definer global-evil-definer
-  :keymaps 'override
-  :states '(insert normal hybrid motion visual operator)
-  :prefix ","
-  :non-normal-prefix "C-,")
-
-;; may use someday
-;; (general-create-definer global-leader
-;;   :keymaps 'override
-;;   :states '(insert normal hybrid motion visual operator)
-;;   :prefix "SPC m"
-;;   :non-normal-prefix "M-SPC m"
-;;   "" '(:ignore t :which-key (lambda (arg) (cons (cadr (split-string (car arg) " ")) (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))))
-
-(defmacro +general-global-menu! (name infix-key &rest body)
-  "Create a definer named +general-global-NAME.
- Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY."
-  (declare (indent 2))
-  `(progn
-     ;; don't use :which-key it is less performant according to general.el author
-     ;; also for some reason which-key duplicates keybindings
-     (which-key-add-key-based-replacements (concat "SPC " ,infix-key) ,name)  
-     (which-key-add-key-based-replacements (concat "M-SPC " ,infix-key) ,name)  
-     (general-create-definer ,(intern (concat "+general-global-" name))
-       :keymaps 'override
-       :states '(insert normal hybrid motion visual operator)
-       :prefix "SPC"
-       :non-normal-prefix "M-SPC"
-       :infix ,infix-key
-       )
-     (,(intern (concat "+general-global-" name))
-      ,@body)))
-
+(use-package evil
+  :straight t
+  :demand t
+  :init
+  (progn
+    (setq evil-undo-system 'undo-redo)
+    ;; `evil-collection' assumes `evil-want-keybinding' is set to
+    ;; `nil' before loading `evil' and `evil-collection'
+    (setq evil-want-keybinding nil))
+  (evil-mode 1)
+  :custom
+  (evil-want-minibuffer t)
+  )
 
 (defmacro after! (package &rest body)
   "Evaluate BODY after PACKAGE have loaded.
@@ -110,7 +293,7 @@ Since the contents of these blocks will never by byte-compiled, avoid putting
 things you want byte-compiled in them! Like function/macro definitions."
   (declare (indent defun) (debug t))
   (if (symbolp package)
-      (unless (memq package (bound-and-true-p disabled-packages))
+      (unless (memq package (bound-and-true-p doom-disabled-packages))
         (list (if (or (not (bound-and-true-p byte-compile-current-file))
                       (require package nil 'noerror))
                   #'progn
@@ -126,283 +309,318 @@ things you want byte-compiled in them! Like function/macro definitions."
                (setq body `((after! ,next ,@body)))))
             (`(after! (:and ,@package) ,@body))))))
 
+(defun my-run-program ()
+  "Run program at point depending on mode."
+  (interactive)
+  (cond
+   ((equal major-mode (or 'python-ts-mode 'python-mode))
+    (if (not (get-buffer "*Python*"))    
+        (run-python "python3 -i" nil t)
+      (let ((kill-buffer-query-functions nil))
+        (kill-buffer "*Python*"))
+      (run-python "python3 -i" nil t)
+      ;; Without this line python returns NameError: name '__PYTHON_EL_eval_file' is not defined
+      (sit-for 1)
+      (python-shell-send-buffer)           
+      (pop-to-buffer "*Python*")           
+      ))
+   ((equal major-mode (or 'csharp-ts-mode 'csharp-mode)) (sharper-transient-run))
+   ((equal major-mode 'LaTeX-mode) (call-interactively #'TeX-command-master))
+   (t (message "No program to run"))))
+
+(defun my-eval-expression ()
+  "Eval expression depending on mode."
+  (interactive)
+  (cond
+   ((equal major-mode 'dape-active-mode)
+    (call-interactively #'dape-evaluate-expression))
+   ((equal major-mode 'edebug-mode)
+    (call-interactively #'edebug-eval-expression))
+   (t (call-interactively #'eval-expression))))
+
+(defun my-save-all-buffers ()
+  "Save all buffers."
+  (interactive)
+  (save-some-buffers "!"))
+
+(defun my-browse-csharp-docs (x)
+  "Browse csharp docs by searching duckduckgo with site: learn.microsoft.com."
+  (interactive "sSearch: ")
+  (browse-url (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))
+
+(defun my-browse-python-docs (x)
+  "Browse python docs by search duckduckgo with site: docs.python.org"
+  (interactive "sSearch: ")
+  (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com")))
 
 
-
-;;; rules
-;; binding rules
-;; 1. All commands should be be classified as minibuffer, module, evil addons, modification, and global where minibuffer are commands in the minibuffer, module are commands specific to a state, evil addons are commands that should have been in evil that are not in minibuffer or module, modification are previous keybinds with improved functionality, and global is the default state,
-;; 2. Module, minibuffer, and evil commands should be bound using evil semantic rules while global commands should be bound using , prefix or SPC prefix semantic rules.
-;; 3. Global commands should be prioritized based on their frequency of use.
-;; 4. Global commands should be bound to , prefix unless there are no available semantic keybindings in , prefix left, then they should be bound to SPC prefix.
-;; 5. Commands must be changed in the notes before you change them in code.
-;;
-;; SPC prefix semantic rules
-;; 1. Infix keys should be unique and specific keyword for each command it contains.
-;; 2. Commands with similar functionality and keyword but in different infixes should have the same key.
-;; 3. Command keys should be based on a specific and unique keyword.
-;; 3. Command key should be either the first keyword character, last keyword character, or the first character of each syllable.  
-;; 4. Command keys should be the smoothest possible key.
-;;
-;; , prefix semantic rules
-;; 1. No infix keys except Shift are allowed.
-;; 2. Command keys should be based on a specific and unique keyword.
-;; 3. Command key should be either the first keyword character, last keyword character, or the first character of each syllable.
-;; 4. Command keys should be the smoothest possible key.
-;;
-;; general.el rules
-;; + Use definers when , prefix or SPC prefix.
-;; + Use mode-maps for mode-specific keybinds instead of :predicate or hooks unless mode-maps do not exist
-;; + Use mode-map with #'evil-make-intercept-map and #'evil-normalize hook instead of 'override with :predicate unless mode keymap does not exist
-;; 
-;; Active keymap hiearchy
-;; overriding-terminal-local-map
-;; overriding-local-map
-;; (get-char-property (point) 'keymap)
-;; emulation-mode-map-alists == general-override-mode-map (copying the ones with state) then evil-mode-maps
-;; minor-mode-overriding-map-alist
-;; minor-mode-map-alist == general-override-mode-map then minor-mode-maps
-;; (get-char-property (point) 'local-map)
-;; current-local-map
-;; current-global-map == emacs insert keys
-
-;;; Evil multi class keybinds (for reference)
-;; <escape> ephermal quit
-;; Z Q non epehermal quit
-;; C-j C-k when j k isn't available
-;; g j g k next same heading
-;; ]] [[ next visible heading
-;; C-S-j C-S-k next grouping or scroll
-
-;;; minibuffer specific command priority
-;; C-j vertico-next
-;; C-k vertico-previous
-;; C-b evil-backward char
-;; C-f evil-forward char
-;; C-S-j scroll-down-command
-;; C-S-k scroll-up-command
-;; <escape> abort-recursive-edit
+(defun my-browse-documentation ()
+  "Browse documentation for mode."
+  (interactive)
+  (cond
+   ((equal major-mode 'emacs-lisp-mode)
+    (info-other-window "elisp"))
+   ((equal major-mode (or 'csharp-ts-mode 'csharp-mode))
+    (call-interactively #'my-browse-csharp-docs))
+   ((equal major-mode (or 'php-ts-mode php-mode))
+    (php-browse-manual))
+   ((equal major-mode (or 'python-ts-mode 'python-mode))
+    (call-interactively #'my-browse-python-docs))))
 
 
-;;; evil addons 
-;; = = format-buffer
-;; C-S-d evil-scroll-up
-;; [ x xref-go-backward
-;; ] x xref-go-forward
+(defun my-window-bookmark-home ()
+  "Move to home bookmark."
+  (interactive)
+  (bookmark-maybe-load-default-file)
+  ;; work around to get org-agenda buffer working in bookmarks
+  (org-agenda-list)
+  (bookmark-jump "Burly: home"))
 
-;;; module specific command priority
-;; corfu
-;; C-SPC corfu-insert-separator
-;; C-h corfu-popupinfo-toggle
-;; C-S-j corfu-popupinfo-scroll-up
-;; C-S-k corfu-popupinfo-scroll-down
 
-;;@org
-;; remark
-;; Enter visual org-remark-mark
-;; o org-remark-open
+;; general , prefix
 
-;; imenu
-;; <return> imenu-goto-node
-;; <escape> imenu-list-quit-window
+(general-define-key
+ :keymaps 'override
+ :states '(insert normal hybrid motion visual operator)
+ :prefix-map 'my-global-evil-map
+ :prefix ","
+ :non-normal-prefix "C-,")
 
-;;@dape
-;; F1 dape-next / dape-start
-;; F2 dape-continue
-;; F3 dape-step-out
-;; F4 dape-step-in
-;; F5 dape-thread
-;; F6 dape-stack-select-down
-;; F7 dape-stack-select-up
-;; F8 dape-watch-dwim
-;; F9 dape-breakpoint-toggle
-;; F10 dape-breakpoint-log (logs)
-;; F11 dape-breakpoint-expression
-;; F12 dape-breakpoint-remove-all
-;; <pause> dape-pause
-;; Z Q dape-quit
+(general-create-definer global-evil-definer
+  :keymaps 'my-global-evil-map)
 
-;; edebug
-;; F1 edebug-step-mode
-;; F2 edebug-go-mode
-;; F3 edebug-step-out
-;; F4 edebug-step-in
-;; F6 edebug-pop-to-backtrace
-;; F7 edebug-pop-to-backtrace
-;; F8 edebug-visit-eval-list
-;; F9 edebug-set-breakpoint
-;; F10 edebug-unset-breakpoint
-;; F11 edebug-set-conditional-breakpoint
-;; F12 edebug-unset-breakpoints
-;; Z Q top-level
-;; <home> edebug-where
 
-;; edebug-eval-mode-map
-;; <enter> edebug-update-eval-list
-;; <home> edebug-where
-
-;; yas
-;; C-<tab> yas-keymap
-;; C-<iso-lefttab> yas-prev-field
-
-;; magit
-;; <escape> magit-mode-bury-buffer
-;; ] ] magit-section-forward
-;; [ [ magit-section-backward
-
-;; dired
-;; <escape> quit-window
-
-;; @org
-;; org table 
-;; C-<tab> org-cycle
-;; C-<iso-lefttab> org-shifttab
-
-;;; modification keys
-;; TAB smart-tab 
-;; g d goto-definition-at-point 
-;; ,, evil-snipe-repeat-reverse
-;; C-h f helpful-callable
-;; C-h v helpful-variable
-;; C-h k helpful-key
-;; C-h x helpful-command
-;; C-h F helpful-function
-;; C-S-d 'evil-scroll-up 
-
-;;@dape @org
-;;; global key commands priority
-;; , s switch-to-buffer
-;; , r run-at-point
-;; , t popper-toggle
-;; , e save-some-buffers
-;; , h description-at-point 
-;; , p org-pomodoro 
-;; SPC e t test-code 
-;; , f find-file
-;; , y copy-file 
-;; , l vterm
-;; , d project-dired
-;; , n eval-defun
-;; , i imenu-list-smart-toggle
-;; SPC e d dape 
-;; , g magit-status
-;; , k kill-buffer
-;; , v eval-expression / dape-evaluate-expression / edebug-eval-expression (, V eval-expression)
-;; SPC s t toggle-theme
-;; , c toggle-truncate-lines 
-;; SPC o r org-timer-set-timer 
-;; SPC w f make-frame-command
-;; , a org-agenda 
-;; SPC e a execute-code-action // eglot
-;; , u browse-documentation 
-;; SPC o s org-timer-stop
-;; SPC e b build-program 
-;; SPC w 1 window-bookmark-home
-;; SPC c q evil-mc-undo-all-cursors 
-;; SPC c a evil-mc-make-all-cursors
-;; SPC c o evil-mc-make-cursor-move-next-line
-;; SPC p p completion-at-point
-;; SPC s s online-search
-;; SPC e i dape-info
-;; SPC f d delete-file
-;; SPC o e org-table-create-or-convert-from-region
-;; SPC c h evil-mc-make-cursor-here 
-;; SPC c r evil-mc-resume-cursors 
-;; SPC c p evil-mc-pause-cursors 
-;; SPC e m sharper-main-transient
-;; SPC o t org-sparse-tree-heading-tag
-;; SPC o f org-forward-heading-same-level
-;; SPC o b org-backward-heading-same-level
-;; SPC j s project-switch-to-buffer
-;; SPC j f project-find-file
-;; SPC j j project-switch-project
-;; SPC j h project-search
-
-;; to add
-;; fit-window-to-buffer
-
-;;; minibuffer
-(general-def vertico-map
-  "C-j" 'vertico-next
-  "C-k" 'vertico-previous
-  "C-S-j" 'scroll-up-command
-  "C-b" 'evil-backward-char
-  "C-f" 'evil-forward-char
-  "C-S-k" 'scroll-down-command
+(global-evil-definer
+  "," 'evil-snipe-repeat-reverse
+  "s" 'switch-to-buffer
+  "r" 'my-run-program
+  "t" 'popper-toggle
+  "e" 'my-save-all-buffers
+  "p" 'org-pomodoro
+  "f" 'find-file
+  "y" 'copy-file
+  "l" 'vterm
+  "d" 'dired
+  "n" 'eval-defun
+  "i" 'imenu-list-smart-toggle
+  "g" 'magit-status
+  "k" 'kill-buffer
+  "v" 'my-eval-expression
+  "a" 'org-agenda-list
+  "u" 'my-browse-documentation
+  "c" 'toggle-truncate-lines
+  "m" 'make-frame-command
+  "1" 'my-window-bookmark-home
+  "o" 'my-online-search
+  "," 'evil-snipe-repeat-reverse
   )
-(general-def 'normal vertico-map
-  "<escape>" 'abort-recursive-edit)
+
+;; SPC keymaps
+
+(defun my-test-code ()
+  "Run test cases for program."
+  (interactive)
+  (cond
+   ((equal major-mode (or 'csharp-ts-mode 'csharp-mode))
+    (sharper-transient-test))
+   (t (message "%s" "No test cases to run."))))
+
+(defun my-build-code ()
+  "Build program."
+  (interactive)
+  (cond
+   ((equal major-mode (or 'csharp-ts-mode 'csharp-mode))
+    (sharper-transient-build))
+   (t (message "%s" "No program to build."))))
+
+(defun my-code-action ()
+  "Perform code actions at point."
+  (interactive)
+  (cond
+   (eglot--managed-mode (call-interactively 'eglot-code-actions))
+   (t (message "%s" "No code actions at point."))))
 
 
-;;; module specific keybinds
+(defun my-cycle-theme ()
+  "Cycle through preferred themes."
+  (interactive)
+  (cond ((equal custom-enabled-themes '(modus-vivendi)) (disable-theme 'modus-vivendi) (load-theme 'tango-dark))
+        ((equal custom-enabled-themes '(tango-dark)) (disable-theme 'tango-dark) (load-theme 'modus-operandi-tinted))
+        ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
+        ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))
 
+(general-define-key
+ :keymaps 'override
+ :states '(insert normal hybrid motion visual operator)
+ :prefix-map 'my-general-global-menu-map
+ :prefix "SPC"
+ :non-normal-prefix "M-SPC")
+
+(defmacro +general-global-menu! (name prefix-key &rest body)
+  "Create a definer named +general-global-NAME.
+  Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY."
+  (declare (indent 2))
+  `(progn
+     ;; find a way to replace this with keymap based replacement
+     (which-key-add-key-based-replacements (concat "SPC " ,prefix-key) ,name)
+     (which-key-add-key-based-replacements (concat "M-SPC " ,prefix-key) ,name)
+     (general-define-key
+      :keymaps 'my-general-global-menu-map
+      :prefix-map ',(intern (concat "my-" name "-map"))
+      :prefix ,prefix-key)
+     (general-create-definer ,(intern (concat "+general-global-" name))
+       :keymaps ',(intern (concat "my-" name "-map")))
+     (,(intern (concat "+general-global-" name))
+      ,@body)))
+
+(+general-global-menu! "code" "e"
+  "t" 'my-test-code
+  "b" 'my-build-code
+  "a" 'my-code-action
+  "d" 'dape
+  "i" 'dape-info
+  )
+
+(+general-global-menu! "miscellaneous" "s"
+  "t" 'my-cycle-theme)
+
+(+general-global-menu! "eval" "v"
+  "s" 'eval-last-sexp
+  "b" 'eval-buffer
+  "r" 'eval-region)
+
+(+general-global-menu! "completion" "p"
+  "p" 'completion-at-point)
+
+(+general-global-menu! "project" "j"
+  "f" 'project-find-file
+  "s" 'project-switch-to-buffer
+  "j" 'project-switch-project
+  "h" 'project-search)
+
+(+general-global-menu! "file" "f"
+  "d" 'delete-file)
+
+(general-define-key
+ :keymaps 'my-general-global-menu-map
+ "m" `("+major-mode" . ,(general-simulate-key "C-c"))
+ "h" `("help" . ,help-map)
+ "x" `("extend" . ,ctl-x-map)
+ )
+
+;; evil-intercept-maps
+(general-def 'normal 'override
+  "s" 'evil-snipe-s
+  "S" 'evil-snipe-S)
+
+;; evil-normal-state-map evil-insert-state-map
+(defun smart-tab ()
+  (interactive)
+  (cond ((buffer-local-value 'vertico--input (current-buffer)) (vertico-insert))
+        ((minibufferp) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
+                         (if res
+                             (completion-at-point)
+                           (hippie-expand nil)))) 
+        ((derived-mode-p 'eshell-mode 'comint-mod) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
+                                                     (if res
+                                                         (completion-at-point)
+                                                       (hippie-expand nil))))
+        ((and (frame-live-p corfu--frame) (frame-visible-p corfu--frame)) (corfu-insert))
+        (mark-active (indent-region (region-beginning) (region-end)))
+        ((looking-at "\\_>") (hippie-expand nil))
+        (t (indent-for-tab-command))))
+
+(defun my-format-buffer ()
+  (interactive)
+  (cond
+   (eglot--managed-mode (eglot-format-buffer))
+   (t (indent-region (point-min) (point-max)))))
+
+(defun my-help-at-point ()
+  (interactive)
+  (cond
+   (eglot--managed-mode (call-interactively 'eldoc-doc-buffer))
+   (t (save-selected-window (helpful-at-point)))))
+
+(general-def 'normal
+  "=" (general-key-dispatch 'evil-indent
+        "=" (my-format-buffer))
+  "C-S-d" 'evil-scroll-up
+  "[ x" 'xref-go-back
+  "] x" 'xref-go-forward
+  "g d" 'xref-find-definitions
+  "g h" 'my-help-at-point
+  )
+
+(general-def 'insert
+  "TAB" 'smart-tab)
+
+;; help-map
+(defun my-helpful-callable-save-window ()
+  (interactive)
+  (save-selected-window (call-interactively 'helpful-callable)))
+
+(defun my-helpful-variable-save-window ()
+  (interactive)
+  (save-selected-window (call-interactively 'helpful-variable)))
+
+(defun my-helpful-key-save-window ()
+  (interactive)
+  (save-selected-window (call-interactively 'helpful-key)))
+
+(defun my-helpful-command-save-window ()
+  (interactive)
+  (save-selected-window (call-interactively 'helpful-command)))
+
+(defun my-helpful-function-save-window ()
+  (interactive)
+  (save-selected-window (call-interactively 'helpful-function)))
+
+(after! help    
+  (general-def '(insert normal) help-map
+    "C-h f" 'my-helpful-callable-save-window
+    "C-h v" 'my-helpful-variable-save-window
+    "C-h k" 'my-helpful-key-save-window
+    "C-h x" 'my-helpful-command-save-window
+    "C-h F" 'my-helpful-function-save-window
+    ))
+
+;; vertico-map
+(after! vertico
+  (general-def '(insert normal) vertico-map
+    "C-j" 'vertico-next
+    "C-k" 'vertico-previous
+    "C-S-j" 'scroll-up-command
+    "C-b" 'evil-backward-char
+    "C-f" 'evil-forward-char
+    "C-S-k" 'scroll-down-command
+    )
+  (general-def 'normal vertico-map
+    "<escape>" 'abort-recursive-edit)
+  )
+
+
+;; corfu-mode-map
 (after! corfu
-  (general-def corfu-map
+  (general-def 'insert corfu-mode-map
     "C-SPC" 'corfu-insert-separator
     "RET" nil))
 
-
+;;corfu-popupinfo-map
 (after! corfu-popupinfo
-  (general-def corfu-popupinfo-map
+  (general-def 'insert corfu-popupinfo-map
     "C-h" 'corfu-popupinfo-toggle
     "C-S-j" 'corfu-popupinfo-scroll-up
     "C-S-k" 'corfu-popupinfo-scroll-down))
 
-;;@org
-(after! org-remark
-  (general-def 'visual org-remark-mode-map 
-    "<return>" 'org-remark-mark)
-  (general-def 'normal org-remark-mode-map
-    "o" 'org-remark-open
-    "]m" 'org-remark-view-next
-    "[m" 'org-remark-view-prev
-    "r" 'org-remark-delete))
+;; dape-breakpoint-global-mode-map
+(defun my-dape-start-next ()
+  "If dape is active, move to next stop, else start dape."
+  (interactive)
+  (if dape-active-mode
+      (call-interactively #'dape-next)
+    (call-interactively #'dape)))
 
-(after! imenu-list
-  (general-def imenu-list-major-mode-map
-    "<return>" (lambda (arg) (interactive "P")
-                 (if arg
-                     (progn (evil-goto-line arg) (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos)))
-                   (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos))))
-    )
-  (general-def 'normal imenu-list-major-mode-map
-    "<escape>" 'imenu-list-quit-window))
-
-;;@org
-(after! evil-org
-  (general-def org-mode-map
-    "C-<tab>" 'org-cycle
-    "C-<iso-lefttab>" 'org-shifttab))
-
-(after! yasnippet
-  (general-def yas-keymap
-    "<tab>" nil
-    "TAB" nil
-    "C-<tab>" 'yas-next-field
-    "C-<iso-lefttab>" 'yas-prev-field))
-
-(after! magit
-  (general-def 'normal magit-mode-map
-    "<escape>" 'magit-mode-bury-buffer)
-  (general-def '(visual normal) magit-mode-map
-    "] ]" 'magit-section-forward
-    "[ [" 'magit-section-backward)
-  (general-def 'normal magit-section-mode-map
-    "] ]" 'magit-section-forward
-    "[ [" 'magit-section-backward))
-
-(after! dired
-  (general-def 'normal dired-mode-map
-    "<escape>" 'quit-window))
-
-;;@org
-(after! org-agenda
-  (general-def 'normal org-agenda-mode-map
-    "<escape>" 'org-agenda-quit))
-
-
-
-;;@dape
 (after! dape
   ;; not added yet
   ;; dape-disassemble
@@ -412,27 +630,26 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; dape-until
   ;; 'override mode is an alias for general-override-mode-map 
   ;; '(insert normal) state is required for general.el to override evil keybindings
-  (general-def '(insert normal) 'override
-    :predicate 'dape-active-mode
-    "<f1>" 'dape-next
+  
+  (general-def '(insert normal) dape-breakpoint-global-mode-map
+    "<f1>" 'my-dape-start-next
     "<f2>" 'dape-continue
-    "<f3>" 'dape-step-in
-    "<f4>" 'dape-step-out
+    "<f3>" 'dape-step-out
+    "<f4>" 'dape-step-in
     "<f5>" 'dape-thread
     "<f6>" 'dape-stack-select-down
     "<f7>" 'dape-stack-select-up
     "<f8>" 'dape-watch-dwim
-    "<pause>" 'dape-pause
-    )
-  (general-def '(insert normal) dape-breakpoint-global-mode-map
-    "<f1>" 'dape
     "<f9>" 'dape-breakpoint-toggle
     "<f10>" 'dape-breakpoint-log
     "<f11>" 'dape-breakpoint-expression
-    "<f12>" 'dape-breakpoint-remove-all)
-  (general-def 'normal 'override
+    "<f12>" 'dape-breakpoint-remove-all
+    "<pause>" 'dape-pause
+    )
+  (general-def 'normal dape-breakpoint-global-mode-map
     :predicate 'dape-active-mode
     "Z Q" '("dape-quit" . dape-quit))
+
   (push (cons '("Z Q" . nil)
               (lambda (kb)
                 (cons (car kb)
@@ -442,7 +659,7 @@ things you want byte-compiled in them! Like function/macro definitions."
         which-key-replacement-alist)
   )
 
-
+;; edebug-mode-map edebug-eval-mode-map
 (after! edebug
   (setq edebug-mode-map (make-sparse-keymap))
   (general-def '(insert normal) edebug-mode-map
@@ -462,248 +679,70 @@ things you want byte-compiled in them! Like function/macro definitions."
   (general-def 'normal edebug-mode-map
     "Z Q" 'top-level)
   (general-def '(normal insert) edebug-eval-mode-map
-    "<enter>" 'edebug-update-eval-list
+    "RET" 'edebug-update-eval-list
     "<home>" 'edebug-where))
 
+;; magit-mode-map magit-section-mode-map
+(after! magit
+  (general-def 'normal magit-mode-map
+    "<escape>" 'magit-mode-bury-buffer)
+  (general-def '(visual normal) magit-mode-map
+    "] ]" 'magit-section-forward
+    "[ [" 'magit-section-backward)
+  (general-def 'normal magit-section-mode-map
+    "] ]" 'magit-section-forward
+    "[ [" 'magit-section-backward))
 
-;;; evil addons
-(general-def 'normal
-  "C-S-d" 'evil-scroll-up
-  "[ x" 'xref-go-back
-  "] x" 'xref-go-forward)
-
-(general-nmap "=" (general-key-dispatch 'evil-indent
-                    "=" (lambda () (interactive) (indent-region (point-min) (point-max)))))
-(after! eglot
-  (general-nmap eglot-mode-map "=" (general-key-dispatch 'evil-indent
-                                     "=" 'eglot-format-buffer)))
-
-
-;;; modification keys
-
-
-(defun smart-tab ()
-  (interactive)
-  (cond ((buffer-local-value 'vertico--input (current-buffer)) (vertico-insert))
-        ((minibufferp) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
-                         (if res
-                             (completion-at-point)
-                           (hippie-expand nil)))) 
-        ((derived-mode-p 'eshell-mode 'comint-mod) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
-                                                     (if res
-                                                         (completion-at-point)
-                                                       (hippie-expand nil))))
-        ((and (frame-live-p corfu--frame) (frame-visible-p corfu--frame)) (corfu-insert))
-        (mark-active (indent-region (region-beginning) (region-end)))
-        ((looking-at "\\_>") (hippie-expand nil))
-        (t (indent-for-tab-command))))
-
-(general-def 'insert
-  "TAB" 'smart-tab)
-
-(after! helpful
-  (general-def
-    "C-h f" '("helpful-callable" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-callable))))
-    "C-h v" '("helpful-variable" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-variable))))
-    "C-h k" '("helpful-key" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-key))))
-    "C-h x" '("helpful-command" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-command))))
-    "C-h F" '("helpful-function" . (lambda () (interactive) (save-selected-window (call-interactively 'helpful-function))))))
-
-(general-def 'normal
-  "g d" 'xref-find-definitions
-  )
-
-(global-evil-definer
-  "," 'evil-snipe-repeat-reverse)
-
-;;@org
-;;; evil , global key commands
-(global-evil-definer
-  "s" 'switch-to-buffer
-  "e" '("save-all-buffers" . (lambda () (interactive) (save-some-buffers "!")))
-  "t" 'popper-toggle
-  "f" 'find-file
-  "l" 'vterm
-  "p" 'org-pomodoro
-  "y" 'copy-file
-  "i" 'imenu-list-smart-toggle
-  "k" 'kill-buffer
-  "n" 'eval-defun
-  "d" 'dired
-  "c" 'toggle-truncate-lines
-  "a" 'org-agenda-list
-  "g" 'magit-status
-  )
-
-
-(global-evil-definer emacs-lisp-mode-map
-  "u" '("browse-documentation" . (lambda () (interactive) (info-other-window "elisp")))
-  "h" '("helpful-at-point" . (lambda () (interactive) (save-selected-window (helpful-at-point))))
-  "v" 'eval-expression)
-
-(after! eglot
-  (global-evil-definer eglot-mode-map
-    "h" 'eldoc-doc-buffer))
-
-(after! csharp-mode
-  (global-evil-definer csharp-ts-mode-map
-    "u" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com"))))))
-
-(after! php-ts-mode
-  (global-evil-definer php-ts-mode-map
-    "u" 'php-browse-manual))
-
-(after! python
-  (global-evil-definer python-ts-mode-map
-    "u" '("browse-documentation" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Adocs.python.org"))))))
-
-(after! csharp-mode
-  (global-evil-definer csharp-ts-mode-map
-    "r" 'sharper-transient-run))
-
-
-(after! python
-  (global-evil-definer python-ts-mode-map
-    "r" '("python-run-script" . (lambda ()                             
-                                  "Run python script"                  
-                                  (interactive)                        
-                                  (if (not (get-buffer "*Python*"))    
-                                      (run-python "python3 -i" nil t)
-                                    (let ((kill-buffer-query-functions nil))
-                                      (kill-buffer "*Python*"))
-                                    (run-python "python3 -i" nil t)
-                                    )
-                                  ;; Without this line python returns NameError: name '__PYTHON_EL_eval_file' is not defined
-                                  (sit-for 1)
-                                  (python-shell-send-buffer)           
-                                  (pop-to-buffer "*Python*")           
-                                  ))))                                 
-(after! latex
-  (global-evil-definer LaTeX-mode-map
-    "r" 'TeX-command-master))
-
-(defun org-run-at-point ()
-  "Run table formula or code block at point."
-  (interactive)
-  (let* ((context
-          (org-element-lineage
-           (org-element-context)
-           '(src-block inline-src-block table-cell) t))
-         (type (org-element-type context)))
-    (pcase type
-      ((or `inline-src-block `src-block)
-       (unless org-babel-no-eval-on-ctrl-c-ctrl-c
-	 (org-babel-eval-wipe-error-buffer)
-	 (org-babel-execute-src-block
-	  current-prefix-arg (org-babel-get-src-block-info nil context))))
-      (`table-cell
-       (call-interactively #'org-table-eval-formula)))))
-;;@org
+;; org-mode-map
 (after! org
-  (global-evil-definer org-mode-map
-    "r" 'org-run-at-point
-    "v" 'eval-expression))
+  (general-def org-mode-map
+    "C-<tab>" 'org-cycle
+    "C-<iso-lefttab>" 'org-shifttab))
 
-(global-evil-definer emacs-lisp-mode-map
-  "v" 'eval-expression)
-
-;;@dape
-(after! dape
-  (global-evil-definer
-    ;; dape doesn't have an active mode-map
-    :predicate 'dape-active-mode
-    "v" 'dape-evaluate-expression))
-
-(after! edebug
-  (global-evil-definer edebug-mode-map
-    "v" 'edebug-eval-expression
-    "V" 'eval-expression))
+;; org-agenda-mode-map
+(after! org-agenda
+  (general-def 'normal org-agenda-mode-map
+    "<escape>" 'org-agenda-quit))
 
 
-;;; space global commands
+;; org-remark-mode-map
+(after! org-remark
+  (general-def 'visual org-remark-mode-map 
+    "<return>" 'org-remark-mark)
+  (general-def 'normal org-remark-mode-map
+    "o" 'org-remark-open
+    "]m" 'org-remark-view-next
+    "[m" 'org-remark-view-prev
+    "r" 'org-remark-delete))
 
-(+general-global-menu! "cursor" "c")
-(+general-global-cursor
-  "q" 'evil-mc-undo-all-cursors
-  "a" 'evil-mc-make-all-cursors
-  "o" 'evil-mc-make-cursor-move-next-line
-  "c" 'evil-mc-make-cursor-here
-  "r" 'evil-mc-resume-cursors
-  "p" 'evil-mc-pause-cursors)
+;; yas-keymap
+(after! yasnippet
+  (general-def yas-keymap
+    "<tab>" nil
+    "TAB" nil
+    "C-<tab>" 'yas-next-field
+    "C-<iso-lefttab>" 'yas-prev-field))
 
-(+general-global-menu! "code" "e")
+;; imenu-list-major-mode-map
+(after! imenu-list
+  (general-def 'normal imenu-list-major-mode-map
+    "<return>" (lambda (arg) (interactive "P")
+                 (if arg
+                     (progn (evil-goto-line arg) (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos)))
+                   (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos))))
+    )
+  (general-def 'normal imenu-list-major-mode-map
+    "<escape>" 'imenu-list-quit-window))
 
-(after! eglot
-  (+general-global-code eglot-mode-map
-    "a" 'eglot-code-actions))
 
-(after! csharp-mode
-  (+general-global-code csharp-ts-mode-map
-    "t" 'sharper-transient-test
-    "b" 'sharper-transient-build
-    "m" 'sharper-main-transient))
+;; dired-mode-map
+(after! dired
+  (general-def 'normal dired-mode-map
+    "<escape>" 'quit-window))
 
-;;@dape
-(after! dape
-  (+general-global-code
-    "d" 'dape
-    "i" 'dape-info))
 
-(+general-global-menu! "completion" "p")
 
-(+general-global-completion
-  "p" 'completion-at-point)
 
-(+general-global-menu! "project" "j")
-
-(after! project
-  (+general-global-project
-    "f" 'project-find-file
-    "s" 'project-switch-to-buffer
-    "j" 'project-switch-project
-    "h" 'project-search))
-
-(+general-global-menu! "file" "f")
-(+general-global-file
-  "d" 'delete-file)
-
-(defun cycle-theme ()
-  "Cycle through preferred themes."
-  (interactive)
-  (cond ((equal custom-enabled-themes '(modus-vivendi)) (disable-theme 'modus-vivendi) (load-theme 'tango-dark))
-        ((equal custom-enabled-themes '(tango-dark)) (disable-theme 'tango-dark) (load-theme 'modus-operandi-tinted))
-        ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
-        ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))
-
-(+general-global-menu! "miscellaneous" "s")
-(+general-global-miscellaneous
-  "t" 'cycle-theme
-  "s" '("online-search" . (lambda (x) (interactive "sSearch: ") (browse-url (concat "https://duckduckgo.com/?q=" x)))))
-
-;;@org
-(+general-global-menu! "org" "o")
-(+general-global-org org-mode-map
-  "t" '("org-match-sparse-tree-same-visibility" . (lambda ()
-                                                    "Match tags to headings but don't change the current visibility."
-                                                    (interactive)
-                                                    (org-save-outline-visibility nil (org-match-sparse-tree))
-                                                    ))
-  "f" 'org-forward-heading-same-level
-  "b" 'org-backward-heading-same-level
-  "r" 'org-timer-set-timer
-  "s" 'org-timer-stop
-  "e" 'org-table-create-or-convert-from-region)
-
-(+general-global-menu! "window" "w")
-(+general-global-window
-  "f" 'make-frame-command
-  "1" '("open-bookmark-home" . (lambda ()
-                                 "Open home bookmark."
-                                 (interactive)
-                                 (bookmark-maybe-load-default-file)
-                                 ;; work around to get org-agenda buffer working in bookmarks
-                                 (org-agenda-list)
-                                 (bookmark-jump "Burly: home"))))
 
 ;;; fixing overrides
 
@@ -713,25 +752,10 @@ things you want byte-compiled in them! Like function/macro definitions."
   "<backtab")
 
 (after! org-remark
-  (general-def 'normal Info-mode-map
-    "s" 'evil-snipe-s
-    "S" 'evil-snipe-S))
-
+  )
 
 ;;;; text editing
 
-(use-package evil
-  :straight t
-  :init
-  (progn
-    (setq evil-undo-system 'undo-redo)
-    ;; `evil-collection' assumes `evil-want-keybinding' is set to
-    ;; `nil' before loading `evil' and `evil-collection'
-    (setq evil-want-keybinding nil))
-  (evil-mode 1)
-  :custom
-  (evil-want-minibuffer t)
-  )
 
 
 (use-package evil-collection
@@ -784,17 +808,14 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
-;;;; org
+;;; org
 
-
-;;;###autoload
 (defun my-org-agenda-to-appt ()
   "Erase all reminders and rebuilt reminders for today from the agenda."
   (interactive)
   (setq appt-time-msg-list nil)
   (org-agenda-to-appt))
 
-;;;###autoload
 (defun my-org-inf-repeat ()
   (interactive)
   "Treat the TODO as a repeater by logging it."
@@ -874,7 +895,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 
-;;@org
 (use-package org
   :straight t
   :hook ((org-agenda-finalize . my-org-agenda-to-appt)
@@ -922,8 +942,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
   )
 
-;;@org
-;; package doesn't work with straight for some reason
+
 (use-package org-remark
   :after org
   :straight t
@@ -934,14 +953,12 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
-;;;###autoload 
 (defun my-org-pomodoro-choose-break-time (arg)
   "Choose break time for pomodoro."
   (interactive "nBreak time (0 if overtime): ")
   (setq org-pomodoro-short-break-length arg))
 
 
-;;;###autoload
 (defun my-org-pomodoro-around-finished-with-overtime (orig-fun &rest args)
   "Advise around `org-pomodoro-finished' to choose break time"
   (org-pomodoro-play-sound :pomodoro)
@@ -951,14 +968,12 @@ things you want byte-compiled in them! Like function/macro definitions."
         (t (apply orig-fun args))))
 
 
-;;;###autoload
 (defun my-org-pomodoro-resume-after-break ()
   "Resume pomodoro timer if pomodoro timer is not currently in overtime."
   (save-window-excursion
     (org-clock-goto)
     (org-pomodoro)))
 
-;;;###autoload
 (defun my-org-pomodoro-clockout-before-kill ()
   "Clock out time before exiting `org-pomodoro' so time is accurately tracked."
   (if (org-clocking-p)
@@ -966,7 +981,6 @@ things you want byte-compiled in them! Like function/macro definitions."
         (org-clock-out))))
 
 
-;;@org
 (use-package org-pomodoro
   :straight t
   :after org
@@ -984,7 +998,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill)
   )
 
-;;@org
 (use-package evil-org
   :straight t
   :after (evil org)
@@ -1010,7 +1023,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   (TeX-parse-self t)
   )
 
-;;@org
 (use-package ob-racket
   :after org
   :config
@@ -1030,7 +1042,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 (use-package magit
   :straight t)
 
-;;@dape
 (use-package dape
   :straight t
   :init
@@ -1052,10 +1063,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
-;;;###autoload
 (defvar my-eglot-completion-functions (list #'cape-file #'yasnippet-capf #'eglot-completion-at-point))
 
-;;;###autoload
 (defun my-eglot-capf ()
   "Configure `completion-at-point-functions' with multiple backends such as yasnippet."
   (setq-local completion-at-point-functions
@@ -1178,13 +1187,11 @@ things you want byte-compiled in them! Like function/macro definitions."
   :straight t
   )
 
-;;;###autoload
 (defun my-yasnippet-add-completion-functions ()
   "Add yasnippet-capf to `completion-at-point-functions'."
   (add-to-list 'completion-at-point-functions #'yasnippet-capf)
   )
 
-;;@org
 (use-package yasnippet-capf
   :straight t
   :init
@@ -1244,7 +1251,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; modus-viviendi-tinted C#
 ;; modus-viviendi Elisp
 
-;;@dape
 (use-package popper
   :straight t ; or :straight t
   :init
@@ -1269,14 +1275,12 @@ things you want byte-compiled in them! Like function/macro definitions."
   (popper-mode +1)
   (popper-echo-mode +1))
 
-;;;###autoload
 (defun my-fit-window-to-right-side (window)
   "Use `fit-window-to-buffer' with right side window specifications."
   (let ((max-width (floor (* 0.35 (frame-width))))
         (max-height (floor (* 0.50 (frame-height)))))
     (fit-window-to-buffer window max-height window-min-height max-width)))
 
-;;@dape
 (use-package window
   :custom
   (menu-bar-mode nil)
@@ -1415,7 +1419,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
-;;@org
 (use-package adaptive-wrap
   :straight t
   :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode dired-mode helpful-mode info-mode) . adaptive-wrap-prefix-mode)
@@ -1442,6 +1445,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 
 ;;;; miscaleanous
+
 
 (use-package burly
   :demand t
@@ -1480,7 +1484,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;;;; emacs default
 
-;;@org
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
   :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . display-line-numbers-mode)
@@ -1537,4 +1540,3 @@ things you want byte-compiled in them! Like function/macro definitions."
    '(read-only t cursor-intangible t face minibuffer-prompt))
 
   )
-
