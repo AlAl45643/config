@@ -1,5 +1,4 @@
 ;;;; PACKAGE management
-
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
@@ -58,7 +57,7 @@
 ;; + Keys defined with evil-define-key for a minor-mode and general-def depending on if it uses evil-define-key internally may not work immediately requiring #'evil-normalize-keymaps to be added to the mode's hook. Consider using general-add-hook for its transient feature in removing the function from the hook after running.
 
 ;; Keybind conventions
-;; <escape> ephermal quit
+;; q ephermal quit
 ;; Z Q non epehermal quit
 ;; C-j C-k when j k isn't available
 ;; g j g k next same heading
@@ -68,24 +67,24 @@
 
 ;;; rules
 ;; guiding values 
-;; - A keybind should be 1. useful 2. memorable 3. shorter than less used keybinds and longer than more used keybinds
-;; - How useful a keybind is depends on its mode.
-;; - A keybind should be as textually close to other keybinds as to the degree of their conflict. This is necessary as if new keybinds were to be bound without considering all previously bound keybinds then it cannot possibily be shorter than less used keybinds.
-;; - Emacs prefixes should be incorporated into your keybind scheme so that you can discover more useful keybinds and that your keybind scheme if not optimal is most likely useful.
+;; + A keybind should be 1. useful 2. memorable 3. shorter than less used and longer than more used keybinds
+;; + Keybinds can be separated into three semantic categories. The first being keybinds that are only useful within a context (mode), the second being keybinds that are useful in any context (mode), and the third being keybinds that are somewhere between. 
+;; + A keybind should be as textually close to other keybinds as to the degree of their conflict. This is necessary as if new keybinds were to be bound without considering all previously bound keybinds then it cannot possibily be shorter than less used keybinds.
+;; + Emacs prefixes should be incorporated into your keybind scheme so that you can discover more useful keybinds and that your keybind scheme if not optimal is most likely useful.
+
 ;; binding rules
-;; 1. All keybinds shall be categorized by the module keymap they are bounded in. 
-;; 2. , prefix commands should be command with higher frequency of use than SPC prefix commands.
-;; 3. Commands must be changed in the notes before they are changed in the code
-;; 4. Prefer funtions bound to keys rather than lambdas. 
-;; 5. Incorporate emacs prefixes such as C-h and C-x for reliability and discoveribility
-;; 6. Prefer binding to prefix-maps when incorporating emacs prefixes.
-;; 7. when defining a keybind for a command follow these steps: 
-;;    1. is the command useful?
-;;    2. what is the shortest memorable keybind you can think of?
-;;    3. is the keybind available? if it is, then bind the keybind to the command. if not, then is the command currently bound less used than our command? if it is, then replace the command and redo step 7 for the command you replaced. if it is not, then think of the next shortest memorable keybind and redo step 3.
-;; 8. Prefer binding to evil keymaps when possible.
-;; 9. Only defer load for keybinds when keymap isn't available or commands aren't needed until package is loaded.
-;; 10. Don't put functions in after!
+;; +. , prefix commands should be commands with higher frequency of use than SPC prefix commands.
+;; +. The , prefix and the SPC prefix are restricted to global commands except SPC m. This does not contradict the 3rd rule as commands useful in one major mode, are unlikely to be more frequently used, they can still be bound to evil and F* keys, and the 2nd rule outweighs the 3rd. Furthermore, inbetween keybinds if they are more frequently used can be easily globalized as functions.
+;; +. All keybinds shall be categorized by the module keymap they are bounded in. 
+;; +. Commands must be changed in notes before they are changed in code.
+;; +. Incorporate emacs prefixes such as C-h and C-x for reliability and discoveribility.
+;; +. Prefer binding to prefix-maps when incorporating emacs prefixes.
+;; +. When defining a keybind for a command follow these steps: 
+;;    1. Is the command always useful? If it is then bind it in a global manner. If not, which mode is it useful in?
+;;    2. What is the shortest memorable keybind you can think of?
+;;    3. Is the keybind available? if it is, then bind the keybind to the command. if not, then is the command currently bound less used than our command? if it is, then replace the command and redo step 7 for the command you replaced. if it is not, then think of the next shortest memorable keybind and redo step 3.
+;; +. Only defer load for keybinds when keymap isn't available or commands aren't needed until package is loaded.
+;; +. Don't put functions in after!
 ;;
 ;; SPC prefix semantic rules
 ;; 1. Only infix keys are allowed in the top level SPC- menu.
@@ -139,11 +138,6 @@
 ;; all (M-) SPC h help-map
 ;; all (M-) SPC x ctl-x-map
 
-
-;; evil-intercept-maps
-;; s evil-snipe-s
-;; S evil-snipe-S
-
 ;; evil-normal-state-map evil-insert-state-map
 ;; normal = = format-buffer
 ;; normal C-S-d evil-scroll-up
@@ -167,7 +161,6 @@
 ;; C-f evil-forward char
 ;; C-S-j scroll-down-command
 ;; C-S-k scroll-up-command
-;; normal <escape> abort-recursive-edit
 
 ;; corfu-mode-map
 ;; insert C-SPC corfu-insert-separator
@@ -178,22 +171,35 @@
 ;; C-S-j corfu-popupinfo-scroll-up
 ;; C-S-k corfu-popupinfo-scroll-down
 
-;; dape-breakpoint-global-mode-map
-;; insert normal F1 my-dape-start-next
-;; insert normal F2 dape-continue
-;; insert normal F3 dape-step-out
-;; insert normal F4 dape-step-in
-;; insert normal F5 dape-thread
-;; insert normal F6 dape-stack-select-down
-;; insert normal F7 dape-stack-select-up
-;; insert normal F8 dape-watch-dwim
-;; insert normal F9 dape-breakpoint-toggle
-;; insert normal F10 dape-breakpoint-log 
-;; insert normal F11 dape-breakpoint-expression
-;; insert normal F12 dape-breakpoint-remove-all
-;; insert normal <pause> dape-pause
+;; python-mode-map csharp-mode-map
+;; normal insert (M-) SPC m <  dape-stack-select-up      
+;; normal insert (M-) SPC m >  dape-stack-select-down    
+;; normal insert (M-) SPC m B  dape-breakpoint-remove-all
+;; normal insert (M-) SPC m D  dape-disconnect-quit      
+;; normal insert (M-) SPC m M  dape-disassemble          
+;; normal insert (M-) SPC m R  dape-repl                 
+;; normal insert (M-) SPC m S  dape-select-stack         
+;; normal insert (M-) SPC m b  dape-breakpoint-toggle    
+;; normal insert (M-) SPC m e  dape-breakpoint-expression
+;; normal insert (M-) SPC m f  dape-restart-frame        
+;; normal insert (M-) SPC m h  dape-breakpoint-hits      
+;; normal insert (M-) SPC m i  dape-info                 
+;; normal insert (M-) SPC m l  dape-breakpoint-log       
+;; normal insert (M-) SPC m m  dape-memory               
+;; normal insert (M-) SPC m p  dape-pause                
+;; normal insert (M-) SPC m q  dape-quit                 
+;; normal insert (M-) SPC m r  dape-restart              
+;; normal insert (M-) SPC m t  dape-select-thread        
+;; normal insert (M-) SPC m u  dape-until                
+;; normal insert (M-) SPC m w  dape-watch-dwim           
+;; normal insert (M-) SPC m x  dape-evaluate-expression  
+
+;; dape-active-mode-map
+;; insert normal F5 dape-continue
+;; insert normal F6 dape-step-out
+;; insert normal F7 dape-step-in
+;; insert normal F8 dape-next
 ;; normal Z Q dape-quit
-;; dape minor mode
 
 ;; edebug-mode-map
 ;; insert normal F1 edebug-step-mode
@@ -213,8 +219,8 @@
 ;; edebug-eval-mode-map
 ;; insert normal RET edebug-update-eval-list
 ;; insert normal <home> edebug-where
+
 ;; magit-mode-map magit-section-mode-map
-;; normal <escape> magit-mode-bury-buffer
 ;; insert normal visual ] ] magit-section-forward
 ;; [ [ magit-section-backward
 
@@ -222,8 +228,6 @@
 ;; C-<tab> org-cycle
 ;; C-<iso-lefttab> org-shifttab
 
-;; org-agenda-mode-map
-;; normal <escape> org-agenda-quit 
 
 ;; org-remark-mode-map
 ;; visual Enter org-remark-mark
@@ -236,10 +240,7 @@
 
 ;; imenu-list-major-mode-map
 ;; normal <return> imenu-goto-node
-;; normal <escape> imenu-list-quit-window
 
-;; dired-mode-map
-;; normal <escape> quit-window
 
 
 (use-package general
@@ -336,7 +337,8 @@ things you want byte-compiled in them! Like function/macro definitions."
     (call-interactively #'dape-evaluate-expression))
    ((equal major-mode 'edebug-mode)
     (call-interactively #'edebug-eval-expression))
-   (t (call-interactively #'eval-expression))))
+   (t (call-interactively #'eval-expression)))
+  )
 
 (defun my-save-all-buffers ()
   "Save all buffers."
@@ -398,7 +400,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   "e" 'my-save-all-buffers
   "p" 'org-pomodoro
   "f" 'find-file
-  "y" 'copy-file
   "l" 'vterm
   "d" 'dired
   "n" 'eval-defun
@@ -437,7 +438,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "Perform code actions at point."
   (interactive)
   (cond
-   (eglot--managed-mode (call-interactively 'eglot-code-actions))
+   ((and (featurep 'eglot) eglot--managed-mode) (call-interactively 'eglot-code-actions))
    (t (message "%s" "No code actions at point."))))
 
 
@@ -478,7 +479,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   "b" 'my-build-code
   "a" 'my-code-action
   "d" 'dape
-  "i" 'dape-info
   )
 
 (+general-global-menu! "miscellaneous" "s"
@@ -499,7 +499,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   "h" 'project-search)
 
 (+general-global-menu! "file" "f"
-  "d" 'delete-file)
+  "d" 'delete-file
+  "c" 'copy-file)
 
 (general-define-key
  :keymaps 'my-general-global-menu-map
@@ -507,11 +508,6 @@ things you want byte-compiled in them! Like function/macro definitions."
  "h" `("help" . ,help-map)
  "x" `("extend" . ,ctl-x-map)
  )
-
-;; evil-intercept-maps
-(general-def 'normal 'override
-  "s" 'evil-snipe-s
-  "S" 'evil-snipe-S)
 
 ;; evil-normal-state-map evil-insert-state-map
 (defun smart-tab ()
@@ -533,13 +529,13 @@ things you want byte-compiled in them! Like function/macro definitions."
 (defun my-format-buffer ()
   (interactive)
   (cond
-   (eglot--managed-mode (eglot-format-buffer))
+   ((and (featurep 'eglot) eglot--managed-mode) (eglot-format-buffer))
    (t (indent-region (point-min) (point-max)))))
 
 (defun my-help-at-point ()
   (interactive)
   (cond
-   (eglot--managed-mode (call-interactively 'eldoc-doc-buffer))
+   ((and (featurep 'eglot) eglot--managed-mode) (call-interactively 'eldoc-doc-buffer))
    (t (save-selected-window (helpful-at-point)))))
 
 (general-def 'normal
@@ -577,7 +573,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (save-selected-window (call-interactively 'helpful-function)))
 
 (after! help    
-  (general-def '(insert normal) help-map
+  (general-def help-map
     "C-h f" 'my-helpful-callable-save-window
     "C-h v" 'my-helpful-variable-save-window
     "C-h k" 'my-helpful-key-save-window
@@ -595,20 +591,19 @@ things you want byte-compiled in them! Like function/macro definitions."
     "C-f" 'evil-forward-char
     "C-S-k" 'scroll-down-command
     )
-  (general-def 'normal vertico-map
-    "<escape>" 'abort-recursive-edit)
   )
 
 
 ;; corfu-mode-map
 (after! corfu
-  (general-def 'insert corfu-mode-map
+  (general-def corfu-map
     "C-SPC" 'corfu-insert-separator
-    "RET" nil))
+    "RET" nil
+    ))
 
 ;;corfu-popupinfo-map
 (after! corfu-popupinfo
-  (general-def 'insert corfu-popupinfo-map
+  (general-def corfu-popupinfo-map
     "C-h" 'corfu-popupinfo-toggle
     "C-S-j" 'corfu-popupinfo-scroll-up
     "C-S-k" 'corfu-popupinfo-scroll-down))
@@ -621,32 +616,16 @@ things you want byte-compiled in them! Like function/macro definitions."
       (call-interactively #'dape-next)
     (call-interactively #'dape)))
 
+
 (after! dape
-  ;; not added yet
-  ;; dape-disassemble
-  ;; dape-disconnect-quit
-  ;; dape-memory
-  ;; dape-restart-frame
-  ;; dape-until
-  ;; 'override mode is an alias for general-override-mode-map 
-  ;; '(insert normal) state is required for general.el to override evil keybindings
+  (general-def '(normal insert) 'override
+    :predicate 'dape-active-mode
+    "<f5>" 'dape-continue
+    "<f6>" 'dape-step-out
+    "<f7>" 'dape-step-in
+    "<f8>" 'dape-next)
   
-  (general-def '(insert normal) dape-breakpoint-global-mode-map
-    "<f1>" 'my-dape-start-next
-    "<f2>" 'dape-continue
-    "<f3>" 'dape-step-out
-    "<f4>" 'dape-step-in
-    "<f5>" 'dape-thread
-    "<f6>" 'dape-stack-select-down
-    "<f7>" 'dape-stack-select-up
-    "<f8>" 'dape-watch-dwim
-    "<f9>" 'dape-breakpoint-toggle
-    "<f10>" 'dape-breakpoint-log
-    "<f11>" 'dape-breakpoint-expression
-    "<f12>" 'dape-breakpoint-remove-all
-    "<pause>" 'dape-pause
-    )
-  (general-def 'normal dape-breakpoint-global-mode-map
+  (general-def 'normal 'override
     :predicate 'dape-active-mode
     "Z Q" '("dape-quit" . dape-quit))
 
@@ -658,6 +637,52 @@ things you want byte-compiled in them! Like function/macro definitions."
                         "evil-quit"))))
         which-key-replacement-alist)
   )
+
+(after! python
+  (general-def python-ts-mode-map
+    "C-c B" 'dape-breakpoint-remove-all
+    "C-c D" 'dape-disconnect-quit
+    "C-c M" 'dape-disassemble
+    "C-c R" 'dape-repl
+    "C-c S" 'dape-select-stack
+    "C-c b" 'dape-breakpoint-toggle
+    "C-c e" 'dape-breakpoint-expression
+    "C-c f" 'dape-restart-frame
+    "C-c h" 'dape-breakpoint-hits
+    "C-c i" 'dape-info
+    "C-c l" 'dape-breakpoint-log
+    "C-c m" 'dape-memory
+    "C-c p" 'dape-pause
+    "C-c q" 'dape-quit
+    "C-c r" 'dape-restart
+    "C-c t" 'dape-select-thread
+    "C-c u" 'dape-until
+    "C-c w" 'dape-watch-dwim
+    "C-c x" 'dape-evaluate-expression
+    )
+  )
+
+(after! csharp-mode
+  (general-def csharp-ts-mode-map
+    "C-c B" 'dape-breakpoint-remove-all
+    "C-c D" 'dape-disconnect-quit
+    "C-c M" 'dape-disassemble
+    "C-c R" 'dape-repl
+    "C-c S" 'dape-select-stack
+    "C-c b" 'dape-breakpoint-toggle
+    "C-c e" 'dape-breakpoint-expression
+    "C-c f" 'dape-restart-frame
+    "C-c h" 'dape-breakpoint-hits
+    "C-c i" 'dape-info
+    "C-c l" 'dape-breakpoint-log
+    "C-c m" 'dape-memory
+    "C-c p" 'dape-pause
+    "C-c q" 'dape-quit
+    "C-c r" 'dape-restart
+    "C-c t" 'dape-select-thread
+    "C-c u" 'dape-until
+    "C-c w" 'dape-watch-dwim
+    "C-c x" 'dape-evaluate-expression))
 
 ;; edebug-mode-map edebug-eval-mode-map
 (after! edebug
@@ -684,8 +709,6 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;; magit-mode-map magit-section-mode-map
 (after! magit
-  (general-def 'normal magit-mode-map
-    "<escape>" 'magit-mode-bury-buffer)
   (general-def '(visual normal) magit-mode-map
     "] ]" 'magit-section-forward
     "[ [" 'magit-section-backward)
@@ -698,11 +721,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   (general-def org-mode-map
     "C-<tab>" 'org-cycle
     "C-<iso-lefttab>" 'org-shifttab))
-
-;; org-agenda-mode-map
-(after! org-agenda
-  (general-def 'normal org-agenda-mode-map
-    "<escape>" 'org-agenda-quit))
 
 
 ;; org-remark-mode-map
@@ -730,16 +748,7 @@ things you want byte-compiled in them! Like function/macro definitions."
                  (if arg
                      (progn (evil-goto-line arg) (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos)))
                    (imenu-list-goto-entry) (evil-scroll-line-to-top (line-number-at-pos))))
-    )
-  (general-def 'normal imenu-list-major-mode-map
-    "<escape>" 'imenu-list-quit-window))
-
-
-;; dired-mode-map
-(after! dired
-  (general-def 'normal dired-mode-map
-    "<escape>" 'quit-window))
-
+    ))
 
 
 
@@ -959,7 +968,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (setq org-pomodoro-short-break-length arg))
 
 
-(defun my-org-pomodoro-around-finished-with-overtime (orig-fun &rest args)
+(defun my-org-pomodoro-finished-with-overtime-advice (orig-fun &rest args)
   "Advise around `org-pomodoro-finished' to choose break time"
   (org-pomodoro-play-sound :pomodoro)
   (call-interactively #'my-org-pomodoro-choose-break-time)
@@ -974,7 +983,7 @@ things you want byte-compiled in them! Like function/macro definitions."
     (org-clock-goto)
     (org-pomodoro)))
 
-(defun my-org-pomodoro-clockout-before-kill ()
+(defun my-org-pomodoro-clockout-before-kill-advice ()
   "Clock out time before exiting `org-pomodoro' so time is accurately tracked."
   (if (org-clocking-p)
       (save-window-excursion
@@ -994,8 +1003,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   (org-pomodoro-short-break-length 7)
   (org-pomodoro-long-break-length 15)
   :config
-  (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-around-finished-with-overtime)
-  (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill)
+  (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-finished-with-overtime-advice)
+  (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill-advice)
   )
 
 (use-package evil-org
@@ -1086,6 +1095,35 @@ things you want byte-compiled in them! Like function/macro definitions."
                '(LaTeX-mode . ("texlab")))
   (setf (alist-get '(csharp-mode csharp-ts-mode) eglot-server-programs) '("csharp-language-server")))
 
+(defvar eldoc-ratio 0.30)
+
+(defun my-buffer-distance (string buffer)
+  "Get Levenshtein distance of STRING and BUFFER."
+  (string-distance string (tramp-get-buffer-string buffer)))
+
+(defun my-buffer-length (buffer)
+  "Get string length of BUFFER."
+  (length (tramp-get-buffer-string buffer)))
+
+(defun my-eldoc-docs-string (list)
+  "Get all strings in eldoc LIST and concat them."
+  (let (value)
+    (dolist (elt list value)
+      (setq value (concat value (substring-no-properties (car elt)))))))
+
+(defun my-save-eldoc-point-advice (orig-fun docs interactive)
+  "Advise `eldoc-display-in-buffer' to save eldoc window position if window is active and DOCS is similar."
+  (if (and eldoc--doc-buffer
+           docs
+           (get-buffer-window (eldoc-doc-buffer))
+           (< (/ (float (my-buffer-distance (my-eldoc-docs-string docs) (eldoc-doc-buffer))) (my-buffer-length (eldoc-doc-buffer))) eldoc-ratio))
+      (let* ((eldoc (eldoc-doc-buffer))
+             (window (get-buffer-window eldoc))
+             (start (window-start window)))
+        (funcall orig-fun docs interactive)
+        (set-window-start window start))
+    (funcall orig-fun docs interactive)
+    ))
 
 
 (use-package eldoc
@@ -1093,6 +1131,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
   :diminish eldoc-mode
+  :config
+  (advice-add 'eldoc-display-in-buffer :around #'my-save-eldoc-point-advice)
   )
 
 (use-package php-mode
@@ -1505,7 +1545,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   (add-to-list 'custom-enabled-themes 'tango-dark)
   (load-theme 'tango-dark)
   (blink-cursor-mode 0)
-
   :custom
   (undo-limit 400000)           ;; 400kb (default is 160kb)
   (undo-strong-limit 3000000)   ;; 3mb   (default is 240kb)
@@ -1538,5 +1577,12 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; do not allow cursor in the minibuffer prompt
   (minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt))
+  (setq-default display-line-numbers 'visual
+                display-line-numbers-widen t
+                ;; this is the default
+                display-line-numbers-current-absolute t)
 
+
+
+  ;; example of customizing colors
   )
