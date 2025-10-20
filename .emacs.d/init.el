@@ -68,16 +68,18 @@
 ;;; rules
 ;; guiding values 
 ;; + A keybind should be 1. useful 2. memorable 3. shorter than less used and longer than more used keybinds
+;; + Structure makes memorable keybinds.
 ;; + Keybinds can be separated into three semantic categories. The first being keybinds that are only useful within a context (mode), the second being keybinds that are useful in any context (mode), and the third being keybinds that are somewhere between. 
 ;; + A keybind should be as textually close to other keybinds as to the degree of their conflict. This is necessary as if new keybinds were to be bound without considering all previously bound keybinds then it cannot possibily be shorter than less used keybinds.
 ;; + Emacs prefixes should be incorporated into your keybind scheme so that you can discover more useful keybinds and that your keybind scheme if not optimal is most likely useful.
 
 ;; binding rules
 ;; +. , prefix commands should be commands with higher frequency of use than SPC prefix commands.
-;; +. The , prefix and the SPC prefix are restricted to global commands except SPC m. This does not contradict the 3rd rule as commands useful in one major mode, are unlikely to be more frequently used, they can still be bound to evil and F* keys, and the 2nd rule outweighs the 3rd. Furthermore, inbetween keybinds if they are more frequently used can be easily globalized as functions.
+;; +. The , prefix and the SPC prefix are restricted to global commands. 
+;;    + This does not contradict the 3rd rule as commands useful in one major mode, are unlikely to be more frequently used, they can still be bound to evil and F* keys, and the 2nd rule outweighs the 3rd. Furthermore, inbetween keybinds if they are more frequently used can be easily globalized as functions.
 ;; +. All keybinds shall be categorized by the module keymap they are bounded in. 
-;; +. Commands must be changed in notes before they are changed in code.
-;; +. Incorporate emacs prefixes such as C-h and C-x for reliability and discoveribility.
+;; +. Keybinds must be changed in notes before they are changed in code.
+;; +. Incorporate emacs prefixes such as C-h and C-x.
 ;; +. Prefer binding to prefix-maps when incorporating emacs prefixes.
 ;; +. When defining a keybind for a command follow these steps: 
 ;;    1. Is the command always useful? If it is then bind it in a global manner. If not, which mode is it useful in?
@@ -146,6 +148,7 @@
 ;; g d xref-find-definitions
 ;; TAB smart-tab
 ;; g h help-at-point
+;; C-w C-v my-evil-window-vsplit-left
 
 ;; help-map
 ;; normal insert C-h f helpful-callable
@@ -538,6 +541,22 @@ things you want byte-compiled in them! Like function/macro definitions."
    ((and (featurep 'eglot) eglot--managed-mode) (call-interactively 'eldoc-doc-buffer))
    (t (save-selected-window (helpful-at-point)))))
 
+(evil-define-command my-evil-window-vsplit-left (&optional count file)
+  "Split the current window vertically, COUNT columns width,
+editing a certain FILE. The new window will be created to the
+left. If COUNT and `evil-auto-balance-windows'are both non-nil
+then all children of the parent of the splitted window are
+rebalanced."
+  :repeat nil
+  (interactive "<wc><f>")
+  (select-window
+   (split-window (selected-window) (when count (- count))
+                 'left))
+  (when (and (not count) evil-auto-balance-windows)
+    (balance-windows (window-parent)))
+  (when file
+    (evil-edit file)))
+
 (general-def 'normal
   "=" (general-key-dispatch 'evil-indent
         "=" (my-format-buffer))
@@ -546,6 +565,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "] x" 'xref-go-forward
   "g d" 'xref-find-definitions
   "g h" 'my-help-at-point
+  "C-w C-v" 'my-evil-window-vsplit-left
   )
 
 (general-def 'insert
@@ -809,11 +829,18 @@ things you want byte-compiled in them! Like function/macro definitions."
   :diminish evil-commentary-mode
   )
 
+(defun my-evil-multiedit-maintain-visual-cursor-advice (func &rest args)
+  (if evil-visual-state-minor-mode
+      (set-window-point (selected-window) (- (point) 1))))
+
+
+
 (use-package evil-multiedit
   :straight t
   :demand t
   :config
   (evil-multiedit-default-keybinds)
+  (advice-add :after 'evil-multiedit-match-and-next #'my-evil-multiedit-maintain-visual-cursor-advice)
   )
 
 
@@ -1526,7 +1553,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . display-line-numbers-mode)
+  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (display-line-numbers-mode) (setq display-line-numbers 'relative)))
          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :config
   ;; ellipsis marker single character of three dots in org
@@ -1577,10 +1604,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   ;; do not allow cursor in the minibuffer prompt
   (minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt))
-  (setq-default display-line-numbers 'visual
-                display-line-numbers-widen t
-                ;; this is the default
-                display-line-numbers-current-absolute t)
 
 
 
