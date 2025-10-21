@@ -67,22 +67,22 @@
 
 ;;; rules
 ;; guiding values 
-;; + A keybind should be 1. useful 2. memorable 3. shorter than less used and longer than more used keybinds
+;; + A keybind should be 1. useful 2. memorable 3. shorter than less used and longer than more used keybinds 4. easy to press
 ;; + Structure makes memorable keybinds.
 ;; + Keybinds can be separated into three semantic categories. The first being keybinds that are only useful within a context (mode), the second being keybinds that are useful in any context (mode), and the third being keybinds that are somewhere between. 
 ;; + A keybind should be as textually close to other keybinds as to the degree of their conflict. This is necessary as if new keybinds were to be bound without considering all previously bound keybinds then it cannot possibily be shorter than less used keybinds.
 ;; + Emacs prefixes should be incorporated into your keybind scheme so that you can discover more useful keybinds and that your keybind scheme if not optimal is most likely useful.
 
 ;; binding rules
-;; +. , prefix commands should be commands with higher frequency of use than SPC prefix commands.
-;; +. The , prefix and the SPC prefix are restricted to global commands. 
-;;    + This does not contradict the 3rd rule as commands useful in one major mode, are unlikely to be more frequently used, they can still be bound to evil and F* keys, and the 2nd rule outweighs the 3rd. Furthermore, inbetween keybinds if they are more frequently used can be easily globalized as functions.
-;; +. All keybinds shall be categorized by the module keymap they are bounded in. 
-;; +. Keybinds must be changed in notes before they are changed in code.
-;; +. Incorporate emacs prefixes such as C-h and C-x.
-;; +. Prefer binding to prefix-maps when incorporating emacs prefixes.
-;; +. When defining a keybind for a command follow these steps: 
-;;    1. Is the command always useful? If it is then bind it in a global manner. If not, which mode is it useful in?
+;; + SPC prefix commands should be commands with higher frequency of use than , prefix commands.
+;; + The , prefix and the SPC prefix are restricted to global commands while the \ prefix is restricted to major mode.
+;; + Inbetween keybinds shall be global through functions or local depending on whichever solution is cleaner.
+;; + All keybinds shall be categorized by the module keymap they are bounded in. 
+;; + Keybinds must be changed in notes before they are changed in code.
+;; + Incorporate emacs prefixes such as C-h and C-x.
+;; + Prefer binding to prefix-maps when incorporating emacs prefixes.
+;; + When defining a keybind for a command follow these steps: 
+;;    1. Is the command always useful? If it is then bind it in a global manner. If not, which mode and state is it useful in?
 ;;    2. What is the shortest memorable keybind you can think of?
 ;;    3. Is the keybind available? if it is, then bind the keybind to the command. if not, then is the command currently bound less used than our command? if it is, then replace the command and redo step 7 for the command you replaced. if it is not, then think of the next shortest memorable keybind and redo step 3.
 ;; +. Only defer load for keybinds when keymap isn't available or commands aren't needed until package is loaded.
@@ -96,49 +96,55 @@
 ;; , prefix semantic rules
 ;; 1. No infix keys except modifier keys.
 
-;; my-global-evil-map
-;; all (C-) , s switch-to-buffer
-;; all (C-) , r my-run-program
-;; all (C-) , t popper-toggle
-;; all (C-) , e my-save-all-buffers
-;; all (C-) , f find-file
-;; all (C-) , y copy-file 
-;; all (C-) , l vterm
-;; all (C-) , d dired
-;; all (C-) , n eval-defun
-;; all (C-) , i imenu-list-smart-toggle
-;; all (C-) , k kill-buffer
-;; all (C-) , v my-eval-expression 
-;; all (C-) , u my-browse-documentation 
-;; all (C-) , c toggle-truncate-lines 
-;; all (C-) , 1 my-window-bookmark-home
-;; all (C-) , m make-frame-command
-;; all (C-) , o my-online-search
-;; all (C-) , g magit-status
-;; all (C-) , , evil-snipe-repeat-reverse
-;; all (C-) , p org-pomodoro 
-;; all (C-) , a org-agenda 
+;; evil-intercept-maps
+;; all (C-) , (general-simulate-key "C-c")
+;; j evil-next-visual-line
+;; k evil-previous-visual-line
 
-;; my-general-global-menu-map
-;; all (M-) SPC e t my-test-code 
-;; all (M-) SPC e b my-build-code
-;; all (M-) SPC e a my-code-action
-;; all (M-) SPC e d dape
-;; all (M-) SPC e i dape-info
-;; all (M-) SPC e m sharper-main-transient
-;; all (M-) SPC s t toggle-theme
-;; all (M-) SPC p p completion-at-point
-;; all (M-) SPC f d delete-file
-;; all (M-) SPC j s project-switch-to-buffer
-;; all (M-) SPC j f project-find-file
-;; all (M-) SPC j j project-switch-project
-;; all (M-) SPC j h project-search
-;; all (M-) SPC v s eval-last-sexp
-;; all (M-) SPC v b eval-buffer
-;; all (M-) SPC v r eval-region
-;; all (M-) SPC m (general-simulate-key "C-c")
-;; all (M-) SPC h help-map
-;; all (M-) SPC x ctl-x-map
+;; my-main-leader-evil-map
+;; all (C-) SPC s switch-to-buffer
+;; all (C-) SPC r my-run-program
+;; all (C-) SPC t popper-toggle
+;; all (C-) SPC e my-save-all-buffers
+;; all (C-) SPC f find-file
+;; all (C-) SPC y copy-file 
+;; all (C-) SPC l vterm
+;; all (C-) SPC d dired
+;; all (C-) SPC n eval-defun
+;; all (C-) SPC i imenu-list-smart-toggle
+;; all (C-) SPC k kill-buffer
+;; all (C-) SPC v my-eval-expression 
+;; all (C-) SPC u my-browse-documentation 
+;; all (C-) SPC c toggle-truncate-lines 
+;; all (C-) SPC 1 my-window-bookmark-home
+;; all (C-) SPC m make-frame-command
+;; all (C-) SPC o my-online-search
+;; all (C-) SPC g magit-status
+;; all (C-) SPC p org-pomodoro 
+;; all (C-) SPC a org-agenda 
+
+;; my-second-leader-map
+;; all (C-) \ e t my-test-code 
+;; all (C-) \ e b my-build-code
+;; all (C-) \ e a my-code-action
+;; all (C-) \ e d dape
+;; all (C-) \ e m sharper-main-transient
+;; all (C-) \ s t toggle-theme
+;; all (C-) \ p p completion-at-point
+;; all (C-) \ f d delete-file
+;; all (C-) \ j s project-switch-to-buffer
+;; all (C-) \ j f project-find-file
+;; all (C-) \ j j project-switch-project
+;; all (C-) \ j h project-search
+;; all (C-) \ v s eval-last-sexp
+;; all (C-) \ v b eval-buffer
+;; all (C-) \ v r eval-region
+;; all (C-) \ m (general-simulate-key "C-c")
+;; all (C-) \ h help-map
+;; all (C-) \ x ctl-x-map
+
+;; transient-sticky-map
+;; q transient-quit-seq
 
 ;; evil-normal-state-map evil-insert-state-map
 ;; normal = = format-buffer
@@ -165,8 +171,9 @@
 ;; C-S-j scroll-down-command
 ;; C-S-k scroll-up-command
 
+;; TODO
 ;; corfu-mode-map
-;; insert C-SPC corfu-insert-separator
+;; insert M-SPC corfu-insert-separator
 ;; insert RET nil
 
 ;; corfu-popupinfo-map
@@ -174,28 +181,29 @@
 ;; C-S-j corfu-popupinfo-scroll-up
 ;; C-S-k corfu-popupinfo-scroll-down
 
+;; TODO 
 ;; python-mode-map csharp-mode-map
-;; normal insert (M-) SPC m <  dape-stack-select-up      
-;; normal insert (M-) SPC m >  dape-stack-select-down    
-;; normal insert (M-) SPC m B  dape-breakpoint-remove-all
-;; normal insert (M-) SPC m D  dape-disconnect-quit      
-;; normal insert (M-) SPC m M  dape-disassemble          
-;; normal insert (M-) SPC m R  dape-repl                 
-;; normal insert (M-) SPC m S  dape-select-stack         
-;; normal insert (M-) SPC m b  dape-breakpoint-toggle    
-;; normal insert (M-) SPC m e  dape-breakpoint-expression
-;; normal insert (M-) SPC m f  dape-restart-frame        
-;; normal insert (M-) SPC m h  dape-breakpoint-hits      
-;; normal insert (M-) SPC m i  dape-info                 
-;; normal insert (M-) SPC m l  dape-breakpoint-log       
-;; normal insert (M-) SPC m m  dape-memory               
-;; normal insert (M-) SPC m p  dape-pause                
-;; normal insert (M-) SPC m q  dape-quit                 
-;; normal insert (M-) SPC m r  dape-restart              
-;; normal insert (M-) SPC m t  dape-select-thread        
-;; normal insert (M-) SPC m u  dape-until                
-;; normal insert (M-) SPC m w  dape-watch-dwim           
-;; normal insert (M-) SPC m x  dape-evaluate-expression  
+;; normal insert (C-) , <  dape-stack-select-up      
+;; normal insert (C-) , >  dape-stack-select-down    
+;; normal insert (C-) , B  dape-breakpoint-remove-all
+;; normal insert (C-) , D  dape-disconnect-quit      
+;; normal insert (C-) , M  dape-disassemble          
+;; normal insert (C-) , R  dape-repl                 
+;; normal insert (C-) , S  dape-select-stack         
+;; normal insert (C-) , b  dape-breakpoint-toggle    
+;; normal insert (C-) , e  dape-breakpoint-expression
+;; normal insert (C-) , f  dape-restart-frame        
+;; normal insert (C-) , h  dape-breakpoint-hits      
+;; normal insert (C-) , i  dape-info                 
+;; normal insert (C-) , l  dape-breakpoint-log       
+;; normal insert (C-) , m  dape-memory               
+;; normal insert (C-) , p  dape-pause                
+;; normal insert (C-) , q  dape-quit                 
+;; normal insert (C-) , r  dape-restart              
+;; normal insert (C-) , t  dape-select-thread        
+;; normal insert (C-) , u  dape-until                
+;; normal insert (C-) , w  dape-watch-dwim           
+;; normal insert (C-) , x  dape-evaluate-expression  
 
 ;; dape-active-mode-map
 ;; insert normal F5 dape-continue
@@ -230,6 +238,7 @@
 ;; org-mode-map
 ;; C-<tab> org-cycle
 ;; C-<iso-lefttab> org-shifttab
+;; normal insert (C-) , t org-match-sparse-tree-heading
 
 
 ;; org-remark-mode-map
@@ -243,6 +252,7 @@
 
 ;; imenu-list-major-mode-map
 ;; normal <return> imenu-goto-node
+
 
 
 
@@ -266,6 +276,9 @@
   (evil-mode 1)
   :custom
   (evil-want-minibuffer t)
+  (evil-emacs-state-modes nil)
+  (evil-insert-state-modes nil)
+  (evil-motion-state-modes nil)
   )
 
 (defmacro after! (package &rest body)
@@ -312,6 +325,18 @@ things you want byte-compiled in them! Like function/macro definitions."
              (dolist (next (reverse (cdr package)) (car body))
                (setq body `((after! ,next ,@body)))))
             (`(after! (:and ,@package) ,@body))))))
+
+;; evil-intercept-maps
+;; general \ local leader
+(general-def 'normal 'override
+  "," (general-simulate-key "C-c"))
+
+(general-def 'insert 'override
+  "C-," (general-simulate-key "C-c"))
+
+(general-def '(normal motion) 'override
+  "j" 'evil-next-visual-line
+  "k" 'evil-previous-visual-line)
 
 (defun my-run-program ()
   "Run program at point depending on mode."
@@ -382,21 +407,19 @@ things you want byte-compiled in them! Like function/macro definitions."
   (bookmark-jump "Burly: home"))
 
 
-;; general , prefix
+;; my-main-leader-evil-map
 
 (general-define-key
  :keymaps 'override
  :states '(insert normal hybrid motion visual operator)
- :prefix-map 'my-global-evil-map
- :prefix ","
- :non-normal-prefix "C-,")
+ :prefix-map 'my-main-leader-map
+ :prefix "SPC"
+ :non-normal-prefix "C-SPC")
 
-(general-create-definer global-evil-definer
-  :keymaps 'my-global-evil-map)
+(general-create-definer main-leader-definer
+  :keymaps 'my-main-leader-map)
 
-
-(global-evil-definer
-  "," 'evil-snipe-repeat-reverse
+(main-leader-definer
   "s" 'switch-to-buffer
   "r" 'my-run-program
   "t" 'popper-toggle
@@ -416,10 +439,15 @@ things you want byte-compiled in them! Like function/macro definitions."
   "m" 'make-frame-command
   "1" 'my-window-bookmark-home
   "o" 'my-online-search
-  "," 'evil-snipe-repeat-reverse
   )
 
-;; SPC keymaps
+;; \\ second evil leader map
+
+(defun my-online-search (x)
+  "Search duckduckgo with X"
+  (interactive "sSearch: ")
+  (browse-url (concat "https://duckduckgo.com/?q=" x))
+  )
 
 (defun my-test-code ()
   "Run test cases for program."
@@ -453,12 +481,13 @@ things you want byte-compiled in them! Like function/macro definitions."
         ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
         ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))
 
+;; my-second-leader-evil-map
 (general-define-key
  :keymaps 'override
  :states '(insert normal hybrid motion visual operator)
- :prefix-map 'my-general-global-menu-map
- :prefix "SPC"
- :non-normal-prefix "M-SPC")
+ :prefix-map 'my-second-leader-map
+ :prefix "\\"
+ :non-normal-prefix "C-\\")
 
 (defmacro +general-global-menu! (name prefix-key &rest body)
   "Create a definer named +general-global-NAME.
@@ -466,10 +495,10 @@ things you want byte-compiled in them! Like function/macro definitions."
   (declare (indent 2))
   `(progn
      ;; find a way to replace this with keymap based replacement
-     (which-key-add-key-based-replacements (concat "SPC " ,prefix-key) ,name)
-     (which-key-add-key-based-replacements (concat "M-SPC " ,prefix-key) ,name)
+     (which-key-add-key-based-replacements (concat "\\ " ,prefix-key) ,name)
+     (which-key-add-key-based-replacements (concat "C-\\ " ,prefix-key) ,name)
      (general-define-key
-      :keymaps 'my-general-global-menu-map
+      :keymaps 'my-second-leader-map
       :prefix-map ',(intern (concat "my-" name "-map"))
       :prefix ,prefix-key)
      (general-create-definer ,(intern (concat "+general-global-" name))
@@ -506,11 +535,10 @@ things you want byte-compiled in them! Like function/macro definitions."
   "c" 'copy-file)
 
 (general-define-key
- :keymaps 'my-general-global-menu-map
- "m" `("+major-mode" . ,(general-simulate-key "C-c"))
- "h" `("help" . ,help-map)
+ :keymaps 'my-second-leader-map
  "x" `("extend" . ,ctl-x-map)
  )
+
 
 ;; evil-normal-state-map evil-insert-state-map
 (defun smart-tab ()
@@ -549,9 +577,8 @@ then all children of the parent of the splitted window are
 rebalanced."
   :repeat nil
   (interactive "<wc><f>")
-  (select-window
-   (split-window (selected-window) (when count (- count))
-                 'left))
+  (split-window (selected-window) (when count (- count))
+                'left)
   (when (and (not count) evil-auto-balance-windows)
     (balance-windows (window-parent)))
   (when file
@@ -617,7 +644,7 @@ rebalanced."
 ;; corfu-mode-map
 (after! corfu
   (general-def corfu-map
-    "C-SPC" 'corfu-insert-separator
+    "M-SPC" 'corfu-insert-separator
     "RET" nil
     ))
 
@@ -736,11 +763,19 @@ rebalanced."
     "] ]" 'magit-section-forward
     "[ [" 'magit-section-backward))
 
+(defun org-match-sparse-tree-heading ()
+  "Check heading of each tag."
+  (interactive)
+  (org-save-outline-visibility t
+    (org-match-sparse-tree)
+    ))
+
 ;; org-mode-map
 (after! org
   (general-def org-mode-map
     "C-<tab>" 'org-cycle
-    "C-<iso-lefttab>" 'org-shifttab))
+    "C-<iso-lefttab>" 'org-shifttab
+    "C-c t" 'org-match-sparse-tree))
 
 
 ;; org-remark-mode-map
@@ -792,6 +827,8 @@ rebalanced."
   :init
   (evil-collection-init)
   :diminish evil-collection-unimpaired-mode
+  :custom
+  (evil-collection-setup-minibuffer t)
   )
 
 
@@ -834,13 +871,13 @@ rebalanced."
       (set-window-point (selected-window) (- (point) 1))))
 
 
-
 (use-package evil-multiedit
   :straight t
   :demand t
   :config
   (evil-multiedit-default-keybinds)
-  (advice-add :after 'evil-multiedit-match-and-next #'my-evil-multiedit-maintain-visual-cursor-advice)
+  (advice-add 'evil-multiedit-match-and-next :before #'my-evil-multiedit-maintain-visual-cursor-advice)
+  (advice-add 'evil-multiedit-match-and-prev :before #'my-evil-multiedit-maintain-visual-cursor-advice)
   )
 
 
@@ -1519,7 +1556,8 @@ rebalanced."
   :straight t)
 
 (use-package vterm
-  :straight t)
+  :straight t
+  :hook (vterm-mode . (lambda () (setq evil-insert-state-modes nil))))
 
 (use-package savehist
   :init
@@ -1553,7 +1591,7 @@ rebalanced."
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (display-line-numbers-mode) (setq display-line-numbers 'relative)))
+  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (display-line-numbers-mode) (setq display-line-numbers 'visual)))
          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :config
   ;; ellipsis marker single character of three dots in org
