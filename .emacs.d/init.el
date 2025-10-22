@@ -297,19 +297,22 @@
     ;; `evil-collection' assumes `evil-want-keybinding' is set to
     ;; `nil' before loading `evil' and `evil-collection'
     (setq evil-want-keybinding nil))
+  (setq evil-want-minibuffer t)
+  (setq evil-emacs-state-modes nil)
+  (setq evil-insert-state-modes nil)
+  (setq evil-motion-state-modes nil)
+  (setq evil-insert-state-message nil)
+  (setq evil-emacs-state-message nil)
+  (setq evil-replace-state-message nil)
+  (setq evil-visual-state-message nil)
+  (setq evil-mode-line-format nil)
+  (setq evil-visual-char-message nil)
+  (setq evil-visual-line-message nil)
+  (setq evil-visual-block-message nil)
+  (setq evil-visual-screen-line-message nil)
   (evil-mode 1)
-  :custom
-  (evil-want-minibuffer t)
-  (evil-emacs-state-modes nil)
-  (evil-insert-state-modes nil)
-  (evil-motion-state-modes nil)
-  (evil-insert-state-message nil)
-  (evil-emacs-state-message nil)
-  (evil-replace-state-message nil)
-  (evil-visual-state-message nil)
-  (evil-mode-line-format nil)
   )
-
+ 
 (defmacro after! (package &rest body)
   "Evaluate BODY after PACKAGE have loaded.
 
@@ -1482,7 +1485,7 @@ rebalanced."
 
 ;; TODO
 (defun my-fit-window-to-magit (window)
-  "Use 'fit-window-to-buffer' with right side window specifications."
+  "Use 'fit-window-to-buffer' but make it work for magit's behavior."
   (let ((max-width (floor (* 0.50 (frame-width))))
         (max-height (floor (* 1.00 (frame-height)))))
     (fit-window-to-buffer window max-height window-min-height max-width)))
