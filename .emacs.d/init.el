@@ -413,7 +413,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (defun my-browse-python-docs (x)
   "Browse python docs by search duckduckgo with site: docs.python.org"
   (interactive "sSearch: ")
-  (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Alearn.microsoft.com")))
+  (browse-url (concat "https://duckduckgo.com/?q=" x "+site%3Adocs.python.org")))
 
 
 (defun my-browse-documentation ()
