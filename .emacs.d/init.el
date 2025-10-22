@@ -171,7 +171,6 @@
 ;; C-S-j scroll-down-command
 ;; C-S-k scroll-up-command
 
-;; TODO
 ;; corfu-mode-map
 ;; insert M-SPC corfu-insert-separator
 ;; insert RET nil
@@ -213,19 +212,44 @@
 ;; normal Z Q dape-quit
 
 ;; edebug-mode-map
-;; insert normal F1 edebug-step-mode
-;; insert normal F2 edebug-go-mode
-;; insert normal F3 edebug-step-out
-;; insert normal F4 edebug-step-in
-;; insert normal F6 edebug-pop-to-backtrace
-;; insert normal F7 edebug-pop-to-backtrace
-;; insert normal F8 edebug-visit-eval-list
-;; insert normal F9 edebug-set-breakpoint
-;; insert normal F10 edebug-unset-breakpoint
-;; insert normal F11 edebug-set-conditional-breakpoint
-;; insert normal F12 edebug-unset-breakpoints
-;; insert normal <home> edebug-where
-;; normal normal Z Q top-level
+;; insert normal F8 edebug-step-mode
+;; insert normal F5 edebug-go-mode
+;; insert normal F6 edebug-step-out
+;; insert normal F7 edebug-step-in
+;; normal Z Q top-level
+;; normal q top-level
+;; insert normal (C-) , n       edebug-next-mode
+;; insert normal (C-) , G       edebug-Go-nonstop-mode
+;; insert normal (C-) , t       edebug-trace-mode
+;; insert normal (C-) , T       edebug-Trace-fast-mode
+;; insert normal (C-) , c       edebug-continue-mode
+;; insert normal (C-) , C       edebug-Continue-fast-mode
+;; insert normal (C-) , f       edebug-forward-sexp
+;; insert normal (C-) , h       edebug-goto-here
+;; insert normal (C-) , I       edebug-instrument-callee
+;; insert normal (C-) , q       top-level
+;; insert normal (C-) , Q       edebug-top-level-nonstop
+;; insert normal (C-) , a       abort-recursive-edit
+;; insert normal (C-) , S       edebug-stop
+;; insert normal (C-) , b       edebug-set-breakpoint
+;; insert normal (C-) , u       edebug-unset-breakpoint
+;; insert normal (C-) , U       edebug-unset-breakpoints
+;; insert normal (C-) , B       edebug-next-breakpoint
+;; insert normal (C-) , x       edebug-set-conditional-breakpoint
+;; insert normal (C-) , X       edebug-set-global-break-condition
+;; insert normal (C-) , D       edebug-toggle-disable-breakpoint
+;; insert normal (C-) , r       edebug-previous-result
+;; insert normal (C-) , e       edebug-eval-expression
+;; insert normal (C-) , C-x C-e edebug-eval-last-sexp
+;; insert normal (C-) , E       edebug-visit-eval-list
+;; insert normal (C-) , w       edebug-where
+;; insert normal (C-) , v       edebug-view-outside        ; maybe obsolete??
+;; insert normal (C-) , p       edebug-bounce-point
+;; insert normal (C-) , P       edebug-view-outside        ; same as v
+;; insert normal (C-) , W       edebug-toggle-save-windows
+;; insert normal (C-) , ?       edebug-help
+;; insert normal (C-) , d       edebug-pop-to-backtrace
+;; insert normal (C-) , -       negative-argument
 
 ;; edebug-eval-mode-map
 ;; insert normal RET edebug-update-eval-list
@@ -334,7 +358,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (general-def 'insert 'override
   "C-," (general-simulate-key "C-c"))
 
-(general-def '(normal motion) 'override
+(general-def '(normal motion) 
   "j" 'evil-next-visual-line
   "k" 'evil-previous-visual-line)
 
@@ -560,7 +584,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (defun my-format-buffer ()
   (interactive)
   (cond
-   ((and (featurep 'eglot) eglot--managed-mode) (eglot-format-buffer))
+   ((and (featurep 'eglot) eglot--managed-mode) (call-interactively #'eglot-format-buffer))
    (t (indent-region (point-min) (point-max)))))
 
 (defun my-help-at-point ()
@@ -586,7 +610,7 @@ rebalanced."
 
 (general-def 'normal
   "=" (general-key-dispatch 'evil-indent
-        "=" (my-format-buffer))
+        "=" 'my-format-buffer)
   "C-S-d" 'evil-scroll-up
   "[ x" 'xref-go-back
   "] x" 'xref-go-forward
@@ -732,27 +756,77 @@ rebalanced."
     "C-c x" 'dape-evaluate-expression))
 
 ;; edebug-mode-map edebug-eval-mode-map
-(after! edebug
+(defun set-edebug-map ()
+  "Set the edebug mode map"
   (setq edebug-mode-map (make-sparse-keymap))
   (general-def '(insert normal) edebug-mode-map
-    "<f1>" 'edebug-step-mode
-    "<f2>" 'edebug-go-mode
-    "<f3>" 'edebug-step-out
-    "<f4>" 'edebug-step-in
-    "<f6>" 'edebug-pop-to-backtrace
-    "<f7>" 'edebug-pop-to-backtrace
-    "<f8>" 'edebug-visit-eval-list
-    "<f9>" 'edebug-set-breakpoint
-    "<f10>" 'edebug-unset-breakpoint
-    "<f11>" 'edebug-set-conditional-breakpoint
-    "<f12>" 'edebug-unset-breakpoints
-    "<home>" 'edebug-where
+    "<f8>" 'edebug-step-mode
+    "<f5>" 'edebug-go-mode
+    "<f6>" 'edebug-step-out
+    "<f7>" 'edebug-step-in
     )
   (general-def 'normal edebug-mode-map
-    "Z Q" 'top-level)
+    "Z Q" 'top-level
+    "q" 'top-level)
+  (general-def edebug-mode-map
+    "C-c n"       'edebug-next-mode
+    "C-c G"       'edebug-Go-nonstop-mode
+    "C-c t"       'edebug-trace-mode
+    "C-c T"       'edebug-Trace-fast-mode
+    "C-c c"       'edebug-continue-mode
+    "C-c C"       'edebug-Continue-fast-mode
+
+    ;;"f"       #'edebug-forward ; not implemented
+    "C-c f"       'edebug-forward-sexp
+    "C-c h"       'edebug-goto-here
+
+    "C-c I"       'edebug-instrument-callee
+
+    ;; quitting and stopping
+    "C-c q"       'top-level
+    "C-c Q"       'edebug-top-level-nonstop
+    "C-c a"       'abort-recursive-edit
+    "C-c S"       'edebug-stop
+
+    ;; breakpoints
+    "C-c b"       'edebug-set-breakpoint
+    "C-c u"       'edebug-unset-breakpoint
+    "C-c U"       'edebug-unset-breakpoints
+    "C-c B"       'edebug-next-breakpoint
+    "C-c x"       'edebug-set-conditional-breakpoint
+    "C-c X"       'edebug-set-global-break-condition
+    "C-c D"       'edebug-toggle-disable-breakpoint
+
+    ;; evaluation
+    "C-c r"       'edebug-previous-result
+    "C-c e"       'edebug-eval-expression
+    "C-c C-x C-e" 'edebug-eval-last-sexp
+    "C-c E"       'edebug-visit-eval-list
+
+    ;; views
+    "C-c w"       'edebug-where
+    "C-c v"       'edebug-view-outside        ; maybe obsolete??
+    "C-c p"       'edebug-bounce-point
+    "C-c P"       'edebug-view-outside        ; same as v
+    "C-c W"       'edebug-toggle-save-windows
+
+    ;; misc
+    "C-c ?"       'edebug-help
+    "C-c d"       'edebug-pop-to-backtrace
+
+    "C-c -"       'negative-argument
+
+    ;; statistics
+    "C-c ="       'edebug-temp-display-freq-count)
+
   (general-def '(normal insert) edebug-eval-mode-map
     "RET" 'edebug-update-eval-list
-    "<home>" 'edebug-where))
+    )
+  )
+
+(after! edebug
+  (add-hook 'edebug-setup-hook #'set-edebug-map)
+  )
 
 ;; magit-mode-map magit-section-mode-map
 (after! magit
@@ -818,17 +892,20 @@ rebalanced."
 (after! org-remark
   )
 
+;;;; hooks
 ;;;; text editing
 
 
 
 (use-package evil-collection
   :straight t
-  :init
-  (evil-collection-init)
-  :diminish evil-collection-unimpaired-mode
+  :demand t
+  :after evil
   :custom
   (evil-collection-setup-minibuffer t)
+  :config
+  (evil-collection-init)
+  :diminish evil-collection-unimpaired-mode
   )
 
 
@@ -1379,10 +1456,28 @@ rebalanced."
   (popper-mode +1)
   (popper-echo-mode +1))
 
+(defun my-fit-window-to-buffer (&optional window max-height min-height max-width min-width preserve-size)
+  (let* ((wind (if window window (selected-window)))
+         (initial-width (window-width wind))
+         (initial-height (window-height window)))
+    (fit-window-to-buffer window max-height min-height max-width min-width preserve-size)
+    (if (or (not (equal (window-width wind) initial-width)) (not (equal (window-height wind) (window-height wind))))
+        t
+      nil)))
+
+
 (defun my-fit-window-to-right-side (window)
   "Use `fit-window-to-buffer' with right side window specifications."
   (let ((max-width (floor (* 0.35 (frame-width))))
         (max-height (floor (* 0.50 (frame-height)))))
+    (if (fit-window-to-buffer window max-height window-min-height max-width)
+        nil
+      (window-resize window (- (floor (* 0.35 (frame-width))) (window-width window)) t))))
+
+(defun my-fit-window-to-left-side (window)
+  "Use 'fit-window-to-buffer' with right side window specifications."
+  (let ((max-width (floor (* 0.50 (frame-width))))
+        (max-height (floor (* 1.00 (frame-height)))))
     (fit-window-to-buffer window max-height window-min-height max-width)))
 
 (use-package window
@@ -1415,7 +1510,7 @@ rebalanced."
       (display-buffer-reuse-window display-buffer-in-direction)
       (mode magit-mode)
       (window . root)
-      (window-width . 0.30)
+      (window-width . my-fit-window-to-left-side)
       (direction . left))))
   )
 
@@ -1591,7 +1686,7 @@ rebalanced."
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (display-line-numbers-mode) (setq display-line-numbers 'visual)))
+  :hook (((prog-mode emacs-lisp-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (display-line-numbers-mode 1) (setq display-line-numbers 'visual)))
          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :config
   ;; ellipsis marker single character of three dots in org
