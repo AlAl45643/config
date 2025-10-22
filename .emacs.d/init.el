@@ -303,6 +303,11 @@
   (evil-emacs-state-modes nil)
   (evil-insert-state-modes nil)
   (evil-motion-state-modes nil)
+  (evil-insert-state-message nil)
+  (evil-emacs-state-message nil)
+  (evil-replace-state-message nil)
+  (evil-visual-state-message nil)
+  (evil-mode-line-format nil)
   )
 
 (defmacro after! (package &rest body)
@@ -1470,11 +1475,13 @@ rebalanced."
   "Use `fit-window-to-buffer' with right side window specifications."
   (let ((max-width (floor (* 0.35 (frame-width))))
         (max-height (floor (* 0.50 (frame-height)))))
-    (if (fit-window-to-buffer window max-height window-min-height max-width)
+    (if (my-fit-window-to-buffer window max-height window-min-height max-width)
         nil
       (window-resize window (- (floor (* 0.35 (frame-width))) (window-width window)) t))))
 
-(defun my-fit-window-to-left-side (window)
+
+;; TODO
+(defun my-fit-window-to-magit (window)
   "Use 'fit-window-to-buffer' with right side window specifications."
   (let ((max-width (floor (* 0.50 (frame-width))))
         (max-height (floor (* 1.00 (frame-height)))))
@@ -1510,7 +1517,7 @@ rebalanced."
       (display-buffer-reuse-window display-buffer-in-direction)
       (mode magit-mode)
       (window . root)
-      (window-width . my-fit-window-to-left-side)
+      (window-width . 0.50)
       (direction . left))))
   )
 
