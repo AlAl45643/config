@@ -851,7 +851,7 @@ rebalanced."
 (defun org-match-sparse-tree-heading ()
   "Check heading of each tag."
   (interactive)
-  (org-save-outline-visibility t
+  (org-save-outline-visibility nil
     (org-match-sparse-tree)
     ))
 
@@ -860,7 +860,7 @@ rebalanced."
   (general-def org-mode-map
     "C-<tab>" 'org-cycle
     "C-<iso-lefttab>" 'org-shifttab
-    "C-c t" 'org-match-sparse-tree))
+    "C-c t" 'org-match-sparse-tree-heading))
 
 
 ;; org-remark-mode-map
