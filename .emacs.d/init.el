@@ -129,6 +129,7 @@
 ;; all (C-) \ e a my-code-action
 ;; all (C-) \ e d dape
 ;; all (C-) \ e m sharper-main-transient
+;; all (C-) \ e n my-code-rename
 ;; all (C-) \ s t toggle-theme
 ;; all (C-) \ p p completion-at-point
 ;; all (C-) \ f d delete-file
@@ -527,6 +528,12 @@ things you want byte-compiled in them! Like function/macro definitions."
         (display-buffer (current-buffer))
         (set-window-start (get-buffer-window "*persisted eldoc*") 0)))))
 
+(defun my-code-rename ()
+  (interactive)
+  (cond
+   ((and (featurep 'eglot) eglot--managed-mode) (call-interactively 'eglot-rename))
+   (t (message "%s" "Nothing to rename at point."))))
+
 ;; my-second-leader-evil-map
 (general-define-key
  :keymaps 'override
@@ -557,6 +564,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "b" 'my-build-code
   "a" 'my-code-action
   "d" 'dape
+  "n" 'my-code-rename
   )
 
 (+general-global-menu! "miscellaneous" "s"
