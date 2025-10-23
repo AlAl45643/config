@@ -312,7 +312,7 @@
   (setq evil-visual-screen-line-message nil)
   (evil-mode 1)
   )
- 
+
 (defmacro after! (package &rest body)
   "Evaluate BODY after PACKAGE have loaded.
 
@@ -516,6 +516,17 @@ things you want byte-compiled in them! Like function/macro definitions."
         ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
         ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))
 
+(defun my-persist-eldoc (interactive)
+  (interactive (list t))
+  (if (get-buffer "*persisted eldoc*")
+      (kill-buffer "*persisted eldoc*"))
+  (with-current-buffer eldoc--doc-buffer
+    (let ((s (buffer-string)))
+      (with-current-buffer (generate-new-buffer "*persisted eldoc*")
+        (insert s)
+        (display-buffer (current-buffer))
+        (set-window-start (get-buffer-window "*persisted eldoc*") 0)))))
+
 ;; my-second-leader-evil-map
 (general-define-key
  :keymaps 'override
@@ -549,7 +560,8 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 (+general-global-menu! "miscellaneous" "s"
-  "t" 'my-cycle-theme)
+  "t" 'my-cycle-theme
+  "e" 'my-persist-eldoc)
 
 (+general-global-menu! "eval" "v"
   "s" 'eval-last-sexp
@@ -740,9 +752,9 @@ rebalanced."
     "C-c t" 'dape-select-thread
     "C-c u" 'dape-until
     "C-c w" 'dape-watch-dwim
-    "C-c x" 'dape-evaluate-expression
     )
   )
+
 
 (after! csharp-mode
   (general-def csharp-ts-mode-map
@@ -764,7 +776,7 @@ rebalanced."
     "C-c t" 'dape-select-thread
     "C-c u" 'dape-until
     "C-c w" 'dape-watch-dwim
-    "C-c x" 'dape-evaluate-expression))
+    ))
 
 ;; edebug-mode-map edebug-eval-mode-map
 (defun set-edebug-map ()
@@ -1509,7 +1521,7 @@ rebalanced."
       (side . right)
       (slot . 0)
       (window-width . my-fit-window-to-right-side))
-     ("\\*helpful\\|\\*Help\\*\\|\\*eldoc\\*"
+     ("\\*helpful\\|\\*Help\\*\\|\\*eldoc\\*\\|\\*persisted eldoc\\*"
       (display-buffer-reuse-window display-buffer-in-side-window)
       (side . right)
       (slot . -1)
