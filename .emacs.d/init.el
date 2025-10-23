@@ -360,11 +360,14 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 ;; evil-intercept-maps
 ;; general \ local leader
-(general-def 'normal 'override
-  "," (general-simulate-key "C-c"))
+(general-def '(normal visual) 'override
+  "," (general-simulate-key "C-c")
+  "<menu>" (general-simulate-key "C-c")
+  "C-c ," 'evil-snipe-repeat-reverse)
 
 (general-def 'insert 'override
-  "C-," (general-simulate-key "C-c"))
+  "C-," (general-simulate-key "C-c")
+  "C-<menu>" (general-simulate-key "C-c"))
 
 (general-def '(normal motion) 
   "j" 'evil-next-visual-line
@@ -393,7 +396,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "Eval expression depending on mode."
   (interactive)
   (cond
-   ((equal major-mode 'dape-active-mode)
+   ((and (featurep 'dape) dape-active-mode)
     (call-interactively #'dape-evaluate-expression))
    ((equal major-mode 'edebug-mode)
     (call-interactively #'edebug-eval-expression))
