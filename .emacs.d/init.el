@@ -98,8 +98,8 @@
 
 ;; evil-intercept-maps
 ;; all (C-) , (general-simulate-key "C-c")
-;; j evil-next-visual-line
-;; k evil-previous-visual-line
+;; normal j evil-next-visual-line
+;; normal k evil-previous-visual-line
 
 ;; my-main-leader-evil-map
 ;; all (C-) SPC s switch-to-buffer
@@ -181,7 +181,6 @@
 ;; C-S-j corfu-popupinfo-scroll-up
 ;; C-S-k corfu-popupinfo-scroll-down
 
-;; TODO 
 ;; python-mode-map csharp-mode-map
 ;; normal insert (C-) , <  dape-stack-select-up      
 ;; normal insert (C-) , >  dape-stack-select-down    
@@ -278,6 +277,9 @@
 ;; imenu-list-major-mode-map
 ;; normal <return> imenu-goto-node
 
+;; doc-view-mode
+;; normal j doc-view-next-line-or-next-page
+;; normal k doc-view-previous-line-or-previous-page
 
 
 
@@ -911,7 +913,11 @@ rebalanced."
     ))
 
 
-
+;; doc-view-mode-map
+(after! doc-view
+  (general-def 'normal doc-view-mode-map
+    "j" 'doc-view-next-line-or-next-page
+    "k" 'doc-view-previous-line-or-previous-page))
 
 ;;; fixing overrides
 
