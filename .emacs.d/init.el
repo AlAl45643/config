@@ -1246,26 +1246,30 @@ rebalanced."
 
   )
 
-
-(defvar my-eglot-completion-functions (list #'cape-file #'yasnippet-capf #'eglot-completion-at-point))
+(defvar my-eglot-completion-functions (list #'yasnippet-capf #'eglot-completion-at-point)
+  "The list of completion functions to combine to replace `eglot-completion-at-point'.")
 
 (defun my-eglot-capf ()
-  "Configure `completion-at-point-functions' with multiple backends such as yasnippet."
+  "Configure `completion-at-point-functions' to replace `eglot-completion-at-point' with completion results including all completions in `my-eglot-capf'."
+  ;; Remember that local values in completion-at-point-functions take priority over global values."
   (setq-local completion-at-point-functions
               (list (apply 'cape-capf-super my-eglot-completion-functions))))
 
+(defun my-file-completion-for-eglot ()
+  "Give `cape-file' priority in `completion-at-point-functions'."
+  ;; Remember that local values in completion-at-point-functions take priority over global values."
+  (add-hook 'completion-at-point-functions #'cape-file -100 t))
 
 (use-package eglot
   :hook ((csharp-ts-mode . eglot-ensure)
          (python-ts-mode . eglot-ensure)
          (LaTeX-mode . eglot-ensure))
   :config
-  (setq completion-category-defaults nil)
-
+  (add-hook 'eglot-managed-mode-hook #'my-eglot-capf)
+  (add-hook 'eglot-managed-mode-hook #'my-file-completion-for-eglot 100)
   ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
   ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
   ;;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
-  (add-hook 'eglot-managed-mode-hook #'my-eglot-capf)
   (add-to-list 'eglot-server-programs
                '(LaTeX-mode . ("texlab")))
   (setf (alist-get '(csharp-mode csharp-ts-mode) eglot-server-programs) '("csharp-language-server")))
@@ -1404,6 +1408,9 @@ rebalanced."
 
 (defun my-yasnippet-add-completion-functions ()
   "Add yasnippet-capf to `completion-at-point-functions'."
+  ;; Note that the list of buffer-local
+  ;; completion functions takes precedence over the global list.
+  ;; Add yasnippet-capf globally
   (add-to-list 'completion-at-point-functions #'yasnippet-capf)
   )
 
@@ -1432,8 +1439,8 @@ rebalanced."
   :straight t
   :custom
   (completion-styles '(orderless partial-completion basic))
-  (completion-category-defaults nil)
-  (completion-category-overrides '((file (styles partial-completion))))
+  ;;(completion-category-defaults nil)
+  ;; (completion-category-overrides '((file (styles partial-completion))))
   )
 
 
@@ -1454,9 +1461,14 @@ rebalanced."
   ;; completion functions takes precedence over the global list.
   ;; (add-hook 'completion-at-point-functions #'cape-history)
   ;; ...
-  (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
-  (advice-add #'lsp-completion-at-point :around #'cape-wrap-nonexclusive)
-  (advice-add #'pcomplete-completions-at-point :around #'cape-wrap-nonexclusive)
+  ;; (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
+  ;; (advice-add #'lsp-completion-at-point :around #'cape-wrap-nonexclusive)
+  ;; (advice-add #'pcomplete-completions-at-point :around #'cape-wrap-nonexclusive)
+
+  ;; adds cape-file globally
+  ;; Note that the list of buffer-local
+  ;; completion functions takes precedence over the global list.
+  
   (add-hook 'completion-at-point-functions #'cape-file)
   )
 
@@ -1722,7 +1734,7 @@ rebalanced."
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((prog-mode emacs-lisp-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
+  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :config
   ;; ellipsis marker single character of three dots in org
