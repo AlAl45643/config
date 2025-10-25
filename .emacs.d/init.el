@@ -621,7 +621,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 (defun my-help-at-point ()
   (interactive)
   (cond
-   ((and (featurep 'eglot) eglot--managed-mode) (call-interactively 'eldoc-doc-buffer))
+   ((or (and (featurep 'eglot) eglot--managed-mode) (equal major-mode 'inferior-python-mode)) (call-interactively 'eldoc-doc-buffer))
    (t (save-selected-window (helpful-at-point)))))
 
 (evil-define-command my-evil-window-vsplit-left (&optional count file)
@@ -1216,6 +1216,8 @@ rebalanced."
 	     :type git :host github :repo "hasu/emacs-ob-racket"
 	     :files ("*.el" "*.rkt")))
 
+
+  
 (use-package pet
   :demand t
   :straight t
@@ -1290,28 +1292,13 @@ rebalanced."
     (dolist (elt list value)
       (setq value (concat value (substring-no-properties (car elt)))))))
 
-(defun my-save-eldoc-point-advice (orig-fun docs interactive)
-  "Advise `eldoc-display-in-buffer' to save eldoc window position if window is active and DOCS is similar."
-  (if (and eldoc--doc-buffer
-           docs
-           (get-buffer-window (eldoc-doc-buffer))
-           (< (/ (float (my-buffer-distance (my-eldoc-docs-string docs) (eldoc-doc-buffer))) (my-buffer-length (eldoc-doc-buffer))) eldoc-ratio))
-      (let* ((eldoc (eldoc-doc-buffer))
-             (window (get-buffer-window eldoc))
-             (start (window-start window)))
-        (funcall orig-fun docs interactive)
-        (set-window-start window start))
-    (funcall orig-fun docs interactive)
-    ))
-
 
 (use-package eldoc
+  :hook (inferior-python-mode . (lambda () (add-hook 'eldoc-documentation-functions #'python-eldoc-function nil t)))
   :custom
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
   :diminish eldoc-mode
-  :config
-  (advice-add 'eldoc-display-in-buffer :around #'my-save-eldoc-point-advice)
   )
 
 (use-package php-mode
@@ -1439,8 +1426,8 @@ rebalanced."
   :straight t
   :custom
   (completion-styles '(orderless partial-completion basic))
-  ;;(completion-category-defaults nil)
-  ;; (completion-category-overrides '((file (styles partial-completion))))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles partial-completion))))
   )
 
 
