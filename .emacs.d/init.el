@@ -30,8 +30,6 @@
   :straight t
   )
 
-;;;; personal variables
-(add-to-list 'exec-path (concat user-emacs-directory "bin/"))
 
 ;;;; keybinds
 
@@ -468,7 +466,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "d" 'dired
   "n" 'eval-defun
   "i" 'imenu-list-smart-toggle
-  "g" 'magit-status
+  "g" 'magit-project-status
   "k" 'kill-buffer
   "v" 'my-eval-expression
   "a" 'org-agenda-list
@@ -605,10 +603,10 @@ things you want byte-compiled in them! Like function/macro definitions."
                          (if res
                              (completion-at-point)
                            (hippie-expand nil)))) 
-        ((derived-mode-p 'eshell-mode 'comint-mod) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
-                                                     (if res
-                                                         (completion-at-point)
-                                                       (hippie-expand nil))))
+        ((derived-mode-p 'eshell-mode) (let ((res (run-hook-wrapped 'completion-at-point-functions #'completion--capf-wrapper 'all)))
+                                         (if res
+                                             (completion-at-point)
+                                           (hippie-expand nil))))
         ((and (frame-live-p corfu--frame) (frame-visible-p corfu--frame)) (corfu-insert))
         (mark-active (indent-region (region-beginning) (region-end)))
         ((looking-at "\\_>") (hippie-expand nil))
@@ -926,13 +924,11 @@ rebalanced."
   "<tab>"
   "<backtab")
 
-(after! org-remark
-  )
 
 ;;;; hooks
 ;;;; text editing
 
-
+;;; emacs default
 
 (use-package evil-collection
   :straight t
@@ -1197,6 +1193,7 @@ rebalanced."
   )
 
 ;;;; code
+
 
 
 (use-package racket-mode
@@ -1725,7 +1722,7 @@ rebalanced."
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((prog-mode emacs-lisp-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (display-line-numbers-mode 1) (setq display-line-numbers 'visual)))
+  :hook (((prog-mode emacs-lisp-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :config
   ;; ellipsis marker single character of three dots in org
@@ -1744,6 +1741,8 @@ rebalanced."
   (add-to-list 'custom-enabled-themes 'tango-dark)
   (load-theme 'tango-dark)
   (blink-cursor-mode 0)
+  (add-to-list 'exec-path (concat user-emacs-directory "bin/"))
+
   :custom
   (undo-limit 400000)           ;; 400kb (default is 160kb)
   (undo-strong-limit 3000000)   ;; 3mb   (default is 240kb)
