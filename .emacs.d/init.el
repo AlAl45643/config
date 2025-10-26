@@ -657,10 +657,12 @@ rebalanced."
   "g d" 'xref-find-definitions
   "g h" 'my-help-at-point
   "C-w C-v" 'my-evil-window-vsplit-left
+  "g s" evilem-map
   )
 
 (general-def 'insert
   "TAB" 'smart-tab)
+
 
 ;; help-map
 (defun my-helpful-callable-save-window ()
@@ -1198,8 +1200,7 @@ rebalanced."
   (org-pomodoro-long-break-length 15)
   :config
   (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-finished-with-overtime-advice)
-  (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill-advice)
-  )
+  (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill-advice))
 
 (use-package evil-org
   :straight t
@@ -1209,11 +1210,13 @@ rebalanced."
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys)
   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
-  :diminish evil-org-mode
-  )
+  :diminish evil-org-mode)
 
 ;;;; code
 
+(use-package evil-easymotion
+  :straight t
+  :demand t)
 
 
 (use-package racket-mode
@@ -1499,10 +1502,7 @@ rebalanced."
           "\\*dotnet"
           "events\\*"
           "\\*shell\\*"
-          "\\*Python\\*"
-          "\\*ielm\\*"
           "\\*dape-shell\\*" 
-          "\\*Racket"
           "\\*vterm\\*"
           debugger-mode
           dired-mode
@@ -1558,18 +1558,21 @@ rebalanced."
       (side . right)
       (slot . -1)
       (window-width . my-fit-window-to-right-side))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*Python\\*\\|\\*ielm\\*\\|\\*dape-shell\\*\\|\\*Racket\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
       (display-buffer-reuse-window display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
-      (window-height 0.30))
+      (window-height . 0.50))
      ((derived-mode . magit-mode)
       (display-buffer-reuse-window display-buffer-in-direction)
-      (mode magit-mode)
       (window . root)
       (window-width . 0.50)
-      (direction . left))))
-  )
+      (direction . left))
+     ((derived-mode . comint-mode)
+      (display-buffer-reuse-mode-window display-buffer-below-selected)
+      (mode . comint-mode)
+      (window-height . 0.30))
+     )))
 
 
 (use-package font-core
