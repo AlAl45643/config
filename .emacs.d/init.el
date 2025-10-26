@@ -120,6 +120,7 @@
 ;; all (C-) SPC g magit-status
 ;; all (C-) SPC p org-pomodoro 
 ;; all (C-) SPC a org-agenda 
+;; all (C-) SPC h my-go-to-help-buffer
 
 ;; my-second-leader-map
 ;; all (C-) \ e t my-test-code 
@@ -275,9 +276,13 @@
 ;; imenu-list-major-mode-map
 ;; normal <return> imenu-goto-node
 
-;; doc-view-mode
+;; doc-view-mode-map
 ;; normal j doc-view-next-line-or-next-page
 ;; normal k doc-view-previous-line-or-previous-page
+
+
+;; inferior-python-mode-map
+;; insert normal (C-) , ? my-python-eldoc-at-point
 
 
 
@@ -618,10 +623,14 @@ things you want byte-compiled in them! Like function/macro definitions."
    ((and (featurep 'eglot) eglot--managed-mode) (call-interactively #'eglot-format-buffer))
    (t (indent-region (point-min) (point-max)))))
 
+
 (defun my-help-at-point ()
   (interactive)
   (cond
-   ((or (and (featurep 'eglot) eglot--managed-mode) (equal major-mode 'inferior-python-mode)) (call-interactively 'eldoc-doc-buffer))
+   ((and (featurep 'eglot) eglot--managed-mode) 
+    (call-interactively 'eldoc-doc-buffer))
+   ((equal major-mode 'inferior-python-mode)
+    (my-python-eldoc-at-point))
    (t (save-selected-window (helpful-at-point)))))
 
 (evil-define-command my-evil-window-vsplit-left (&optional count file)
@@ -916,6 +925,17 @@ rebalanced."
   (general-def 'normal doc-view-mode-map
     "j" 'doc-view-next-line-or-next-page
     "k" 'doc-view-previous-line-or-previous-page))
+
+;; inferior-python-mode-map
+(defun my-python-eldoc-at-point ()
+  "Get python documentation in eldoc with `python-eldoc--get-doc-at-point'."
+  (interactive)
+  (call-interactively 'eldoc-doc-buffer)
+  (eldoc-display-in-buffer `((,(python-eldoc-function))) nil)
+  )
+(after! python
+  (general-def inferior-python-mode-map
+    "C-c ?" 'my-python-eldoc-at-point)) 
 
 ;;; fixing overrides
 
@@ -1217,7 +1237,7 @@ rebalanced."
 	     :files ("*.el" "*.rkt")))
 
 
-  
+
 (use-package pet
   :demand t
   :straight t
@@ -1294,12 +1314,14 @@ rebalanced."
 
 
 (use-package eldoc
-  :hook (inferior-python-mode . (lambda () (add-hook 'eldoc-documentation-functions #'python-eldoc-function nil t)))
   :custom
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
   :diminish eldoc-mode
   )
+
+
+
 
 (use-package php-mode
   :straight t
