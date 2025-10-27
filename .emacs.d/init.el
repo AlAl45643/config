@@ -368,8 +368,7 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; general \ local leader
 (general-def '(normal visual) 'override
   "," (general-simulate-key "C-c")
-  "<menu>" (general-simulate-key "C-c")
-  "C-c ," 'evil-snipe-repeat-reverse)
+  "<menu>" (general-simulate-key "C-c"))
 
 (general-def 'insert 'override
   "C-," (general-simulate-key "C-c")
@@ -470,7 +469,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "l" 'vterm
   "d" 'dired
   "n" 'eval-defun
-  "i" 'imenu-list-smart-toggle
+  "i" 'consult-imenu
   "g" 'magit-project-status
   "k" 'kill-buffer
   "v" 'my-eval-expression
@@ -657,8 +656,14 @@ rebalanced."
   "g d" 'xref-find-definitions
   "g h" 'my-help-at-point
   "C-w C-v" 'my-evil-window-vsplit-left
-  "g s" evilem-map
   )
+
+(after! evil-easymotion
+  (general-def 'normal
+    "s" 'evilem-motion-find-char
+    "S" 'evilem-motion-find-char-backward
+    "g s" evilem-map
+    ))
 
 (general-def 'insert
   "TAB" 'smart-tab)
@@ -964,13 +969,6 @@ rebalanced."
   )
 
 
-(use-package evil-snipe
-  :straight t
-  :diminish evil-snipe-local-mode
-  :init
-  (evil-snipe-mode +1)
-  (evil-snipe-override-mode +1)
-  )
 
 (use-package evil-owl
   :diminish evil-owl-mode
@@ -1649,13 +1647,6 @@ rebalanced."
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)
   )
 
-(use-package imenu-list
-  :straight t
-  :hook ((imenu-list-after-jump . (lambda () (imenu-list-smart-toggle))))
-  :custom
-  (imenu-list-focus-after-activation t)
-  (imenu-list-auto-resize t)
-  (imenu-list-position 'left))
 
 
 ;;Enable rich annotations using the Marginalia package
