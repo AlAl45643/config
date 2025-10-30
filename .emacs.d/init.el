@@ -263,7 +263,6 @@
 ;; C-<iso-lefttab> org-shifttab
 ;; normal insert (C-) , t org-match-sparse-tree-heading
 
-
 ;; org-remark-mode-map
 ;; visual Enter org-remark-mark
 ;; normal o org-remark-open
@@ -368,7 +367,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 ;; general \ local leader
 (general-def '(normal visual) 'override
   "," (general-simulate-key "C-c")
-  "<menu>" (general-simulate-key "C-c"))
+  "<menu>" (general-simulate-key "C-c")
+  "C-c ," 'evil-repeat-find-char-reverse)
 
 (general-def 'insert 'override
   "C-," (general-simulate-key "C-c")
@@ -385,8 +385,12 @@ things you want byte-compiled in them! Like function/macro definitions."
    ((equal major-mode (or 'python-ts-mode 'python-mode))
     (if (not (get-buffer "*Python*"))    
         (run-python "python3 -i" nil t)
-      (let ((kill-buffer-query-functions nil))
-        (kill-buffer "*Python*"))
+      (let ((kill-buffer-query-functions nil)
+            (python (get-buffer-window "*Python*")))
+        (cond
+         (python (with-selected-window python
+                   (kill-buffer-and-window)))
+         ((get-buffer "*Python*") (kill-buffer "*Python*"))))
       (run-python "python3 -i" nil t)
       ;; Without this line python returns NameError: name '__PYTHON_EL_eval_file' is not defined
       (sit-for 1)
@@ -660,8 +664,10 @@ rebalanced."
 
 (after! evil-easymotion
   (general-def 'normal
-    "s" 'evilem-motion-find-char
-    "S" 'evilem-motion-find-char-backward
+    ;; "s" 'evilem-motion-find-char
+    ;; "S" 'evilem-motion-find-char-backward
+    ;; "g f" 'evilem-motion-find-char
+    ;; "g F" 'evilem-motion-find-char-backward
     "g s" evilem-map
     ))
 
@@ -1696,6 +1702,10 @@ rebalanced."
 
 ;;;; miscaleanous
 
+(use-package pdf-tools
+  :straight t
+  ;; :mode ("\\.pdf\\'" . )
+  )
 
 (use-package burly
   :demand t
@@ -1737,7 +1747,7 @@ rebalanced."
 
 (use-package emacs
   :mode ("\\.sql\\'" . sql-mode)
-  :hook (((prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
+  :hook (((Info-mode prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :config
   ;; ellipsis marker single character of three dots in org
