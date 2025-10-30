@@ -573,6 +573,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "a" 'my-code-action
   "d" 'dape
   "n" 'my-code-rename
+  "k" 'docker
   )
 
 (+general-global-menu! "miscellaneous" "s"
@@ -958,10 +959,12 @@ rebalanced."
   "<backtab")
 
 
-;;;; hooks
 ;;;; text editing
 
-;;; emacs default
+
+(use-package evil-easymotion
+  :straight t
+  :demand t)
 
 (use-package evil-collection
   :straight t
@@ -1216,11 +1219,10 @@ rebalanced."
   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
   :diminish evil-org-mode)
 
-;;;; code
+;;; code
 
-(use-package evil-easymotion
-  :straight t
-  :demand t)
+(use-package docker
+  :straight t)
 
 
 (use-package racket-mode
