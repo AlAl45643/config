@@ -1222,7 +1222,9 @@ rebalanced."
 ;;; code
 
 (use-package docker
-  :straight t)
+  :straight t
+  :custom
+  (docker-run-as-root t))
 
 
 (use-package racket-mode
