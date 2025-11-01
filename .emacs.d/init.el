@@ -1771,7 +1771,9 @@ rebalanced."
   (add-to-list 'custom-enabled-themes 'tango-dark)
   (load-theme 'tango-dark)
   (blink-cursor-mode 0)
+  ;; paths
   (add-to-list 'exec-path (concat user-emacs-directory "bin/"))
+  (add-to-list 'Info-directory-list (concat user-emacs-directory "info/"))
 
   :custom
   (undo-limit 400000)           ;; 400kb (default is 160kb)
