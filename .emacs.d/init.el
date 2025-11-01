@@ -280,6 +280,7 @@
 ;; insert normal (C-) , ? my-python-eldoc-at-point
 
 
+
 (use-package general
   :straight t
   :demand t
@@ -729,14 +730,6 @@ rebalanced."
     "C-S-k" 'corfu-popupinfo-scroll-down))
 
 ;; dape-active-mode-map
-(defun my-dape-start-next ()
-  "If dape is active, move to next stop, else start dape."
-  (interactive)
-  (if dape-active-mode
-      (call-interactively #'dape-next)
-    (call-interactively #'dape)))
-
-
 (after! dape
   (general-def '(normal insert) 'override
     :predicate 'dape-active-mode
@@ -809,6 +802,7 @@ rebalanced."
     (general-def '(normal insert) edebug-eval-mode-map
       "RET" 'edebug-update-eval-list
       )))
+
 
 ;; magit-mode-map magit-section-mode-map
 (after! magit
@@ -1093,6 +1087,7 @@ rebalanced."
   :diminish org-remark-mode
   )
 
+
 (use-package nov
   :straight t
   :mode ("\\.epub\\'" . nov-mode))
@@ -1155,7 +1150,8 @@ rebalanced."
 ;;; code
 
 (use-package docker
-  :straight t)
+  :straight t
+  )
 
 
 (use-package racket-mode
@@ -1443,6 +1439,8 @@ rebalanced."
           "\\*shell\\*"
           "\\*dape-shell\\*" 
           "\\*vterm\\*"
+          "^\\* docker.+ up"
+          "^\\* docker.+ exec"
           debugger-mode
           dired-mode
           compilation-mode
@@ -1497,12 +1495,12 @@ rebalanced."
       (side . right)
       (slot . -1)
       (window-width . my-fit-window-to-right-side))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*\\|^\\* docker.+ up\\|^\\* docker.+ exec" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
       (display-buffer-reuse-window display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
       (window-height . 0.50))
-     ((derived-mode . magit-mode)
+     ((or "^\\*docker.+\\*$" (derived-mode . magit-mode))
       (display-buffer-reuse-window display-buffer-in-direction)
       (window . root)
       (window-width . 0.50)
