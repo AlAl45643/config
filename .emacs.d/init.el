@@ -275,14 +275,9 @@
 ;; imenu-list-major-mode-map
 ;; normal <return> imenu-goto-node
 
-;; doc-view-mode-map
-;; normal j doc-view-next-line-or-next-page
-;; normal k doc-view-previous-line-or-previous-page
-
 
 ;; inferior-python-mode-map
 ;; insert normal (C-) , ? my-python-eldoc-at-point
-
 
 
 (use-package general
@@ -733,7 +728,7 @@ rebalanced."
     "C-S-j" 'corfu-popupinfo-scroll-up
     "C-S-k" 'corfu-popupinfo-scroll-down))
 
-;; dape-breakpoint-global-mode-map
+;; dape-active-mode-map
 (defun my-dape-start-next ()
   "If dape is active, move to next stop, else start dape."
   (interactive)
@@ -745,10 +740,31 @@ rebalanced."
 (after! dape
   (general-def '(normal insert) 'override
     :predicate 'dape-active-mode
-    "<f5>" 'dape-continue
-    "<f6>" 'dape-step-out
-    "<f7>" 'dape-step-in
-    "<f8>" 'dape-next)
+    "s" 'dape-next
+    "c" 'dape-continue
+    "i" 'dape-step-in
+    "o" 'dape-step-out
+    "q" 'dape-quit
+    "b" 'dape-breakpoint-toggle
+    "u" 'dape-breakpoint-remove-at-point
+    "x" 'dape-breakpoint-expression
+    "h" 'dape-breakpoint-hits
+    "l" 'dape-breakpoint-log
+    "B" 'dape-breakpoint-remove
+    "e" 'dape-evaluate-expression
+    "w" 'dape-watch-dwim
+    "<" 'dape-stack-select-up
+    ">" 'dape-stack-select-down
+    "D" 'dape-disconnect-quit
+    "M" 'dape-disassemble
+    "R" 'dape-repl
+    "S" 'dape-select-stack
+    "F" 'dape-restart-frame
+    "m" 'dape-memory
+    "R" 'dape-restart
+    "T" 'dape-select-thread
+    "U" 'dape-until
+    )
   
   (general-def 'normal 'override
     :predicate 'dape-active-mode
@@ -763,124 +779,36 @@ rebalanced."
         which-key-replacement-alist)
   )
 
+;; python-ts-mode-map
 (after! python
   (general-def python-ts-mode-map
     "C-c B" 'dape-breakpoint-remove-all
-    "C-c D" 'dape-disconnect-quit
-    "C-c M" 'dape-disassemble
-    "C-c R" 'dape-repl
-    "C-c S" 'dape-select-stack
     "C-c b" 'dape-breakpoint-toggle
     "C-c e" 'dape-breakpoint-expression
-    "C-c f" 'dape-restart-frame
     "C-c h" 'dape-breakpoint-hits
     "C-c i" 'dape-info
     "C-c l" 'dape-breakpoint-log
-    "C-c m" 'dape-memory
-    "C-c p" 'dape-pause
-    "C-c q" 'dape-quit
-    "C-c r" 'dape-restart
-    "C-c t" 'dape-select-thread
-    "C-c u" 'dape-until
-    "C-c w" 'dape-watch-dwim
     )
   )
 
-
+;; csharp-ts-mode-map
 (after! csharp-mode
   (general-def csharp-ts-mode-map
     "C-c B" 'dape-breakpoint-remove-all
-    "C-c D" 'dape-disconnect-quit
-    "C-c M" 'dape-disassemble
-    "C-c R" 'dape-repl
-    "C-c S" 'dape-select-stack
     "C-c b" 'dape-breakpoint-toggle
     "C-c e" 'dape-breakpoint-expression
-    "C-c f" 'dape-restart-frame
     "C-c h" 'dape-breakpoint-hits
     "C-c i" 'dape-info
     "C-c l" 'dape-breakpoint-log
-    "C-c m" 'dape-memory
-    "C-c p" 'dape-pause
-    "C-c q" 'dape-quit
-    "C-c r" 'dape-restart
-    "C-c t" 'dape-select-thread
-    "C-c u" 'dape-until
-    "C-c w" 'dape-watch-dwim
     ))
 
 ;; edebug-mode-map edebug-eval-mode-map
-(defun set-edebug-map ()
-  "Set the edebug mode map"
-  (setq edebug-mode-map (make-sparse-keymap))
-  (general-def '(insert normal) edebug-mode-map
-    "<f8>" 'edebug-step-mode
-    "<f5>" 'edebug-go-mode
-    "<f6>" 'edebug-step-out
-    "<f7>" 'edebug-step-in
-    )
+(after! edebug
   (general-def 'normal edebug-mode-map
     "Z Q" 'top-level
-    "q" 'top-level)
-  (general-def edebug-mode-map
-    "C-c n"       'edebug-next-mode
-    "C-c G"       'edebug-Go-nonstop-mode
-    "C-c t"       'edebug-trace-mode
-    "C-c T"       'edebug-Trace-fast-mode
-    "C-c c"       'edebug-continue-mode
-    "C-c C"       'edebug-Continue-fast-mode
-
-    ;;"f"       #'edebug-forward ; not implemented
-    "C-c f"       'edebug-forward-sexp
-    "C-c h"       'edebug-goto-here
-
-    "C-c I"       'edebug-instrument-callee
-
-    ;; quitting and stopping
-    "C-c q"       'top-level
-    "C-c Q"       'edebug-top-level-nonstop
-    "C-c a"       'abort-recursive-edit
-    "C-c S"       'edebug-stop
-
-    ;; breakpoints
-    "C-c b"       'edebug-set-breakpoint
-    "C-c u"       'edebug-unset-breakpoint
-    "C-c U"       'edebug-unset-breakpoints
-    "C-c B"       'edebug-next-breakpoint
-    "C-c x"       'edebug-set-conditional-breakpoint
-    "C-c X"       'edebug-set-global-break-condition
-    "C-c D"       'edebug-toggle-disable-breakpoint
-
-    ;; evaluation
-    "C-c r"       'edebug-previous-result
-    "C-c e"       'edebug-eval-expression
-    "C-c C-x C-e" 'edebug-eval-last-sexp
-    "C-c E"       'edebug-visit-eval-list
-
-    ;; views
-    "C-c w"       'edebug-where
-    "C-c v"       'edebug-view-outside        ; maybe obsolete??
-    "C-c p"       'edebug-bounce-point
-    "C-c P"       'edebug-view-outside        ; same as v
-    "C-c W"       'edebug-toggle-save-windows
-
-    ;; misc
-    "C-c ?"       'edebug-help
-    "C-c d"       'edebug-pop-to-backtrace
-
-    "C-c -"       'negative-argument
-
-    ;; statistics
-    "C-c ="       'edebug-temp-display-freq-count)
-
-  (general-def '(normal insert) edebug-eval-mode-map
-    "RET" 'edebug-update-eval-list
-    )
-  )
-
-(after! edebug
-  (add-hook 'edebug-setup-hook #'set-edebug-map)
-  )
+    (general-def '(normal insert) edebug-eval-mode-map
+      "RET" 'edebug-update-eval-list
+      )))
 
 ;; magit-mode-map magit-section-mode-map
 (after! magit
@@ -1159,10 +1087,15 @@ rebalanced."
   :after org
   :straight t
   :hook ((after-init . org-remark-global-tracking-mode)
-         (Info-mode . org-remark-info-mode))
+         (Info-mode . org-remark-info-mode)
+         (nov-mode . org-remark-nov-mode))
   :diminish org-remark-global-tracking-mode
   :diminish org-remark-mode
   )
+
+(use-package nov
+  :straight t
+  :mode ("\\.epub\\'" . nov-mode))
 
 
 (defun my-org-pomodoro-choose-break-time (arg)
@@ -1222,8 +1155,7 @@ rebalanced."
 ;;; code
 
 (use-package docker
-  :straight t
-  )
+  :straight t)
 
 
 (use-package racket-mode
@@ -1511,8 +1443,6 @@ rebalanced."
           "\\*shell\\*"
           "\\*dape-shell\\*" 
           "\\*vterm\\*"
-          "^\\* docker.+ up"
-          "^\\* docker.+ exec"
           debugger-mode
           dired-mode
           compilation-mode
@@ -1567,12 +1497,12 @@ rebalanced."
       (side . right)
       (slot . -1)
       (window-width . my-fit-window-to-right-side))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*\\|^\\* docker.+ up\\|^\\* docker.+ exec" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
       (display-buffer-reuse-window display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
       (window-height . 0.50))
-     ((or "^\\*docker.+\\*$" (derived-mode . magit-mode))
+     ((derived-mode . magit-mode)
       (display-buffer-reuse-window display-buffer-in-direction)
       (window . root)
       (window-width . 0.50)
