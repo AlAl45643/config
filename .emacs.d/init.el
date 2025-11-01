@@ -1223,8 +1223,7 @@ rebalanced."
 
 (use-package docker
   :straight t
-  :custom
-  (docker-run-as-root t))
+  )
 
 
 (use-package racket-mode
@@ -1512,6 +1511,8 @@ rebalanced."
           "\\*shell\\*"
           "\\*dape-shell\\*" 
           "\\*vterm\\*"
+          "^\\* docker.+ up"
+          "^\\* docker.+ exec"
           debugger-mode
           dired-mode
           compilation-mode
@@ -1566,12 +1567,12 @@ rebalanced."
       (side . right)
       (slot . -1)
       (window-width . my-fit-window-to-right-side))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*\\|^\\* docker.+ up\\|^\\* docker.+ exec" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
       (display-buffer-reuse-window display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
       (window-height . 0.50))
-     ((derived-mode . magit-mode)
+     ((or "^\\*docker.+\\*$" (derived-mode . magit-mode))
       (display-buffer-reuse-window display-buffer-in-direction)
       (window . root)
       (window-width . 0.50)
