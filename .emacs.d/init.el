@@ -1,4 +1,4 @@
-;;;; PACKAGE management
+;;; package management
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
@@ -31,30 +31,31 @@
   )
 
 
-;;;; keybinds
-
+;;; keybinds
+;;;; rules
+;;;;; keymaps to function
 ;; Keymaps                                  Default binding functions                     General.el functions                   Examples
 ;; Overriding terminal-local map                                                                                                 transient
 ;; Overriding local map
 ;; Point Property keymaps                                                                                                        magit diffs
 ;; Emulation mode map alists
-;;; Intercept keymaps              -        evil-make-intercept-map             -         general-def '(states) 'override        edebug-mode-map 
-;;; Local state keymaps            -        evil-local-set-key                  -         general-def '(states) 'local            
-;;; Minor-mode keymaps             -        evil-define-minor-mode-key          -         general-def '(states) minor-mode-map   evil org mode
-;;; Auxiliary/mode keymaps         -        evil-define-key                     -         general-def '(states) major-mode-map   evil commentary
-;;; Overriding keymaps             -        evil-make-overriding-map            -             
-;;; Global state keymaps           -        evil-global-set-key                 -         general-def '(states)...               vim keybindings
+;; Intercept keymaps              -        evil-make-intercept-map             -         general-def '(states) 'override        edebug-mode-map 
+;; Local state keymaps            -        evil-local-set-key                  -         general-def '(states) 'local            
+;; Minor-mode keymaps             -        evil-define-minor-mode-key          -         general-def '(states) minor-mode-map   evil org mode
+;; Auxiliary/mode keymaps         -        evil-define-key                     -         general-def '(states) major-mode-map   evil commentary
+;; Overriding keymaps             -        evil-make-overriding-map            -             
+;; Global state keymaps           -        evil-global-set-key                 -         general-def '(states)...               vim keybindings
 ;; Minor mode overriding map alist -                                                      general-def 'override 
 ;; Buffer local keymap (general.el)-                                                      general-def 'local
 ;; Minor mode keymaps              -        define-key minor-mode-map           -         general-def keymap...                  tab-bar-mode
 ;; Local keymaps                   -        define-key major-mode-map           -         general-def keymap...                   
 ;; Global keymaps                  -        global-set-key                      -         general-def... 
 
-;; notes
+;;;;; notes
 ;; + Using (evil-make-intercept-map) will not place the keymap in evil-intercept-maps as that has no effect but in the minor-mode-keymaps with an intercept state which has the same functionality.
 ;; + Keys defined with evil-define-key for a minor-mode and general-def depending on if it uses evil-define-key internally may not work immediately requiring #'evil-normalize-keymaps to be added to the mode's hook. Consider using general-add-hook for its transient feature in removing the function from the hook after running.
 
-;; Keybind conventions
+;;;;; Keybind conventions
 ;; q ephermal quit
 ;; Z Q non epehermal quit
 ;; C-j C-k when j k isn't available
@@ -62,15 +63,13 @@
 ;; ]] [[ next visible heading
 ;; C-S-j C-S-k next grouping or scroll
 
-
-;;; rules
-;; guiding values 
+;;;;; guiding values 
 ;; + A keybind should be 1. useful 2. memorable 3. shorter than less used and longer than more used keybinds 4. easy to press
 ;; + Structure makes memorable keybinds.
 ;; + Keybinds can be separated into three semantic categories. The first being keybinds that are only useful within a context (mode), the second being keybinds that are useful in any context (mode), and the third being keybinds that are somewhere between. 
 ;; + Emacs prefixes should be incorporated into your keybind scheme so that you can discover more useful keybinds and that your keybind scheme if not optimal is most likely useful.
 
-;; binding rules
+;;;;; binding rules
 ;; + SPC prefix commands should be commands with higher frequency of use than , prefix commands.
 ;; + The , prefix and the SPC prefix are restricted to global commands while the \ prefix is restricted to major mode.
 ;; + Inbetween keybinds shall be global through functions or local depending on whichever solution is cleaner.
@@ -93,12 +92,13 @@
 ;; , prefix semantic rules
 ;; 1. No infix keys except modifier keys.
 
-;; evil-intercept-maps
+;;;; textual keybinds
+;;;;; evil-intercept-maps
 ;; all (C-) , (general-simulate-key "C-c")
 ;; normal j evil-next-visual-line
 ;; normal k evil-previous-visual-line
 
-;; my-main-leader-evil-map
+;;;;; my-main-leader-evil-map
 ;; all (C-) SPC s switch-to-buffer
 ;; all (C-) SPC r my-run-program
 ;; all (C-) SPC t popper-toggle
@@ -121,7 +121,7 @@
 ;; all (C-) SPC a org-agenda 
 ;; all (C-) SPC h my-go-to-help-buffer
 
-;; my-second-leader-map
+;;;;; my-second-leader-map
 ;; all (C-) \ e t my-test-code 
 ;; all (C-) \ e b my-build-code
 ;; all (C-) \ e a my-code-action
@@ -142,10 +142,10 @@
 ;; all (C-) \ h help-map
 ;; all (C-) \ x ctl-x-map
 
-;; transient-sticky-map
+;;;;; transient-sticky-map
 ;; q transient-quit-seq
 
-;; evil-normal-state-map evil-insert-state-map
+;;;;; evil-normal-state-map evil-insert-state-map
 ;; normal = = format-buffer
 ;; normal C-S-d evil-scroll-up
 ;; [ x xref-go-back
@@ -155,14 +155,14 @@
 ;; g h help-at-point
 ;; C-w C-v my-evil-window-vsplit-left
 
-;; help-map
+;;;;; help-map
 ;; normal insert C-h f helpful-callable
 ;; normal insert C-h v helpful-variable
 ;; normal insert C-h k helpful-key
 ;; normal insert C-h x helpful-command
 ;; normal insert C-h F helpful-function
 
-;; vertico-map
+;;;;; vertico-map
 ;; C-j vertico-next
 ;; C-k vertico-previous
 ;; C-b evil-backward char
@@ -170,16 +170,16 @@
 ;; C-S-j scroll-down-command
 ;; C-S-k scroll-up-command
 
-;; corfu-mode-map
+;;;;; corfu-mode-map
 ;; insert M-SPC corfu-insert-separator
 ;; insert RET nil
 
-;; corfu-popupinfo-map
+;;;;; corfu-popupinfo-map
 ;; C-h corfu-popupinfo-toggle
 ;; C-S-j corfu-popupinfo-scroll-up
 ;; C-S-k corfu-popupinfo-scroll-down
 
-;; python-mode-map csharp-mode-map
+;;;;; python-mode-map csharp-mode-map
 ;; normal insert (C-) , <  dape-stack-select-up      
 ;; normal insert (C-) , >  dape-stack-select-down    
 ;; normal insert (C-) , B  dape-breakpoint-remove-all
@@ -202,14 +202,14 @@
 ;; normal insert (C-) , w  dape-watch-dwim           
 ;; normal insert (C-) , x  dape-evaluate-expression  
 
-;; dape-active-mode-map
+;;;;; dape-active-mode-map
 ;; insert normal F5 dape-continue
 ;; insert normal F6 dape-step-out
 ;; insert normal F7 dape-step-in
 ;; insert normal F8 dape-next
 ;; normal Z Q dape-quit
 
-;; edebug-mode-map
+;;;;; edebug-mode-map
 ;; insert normal F8 edebug-step-mode
 ;; insert normal F5 edebug-go-mode
 ;; insert normal F6 edebug-step-out
@@ -249,39 +249,40 @@
 ;; insert normal (C-) , d       edebug-pop-to-backtrace
 ;; insert normal (C-) , -       negative-argument
 
-;; edebug-eval-mode-map
+;;;;; edebug-eval-mode-map
 ;; insert normal RET edebug-update-eval-list
 ;; insert normal <home> edebug-where
 
-;; magit-mode-map magit-section-mode-map
+;;;;; magit-mode-map magit-section-mode-map
 ;; insert normal visual ] ] magit-section-forward
 ;; [ [ magit-section-backward
 
-;; org-mode-map
+;;;;; org-mode-map
 ;; C-<tab> org-cycle
 ;; C-<iso-lefttab> org-shifttab
 ;; normal insert (C-) , t org-match-sparse-tree-heading
 
-;; org-remark-mode-map
+;;;;; org-remark-mode-map
 ;; visual Enter org-remark-mark
 ;; normal o org-remark-open
 ;; normal ]m org-remark-view-next
 
-;; yas-keymap
+;;;;; yas-keymap
 ;; C-<tab> yas-next-field
 ;; C-<iso-lefttab> yas-prev-field
 
-;; imenu-list-major-mode-map
+;;;;; imenu-list-major-mode-map
 ;; normal <return> imenu-goto-node
 
 
-;; inferior-python-mode-map
+;;;;; inferior-python-mode-map
 ;; insert normal (C-) , ? my-python-eldoc-at-point
 
-;; dired-mode-map
+;;;;; dired-mode-map
 ;; q evil-window-delete
 
-
+;;;; code keybinds
+;;;;; keybind dependencies
 (use-package general
   :straight t
   :demand t
@@ -360,8 +361,7 @@ things you want byte-compiled in them! Like function/macro definitions."
                (setq body `((after! ,next ,@body)))))
             (`(after! (:and ,@package) ,@body))))))
 
-;; evil-intercept-maps
-;; general \ local leader
+;;;;; evil-intercept-maps
 (general-def '(normal visual) 'override
   "," (general-simulate-key "C-c")
   "<menu>" (general-simulate-key "C-c")
@@ -448,7 +448,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (bookmark-jump "Burly: home"))
 
 
-;; my-main-leader-evil-map
+;;;;; my-main-leader-evil-map
 
 (general-define-key
  :keymaps 'override
@@ -482,7 +482,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   "o" 'my-online-search
   )
 
-;; \\ second evil leader map
 
 (defun my-online-search (x)
   "Search duckduckgo with X"
@@ -539,7 +538,7 @@ things you want byte-compiled in them! Like function/macro definitions."
    ((and (featurep 'eglot) eglot--managed-mode) (call-interactively 'eglot-rename))
    (t (message "%s" "Nothing to rename at point."))))
 
-;; my-second-leader-evil-map
+;;;;; my-second-leader-evil-map
 (general-define-key
  :keymaps 'override
  :states '(insert normal hybrid motion visual operator)
@@ -601,7 +600,7 @@ things you want byte-compiled in them! Like function/macro definitions."
  )
 
 
-;; evil-normal-state-map evil-insert-state-map
+;;;;; evil-normal-state-map evil-insert-state-map
 (defun smart-tab ()
   (interactive)
   (cond ((buffer-local-value 'vertico--input (current-buffer)) (vertico-insert))
@@ -673,7 +672,7 @@ rebalanced."
   "TAB" 'smart-tab)
 
 
-;; help-map
+;;;;; help-map
 (defun my-helpful-callable-save-window ()
   (interactive)
   (save-selected-window (call-interactively 'helpful-callable)))
@@ -703,7 +702,7 @@ rebalanced."
     "C-h F" 'my-helpful-function-save-window
     ))
 
-;; vertico-map
+;;;;; vertico-map
 (after! vertico
   (general-def '(insert normal) vertico-map
     "C-j" 'vertico-next
@@ -716,19 +715,22 @@ rebalanced."
   )
 
 
-;; corfu-mode-map
+;;;;; corfu-mode-map
 (after! corfu
   (general-def corfu-map
     "M-SPC" 'corfu-insert-separator
     "RET" nil
     ))
 
-;;corfu-popupinfo-map
+;;;;; corfu-popupinfo-map
 (after! corfu-popupinfo
   (general-def corfu-popupinfo-map
     "C-h" 'corfu-popupinfo-toggle
     "C-S-j" 'corfu-popupinfo-scroll-up
     "C-S-k" 'corfu-popupinfo-scroll-down))
+
+;;;;; dape-maps*
+;;;;;; dape-active-mode-map
 (after! dape
   (general-def '(normal insert) 'override
     :predicate 'dape-active-mode
@@ -750,6 +752,7 @@ rebalanced."
         which-key-replacement-alist)
   )
 
+;;;;;; python-ts-mode-map
 (after! python
   (general-def python-ts-mode-map
     "C-c B" 'dape-breakpoint-remove-all
@@ -773,7 +776,7 @@ rebalanced."
     )
   )
 
-
+;;;;;; csharp-ts-mode
 (after! csharp-mode
   (general-def csharp-ts-mode-map
     "C-c B" 'dape-breakpoint-remove-all
@@ -796,7 +799,7 @@ rebalanced."
     "C-c w" 'dape-watch-dwim
     ))
 
-;; edebug-mode-map edebug-eval-mode-map
+;;;;; edebug-mode-map edebug-eval-mode-map
 (defun set-edebug-map ()
   "Set the edebug mode map"
   (setq edebug-mode-map (make-sparse-keymap))
@@ -871,7 +874,7 @@ rebalanced."
 
 
 
-;; magit-mode-map magit-section-mode-map
+;;;;; magit-mode-map magit-section-mode-map
 (after! magit
   (general-def '(visual normal) magit-mode-map
     "] ]" 'magit-section-forward
@@ -887,7 +890,7 @@ rebalanced."
     (org-match-sparse-tree)
     ))
 
-;; org-mode-map
+;;;;; org-mode-map
 (after! org
   (general-def org-mode-map
     "C-<tab>" 'org-cycle
@@ -895,7 +898,7 @@ rebalanced."
     "C-c t" 'org-match-sparse-tree-heading))
 
 
-;; org-remark-mode-map
+;;;;; org-remark-mode-map
 (after! org-remark
   (general-def 'visual org-remark-mode-map 
     "<return>" 'org-remark-mark)
@@ -905,7 +908,7 @@ rebalanced."
     "[m" 'org-remark-view-prev
     "r" 'org-remark-delete))
 
-;; yas-keymap
+;;;;; yas-keymap
 (after! yasnippet
   (general-def yas-keymap
     "<tab>" nil
@@ -913,7 +916,7 @@ rebalanced."
     "C-<tab>" 'yas-next-field
     "C-<iso-lefttab>" 'yas-prev-field))
 
-;; imenu-list-major-mode-map
+;;;;; imenu-list-major-mode-map
 (after! imenu-list
   (general-def 'normal imenu-list-major-mode-map
     "<return>" (lambda (arg) (interactive "P")
@@ -923,13 +926,13 @@ rebalanced."
     ))
 
 
-;; doc-view-mode-map
+;;;;; doc-view-mode-map
 (after! doc-view
   (general-def 'normal doc-view-mode-map
     "j" 'doc-view-next-line-or-next-page
     "k" 'doc-view-previous-line-or-previous-page))
 
-;; inferior-python-mode-map
+;;;;; inferior-python-mode-map
 (defun my-python-eldoc-at-point ()
   "Get python documentation in eldoc with `python-eldoc--get-doc-at-point'."
   (interactive)
@@ -940,12 +943,12 @@ rebalanced."
   (general-def inferior-python-mode-map
     "C-c ?" 'my-python-eldoc-at-point)) 
 
-;; dired-mode-map
+;;;;; dired-mode-map
 (after! dired
   (general-def 'normal dired-mode-map
     "q" 'evil-window-delete))
 
-;;; fixing overrides
+;;;;; fixing overrides
 
 (general-unbind iedit-mode-keymap
   "TAB"
@@ -953,9 +956,8 @@ rebalanced."
   "<backtab")
 
 
-;;;; text editing
-
-
+;;; packages
+;;;; evil
 (use-package evil-easymotion
   :straight t
   :demand t)
@@ -1014,8 +1016,7 @@ rebalanced."
   )
 
 
-;;; org
-
+;;;; org
 (defun my-org-agenda-to-appt ()
   "Erase all reminders and rebuilt reminders for today from the agenda."
   (interactive)
@@ -1219,12 +1220,37 @@ rebalanced."
   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
   :diminish evil-org-mode)
 
-;;; code
+;;;; code
+;;;;; tools
 
 (use-package docker
   :straight t
   )
 
+(use-package magit
+  :straight t)
+
+(use-package pet
+  :demand t
+  :straight t
+  :config
+  (add-hook 'python-base-mode-hook 'pet-mode -10)
+  )
+
+(use-package sharper
+  :straight t
+  :demand t
+  )
+
+;;;;; modes
+(use-package ob-racket
+  :after org
+  :config
+  (add-hook 'ob-racket-pre-runtime-library-load-hook
+	    #'ob-racket-raco-make-runtime-library)
+  :straight (ob-racket
+	     :type git :host github :repo "hasu/emacs-ob-racket"
+	     :files ("*.el" "*.rkt")))
 
 (use-package racket-mode
   :straight t
@@ -1237,27 +1263,35 @@ rebalanced."
   (TeX-parse-self t)
   )
 
-(use-package ob-racket
-  :after org
-  :config
-  (add-hook 'ob-racket-pre-runtime-library-load-hook
-	    #'ob-racket-raco-make-runtime-library)
-  :straight (ob-racket
-	     :type git :host github :repo "hasu/emacs-ob-racket"
-	     :files ("*.el" "*.rkt")))
-
-
-
-(use-package pet
-  :demand t
+(use-package php-mode
   :straight t
-  :config
-  (add-hook 'python-base-mode-hook 'pet-mode -10)
+  :mode ("\\.php\\'" . php-ts-mode)
   )
 
-(use-package magit
-  :straight t)
+(use-package js2-mode
+  :straight t
+  :mode ("\\.js\\'" . js2-mode))
 
+
+(use-package elisp-mode
+  :hook (emacs-lisp-mode . (lambda () (setq imenu-generic-expression (append (list  (list "Use Package" "^(use-package \\(.+\\)" 1)) imenu-generic-expression))))
+  )
+
+
+(use-package web-mode
+  :straight t
+  :mode ((("\\.phtml\\'") . web-mode)
+         (("\\page\\'") . web-mode))
+  )
+
+
+(use-package plantuml-mode
+  :straight t
+  :custom
+  (plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
+  )
+
+;;;;; debugging
 (use-package dape
   :straight t
   :init
@@ -1278,6 +1312,7 @@ rebalanced."
 
   )
 
+;;;;; language server
 (defvar my-eglot-completion-functions (list #'yasnippet-capf #'eglot-completion-at-point)
   "The list of completion functions to combine to replace `eglot-completion-at-point'.")
 
@@ -1333,50 +1368,9 @@ rebalanced."
 
 
 
-(use-package php-mode
-  :straight t
-  :mode ("\\.php\\'" . php-ts-mode)
-  )
 
-(use-package js2-mode
-  :straight t
-  :mode ("\\.js\\'" . js2-mode))
-
-
-
-(use-package elisp-mode
-  :hook (emacs-lisp-mode . (lambda () (setq imenu-generic-expression (append (list  (list "Use Package" "^(use-package \\(.+\\)" 1)) imenu-generic-expression))))
-  )
-
-
-(use-package web-mode
-  :straight t
-  :mode ((("\\.phtml\\'") . web-mode)
-         (("\\page\\'") . web-mode))
-  )
-
-
-(use-package plantuml-mode
-  :straight t
-  :custom
-  (plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
-  )
-
-(use-package treesit-auto
-  :straight t
-  :demand t
-  :custom
-  (treesit-font-lock-level 4)
-  :config
-  (global-treesit-auto-mode))
-
-(use-package sharper
-  :straight t
-  :demand t
-  )
 
 ;;;; completion
-
 (use-package corfu
   :straight t
   :init
@@ -1492,7 +1486,13 @@ rebalanced."
   )
 
 ;;;; ui
-
+(use-package treesit-auto
+  :straight t
+  :demand t
+  :custom
+  (treesit-font-lock-level 4)
+  :config
+  (global-treesit-auto-mode))
 ;; modus-operandi-tinted python
 ;; modus-viviendi-tinted C#
 ;; modus-viviendi Elisp
@@ -1713,11 +1713,6 @@ rebalanced."
 
 
 ;;;; miscaleanous
-
-
-
-  
-
 (use-package pdf-tools
   :straight t
   ;; :mode ("\\.pdf\\'" . )
@@ -1760,9 +1755,9 @@ rebalanced."
   )
 
 ;;;; emacs default
-
 (use-package emacs
-  :mode ("\\.sql\\'" . sql-mode)
+  :mode (("\\.sql\\'" . sql-mode)
+         ("init.el" . (lambda () (emacs-lisp-mode) (outline-minor-mode 1) (evil-close-folds))))
   :hook (((Info-mode prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :config
