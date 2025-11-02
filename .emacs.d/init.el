@@ -68,14 +68,13 @@
 ;; + A keybind should be 1. useful 2. memorable 3. shorter than less used and longer than more used keybinds 4. easy to press
 ;; + Structure makes memorable keybinds.
 ;; + Keybinds can be separated into three semantic categories. The first being keybinds that are only useful within a context (mode), the second being keybinds that are useful in any context (mode), and the third being keybinds that are somewhere between. 
-;; + A keybind should be as textually close to other keybinds as to the degree of their conflict. This is necessary as if new keybinds were to be bound without considering all previously bound keybinds then it cannot possibily be shorter than less used keybinds.
 ;; + Emacs prefixes should be incorporated into your keybind scheme so that you can discover more useful keybinds and that your keybind scheme if not optimal is most likely useful.
 
 ;; binding rules
 ;; + SPC prefix commands should be commands with higher frequency of use than , prefix commands.
 ;; + The , prefix and the SPC prefix are restricted to global commands while the \ prefix is restricted to major mode.
 ;; + Inbetween keybinds shall be global through functions or local depending on whichever solution is cleaner.
-;; + All keybinds shall be categorized by the module keymap they are bounded in. 
+;; + All keybinds shall be categorized by the module they are bounded in. 
 ;; + Keybinds must be changed in notes before they are changed in code.
 ;; + Incorporate emacs prefixes such as C-h and C-x.
 ;; + Prefer binding to prefix-maps when incorporating emacs prefixes.
@@ -279,6 +278,8 @@
 ;; inferior-python-mode-map
 ;; insert normal (C-) , ? my-python-eldoc-at-point
 
+;; dired-mode-map
+;; q evil-window-delete
 
 
 (use-package general
@@ -403,7 +404,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   (cond
    ((and (featurep 'dape) dape-active-mode)
     (call-interactively #'dape-evaluate-expression))
-   ((equal major-mode 'edebug-mode)
+   ((and (featurep 'edebug) edebug-mode)
     (call-interactively #'edebug-eval-expression))
    (t (call-interactively #'eval-expression)))
   )
@@ -728,36 +729,13 @@ rebalanced."
     "C-h" 'corfu-popupinfo-toggle
     "C-S-j" 'corfu-popupinfo-scroll-up
     "C-S-k" 'corfu-popupinfo-scroll-down))
-
-;; dape-active-mode-map
 (after! dape
   (general-def '(normal insert) 'override
     :predicate 'dape-active-mode
-    "s" 'dape-next
-    "c" 'dape-continue
-    "i" 'dape-step-in
-    "o" 'dape-step-out
-    "q" 'dape-quit
-    "b" 'dape-breakpoint-toggle
-    "u" 'dape-breakpoint-remove-at-point
-    "x" 'dape-breakpoint-expression
-    "h" 'dape-breakpoint-hits
-    "l" 'dape-breakpoint-log
-    "B" 'dape-breakpoint-remove
-    "e" 'dape-evaluate-expression
-    "w" 'dape-watch-dwim
-    "<" 'dape-stack-select-up
-    ">" 'dape-stack-select-down
-    "D" 'dape-disconnect-quit
-    "M" 'dape-disassemble
-    "R" 'dape-repl
-    "S" 'dape-select-stack
-    "F" 'dape-restart-frame
-    "m" 'dape-memory
-    "R" 'dape-restart
-    "T" 'dape-select-thread
-    "U" 'dape-until
-    )
+    "<f5>" 'dape-continue
+    "<f6>" 'dape-step-out
+    "<f7>" 'dape-step-in
+    "<f8>" 'dape-next)
   
   (general-def 'normal 'override
     :predicate 'dape-active-mode
@@ -772,36 +750,125 @@ rebalanced."
         which-key-replacement-alist)
   )
 
-;; python-ts-mode-map
 (after! python
   (general-def python-ts-mode-map
     "C-c B" 'dape-breakpoint-remove-all
+    "C-c D" 'dape-disconnect-quit
+    "C-c M" 'dape-disassemble
+    "C-c R" 'dape-repl
+    "C-c S" 'dape-select-stack
     "C-c b" 'dape-breakpoint-toggle
     "C-c e" 'dape-breakpoint-expression
+    "C-c f" 'dape-restart-frame
     "C-c h" 'dape-breakpoint-hits
     "C-c i" 'dape-info
     "C-c l" 'dape-breakpoint-log
+    "C-c m" 'dape-memory
+    "C-c p" 'dape-pause
+    "C-c q" 'dape-quit
+    "C-c r" 'dape-restart
+    "C-c t" 'dape-select-thread
+    "C-c u" 'dape-until
+    "C-c w" 'dape-watch-dwim
     )
   )
 
-;; csharp-ts-mode-map
+
 (after! csharp-mode
   (general-def csharp-ts-mode-map
     "C-c B" 'dape-breakpoint-remove-all
+    "C-c D" 'dape-disconnect-quit
+    "C-c M" 'dape-disassemble
+    "C-c R" 'dape-repl
+    "C-c S" 'dape-select-stack
     "C-c b" 'dape-breakpoint-toggle
     "C-c e" 'dape-breakpoint-expression
+    "C-c f" 'dape-restart-frame
     "C-c h" 'dape-breakpoint-hits
     "C-c i" 'dape-info
     "C-c l" 'dape-breakpoint-log
+    "C-c m" 'dape-memory
+    "C-c p" 'dape-pause
+    "C-c q" 'dape-quit
+    "C-c r" 'dape-restart
+    "C-c t" 'dape-select-thread
+    "C-c u" 'dape-until
+    "C-c w" 'dape-watch-dwim
     ))
 
 ;; edebug-mode-map edebug-eval-mode-map
-(after! edebug
+(defun set-edebug-map ()
+  "Set the edebug mode map"
+  (setq edebug-mode-map (make-sparse-keymap))
+  (general-def '(insert normal) edebug-mode-map
+    "<f8>" 'edebug-step-mode
+    "<f5>" 'edebug-go-mode
+    "<f6>" 'edebug-step-out
+    "<f7>" 'edebug-step-in
+    )
   (general-def 'normal edebug-mode-map
     "Z Q" 'top-level
-    (general-def '(normal insert) edebug-eval-mode-map
-      "RET" 'edebug-update-eval-list
-      )))
+    "q" 'top-level)
+  (general-def edebug-mode-map
+    "C-c n"       'edebug-next-mode
+    "C-c G"       'edebug-Go-nonstop-mode
+    "C-c t"       'edebug-trace-mode
+    "C-c T"       'edebug-Trace-fast-mode
+    "C-c c"       'edebug-continue-mode
+    "C-c C"       'edebug-Continue-fast-mode
+
+    ;;"f"       #'edebug-forward ; not implemented
+    "C-c f"       'edebug-forward-sexp
+    "C-c h"       'edebug-goto-here
+
+    "C-c I"       'edebug-instrument-callee
+
+    ;; quitting and stopping
+    "C-c q"       'top-level
+    "C-c Q"       'edebug-top-level-nonstop
+    "C-c a"       'abort-recursive-edit
+    "C-c S"       'edebug-stop
+
+    ;; breakpoints
+    "C-c b"       'edebug-set-breakpoint
+    "C-c u"       'edebug-unset-breakpoint
+    "C-c U"       'edebug-unset-breakpoints
+    "C-c B"       'edebug-next-breakpoint
+    "C-c x"       'edebug-set-conditional-breakpoint
+    "C-c X"       'edebug-set-global-break-condition
+    "C-c D"       'edebug-toggle-disable-breakpoint
+
+    ;; evaluation
+    "C-c r"       'edebug-previous-result
+    "C-c e"       'edebug-eval-expression
+    "C-c C-x C-e" 'edebug-eval-last-sexp
+    "C-c E"       'edebug-visit-eval-list
+
+    ;; views
+    "C-c w"       'edebug-where
+    "C-c v"       'edebug-view-outside        ; maybe obsolete??
+    "C-c p"       'edebug-bounce-point
+    "C-c P"       'edebug-view-outside        ; same as v
+    "C-c W"       'edebug-toggle-save-windows
+
+    ;; misc
+    "C-c ?"       'edebug-help
+    "C-c d"       'edebug-pop-to-backtrace
+
+    "C-c -"       'negative-argument
+
+    ;; statistics
+    "C-c ="       'edebug-temp-display-freq-count)
+
+  (general-def '(normal insert) edebug-eval-mode-map
+    "RET" 'edebug-update-eval-list
+    )
+  )
+
+(after! edebug
+  (add-hook 'edebug-setup-hook #'set-edebug-map)
+  )
+
 
 
 ;; magit-mode-map magit-section-mode-map
@@ -872,6 +939,11 @@ rebalanced."
 (after! python
   (general-def inferior-python-mode-map
     "C-c ?" 'my-python-eldoc-at-point)) 
+
+;; dired-mode-map
+(after! dired
+  (general-def 'normal dired-mode-map
+    "q" 'evil-window-delete))
 
 ;;; fixing overrides
 
@@ -1424,6 +1496,11 @@ rebalanced."
 ;; modus-operandi-tinted python
 ;; modus-viviendi-tinted C#
 ;; modus-viviendi Elisp
+(use-package dired
+  :custom
+  (dired-kill-when-opening-new-dired-buffer t)
+  (dired-auto-revert-buffer t)
+  )
 
 (use-package popper
   :straight t ; or :straight t
@@ -1441,8 +1518,9 @@ rebalanced."
           "\\*vterm\\*"
           "^\\* docker.+ up"
           "^\\* docker.+ exec"
+          (lambda (buf) (with-current-buffer buf
+                          (derived-mode-p 'comint-mode)))
           debugger-mode
-          dired-mode
           compilation-mode
           ))
   (popper-mode +1)
@@ -1495,7 +1573,7 @@ rebalanced."
       (side . right)
       (slot . -1)
       (window-width . my-fit-window-to-right-side))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*\\|^\\* docker.+ up\\|^\\* docker.+ exec" (major-mode . compilation-mode) (major-mode . dired-mode) (major-mode . debugger-mode)) 
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*\\|^\\* docker.+ up\\|^\\* docker.+ exec" (major-mode . compilation-mode)  (major-mode . debugger-mode) (derived-mode . comint-mode)) 
       (display-buffer-reuse-window display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
@@ -1505,10 +1583,11 @@ rebalanced."
       (window . root)
       (window-width . 0.50)
       (direction . left))
-     ((derived-mode . comint-mode)
-      (display-buffer-reuse-mode-window display-buffer-below-selected)
-      (mode . comint-mode)
-      (window-height . 0.30))
+     ((major-mode . dired-mode)
+      (display-buffer-reuse-mode-window display-buffer-in-direction)
+      (window . root)
+      (window-width . 0.50)
+      (direction . left))
      )))
 
 
@@ -1634,6 +1713,10 @@ rebalanced."
 
 
 ;;;; miscaleanous
+
+
+
+  
 
 (use-package pdf-tools
   :straight t
