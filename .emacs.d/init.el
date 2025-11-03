@@ -55,7 +55,7 @@
 ;; + Using (evil-make-intercept-map) will not place the keymap in evil-intercept-maps as that has no effect but in the minor-mode-keymaps with an intercept state which has the same functionality.
 ;; + Keys defined with evil-define-key for a minor-mode and general-def depending on if it uses evil-define-key internally may not work immediately requiring #'evil-normalize-keymaps to be added to the mode's hook. Consider using general-add-hook for its transient feature in removing the function from the hook after running.
 
-;;;;; Keybind conventions
+;;;;; keybind conventions
 ;; q ephermal quit
 ;; Z Q non epehermal quit
 ;; C-j C-k when j k isn't available
@@ -263,10 +263,14 @@
 ;; normal insert (C-) , t org-match-sparse-tree-heading
 
 ;;;;; org-remark-mode-map
-;; visual Enter org-remark-mark
+;; visual , 1 org-remark-mark-understand
+;; visual , 2 org-remark-mark-keyword
+;; visual , 3 org-remark-mark-sentence
+;; visual , 4 org-remark-mark-argument
+;; visual enter org-remark-mark-highlight
 ;; normal o org-remark-open
 ;; normal ]m org-remark-view-next
-
+;; normal r org-remark-delete
 ;;;;; yas-keymap
 ;; C-<tab> yas-next-field
 ;; C-<iso-lefttab> yas-prev-field
@@ -899,9 +903,29 @@ rebalanced."
 
 
 ;;;;; org-remark-mode-map
+
+(org-remark-create "understand"
+                   '(:background "#1d3c25"))
+
+(org-remark-create "keyword"
+                   '(:strike-through "cyan"))
+
+(org-remark-create "sentence"
+                   '(:underline "white"))
+
+(org-remark-create "argument"
+                   '(:overline "red"))
+
+(org-remark-create "highlight"
+                   '(:foreground "#fce94f"))
+
 (after! org-remark
   (general-def 'visual org-remark-mode-map 
-    "<return>" 'org-remark-mark)
+    "<return>" 'org-remark-mark-highlight
+    "C-c 1" 'org-remark-mark-understand
+    "C-c 2" 'org-remark-mark-keyword
+    "C-c 3" 'org-remark-mark-sentence
+    "C-c 4" 'org-remark-mark-argument)
   (general-def 'normal org-remark-mode-map
     "o" 'org-remark-open
     "]m" 'org-remark-view-next
@@ -961,7 +985,6 @@ rebalanced."
 (use-package evil-easymotion
   :straight t
   :demand t)
-
 (use-package evil-collection
   :straight t
   :demand t
@@ -972,9 +995,6 @@ rebalanced."
   (evil-collection-init)
   :diminish evil-collection-unimpaired-mode
   )
-
-
-
 (use-package evil-owl
   :diminish evil-owl-mode
   :straight t
@@ -986,26 +1006,20 @@ rebalanced."
   :init
   (evil-owl-mode)
   )
-
-
 (use-package evil-mc
   :straight t
   :init
   (global-evil-mc-mode)
   :diminish evil-mc-mode
   )
-
 (use-package evil-commentary
   :straight t
   :hook (prog-mode . evil-commentary-mode)
   :diminish evil-commentary-mode
   )
-
 (defun my-evil-multiedit-maintain-visual-cursor-advice (func &rest args)
   (if evil-visual-state-minor-mode
       (set-window-point (selected-window) (- (point) 1))))
-
-
 (use-package evil-multiedit
   :straight t
   :demand t
@@ -1014,8 +1028,6 @@ rebalanced."
   (advice-add 'evil-multiedit-match-and-next :before #'my-evil-multiedit-maintain-visual-cursor-advice)
   (advice-add 'evil-multiedit-match-and-prev :before #'my-evil-multiedit-maintain-visual-cursor-advice)
   )
-
-
 ;;;; org
 (defun my-org-agenda-to-appt ()
   "Erase all reminders and rebuilt reminders for today from the agenda."
