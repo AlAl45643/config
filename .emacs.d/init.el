@@ -903,23 +903,22 @@ rebalanced."
 
 
 ;;;;; org-remark-mode-map
-
-(org-remark-create "understand"
-                   '(:background "#1d3c25"))
-
-(org-remark-create "keyword"
-                   '(:strike-through "cyan"))
-
-(org-remark-create "sentence"
-                   '(:underline "white"))
-
-(org-remark-create "argument"
-                   '(:overline "red"))
-
-(org-remark-create "highlight"
-                   '(:foreground "#fce94f"))
-
 (after! org-remark
+  (org-remark-create "understand"
+                     '(:background "#1d3c25"))
+
+  (org-remark-create "keyword"
+                     '(:strike-through "cyan"))
+
+  (org-remark-create "sentence"
+                     '(:underline "white"))
+
+  (org-remark-create "argument"
+                     '(:overline "red"))
+
+  (org-remark-create "highlight"
+                     '(:foreground "#fce94f"))
+
   (general-def 'visual org-remark-mode-map 
     "<return>" 'org-remark-mark-highlight
     "C-c 1" 'org-remark-mark-understand
