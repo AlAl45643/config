@@ -379,6 +379,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "j" 'evil-next-visual-line
   "k" 'evil-previous-visual-line)
 
+;;;;; my-main-leader-evil-map
 (defun my-run-program ()
   "Run program at point depending on mode."
   (interactive)
@@ -452,7 +453,6 @@ things you want byte-compiled in them! Like function/macro definitions."
   (bookmark-jump "Burly: home"))
 
 
-;;;;; my-main-leader-evil-map
 
 (general-define-key
  :keymaps 'override
@@ -487,6 +487,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   )
 
 
+;;;;; my-second-leader-evil-map
 (defun my-online-search (x)
   "Search duckduckgo with X"
   (interactive "sSearch: ")
@@ -542,7 +543,6 @@ things you want byte-compiled in them! Like function/macro definitions."
    ((and (featurep 'eglot) eglot--managed-mode) (call-interactively 'eglot-rename))
    (t (message "%s" "Nothing to rename at point."))))
 
-;;;;; my-second-leader-evil-map
 (general-define-key
  :keymaps 'override
  :states '(insert normal hybrid motion visual operator)
@@ -955,6 +955,17 @@ rebalanced."
     "j" 'doc-view-next-line-or-next-page
     "k" 'doc-view-previous-line-or-previous-page))
 
+;;;;; python-mode-map
+(defun my-python-repl ()
+  "Go to Python REPL and create it if needed."
+  (interactive)
+  (if (python-shell-get-buffer)
+      (python-shell-switch-to-shell)
+    (run-python "python3 -i" nil t)))
+
+(after! python
+  (general-def 'normal python-ts-mode-map
+    "g z" 'my-python-repl))
 ;;;;; inferior-python-mode-map
 (defun my-python-eldoc-at-point ()
   "Get python documentation in eldoc with `python-eldoc--get-doc-at-point'."
@@ -1529,6 +1540,7 @@ rebalanced."
           "\\*vterm\\*"
           "^\\* docker.+ up"
           "^\\* docker.+ exec"
+          "\\*Racket"
           (lambda (buf) (with-current-buffer buf
                           (derived-mode-p 'comint-mode)))
           debugger-mode
@@ -1584,7 +1596,7 @@ rebalanced."
       (side . right)
       (slot . -1)
       (window-width . my-fit-window-to-right-side))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*\\|^\\* docker.+ up\\|^\\* docker.+ exec" (major-mode . compilation-mode)  (major-mode . debugger-mode) (derived-mode . comint-mode)) 
+     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*\\|^\\* docker.+ up\\|^\\* docker.+ exec\\|\\* Racket" (major-mode . compilation-mode)  (major-mode . debugger-mode) (derived-mode . comint-mode)) 
       (display-buffer-reuse-window display-buffer-in-side-window)
       (side . bottom)
       (slot . 0)
