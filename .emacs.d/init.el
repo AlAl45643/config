@@ -978,9 +978,12 @@ rebalanced."
     "C-c ?" 'my-python-eldoc-at-point)) 
 
 ;;;;; dired-mode-map
-(after! dired
-  (general-def 'normal dired-mode-map
-    "q" 'evil-window-delete))
+(defun my-dired-keybinds ()
+    "Create keybinds for dired."
+    (general-def 'normal dired-mode-map
+      "q" 'evil-window-delete))
+
+(add-hook 'dired-mode-hook #'my-dired-keybinds)
 
 ;;;;; fixing overrides
 
