@@ -1169,7 +1169,9 @@ rebalanced."
   (org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)
                                                            (dot . t)
                                                            (scheme . t)
-                                                           (racket . t)))
+                                                           (racket . t)
+                                                           (python . t)
+                                                           (shell . t)))
   (setq org-agenda-files '("~/org/TODO.org"))
   (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
   )
@@ -1245,6 +1247,14 @@ rebalanced."
   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
   :diminish evil-org-mode)
 
+(use-package ob-racket
+  :after org
+  :config
+  (add-hook 'ob-racket-pre-runtime-library-load-hook
+	    #'ob-racket-raco-make-runtime-library)
+  :straight (ob-racket
+	     :type git :host github :repo "hasu/emacs-ob-racket"
+	     :files ("*.el" "*.rkt")))
 ;;;; code
 ;;;;; tools
 
@@ -1268,14 +1278,6 @@ rebalanced."
   )
 
 ;;;;; modes
-(use-package ob-racket
-  :after org
-  :config
-  (add-hook 'ob-racket-pre-runtime-library-load-hook
-	    #'ob-racket-raco-make-runtime-library)
-  :straight (ob-racket
-	     :type git :host github :repo "hasu/emacs-ob-racket"
-	     :files ("*.el" "*.rkt")))
 
 (use-package racket-mode
   :straight t
