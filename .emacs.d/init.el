@@ -120,7 +120,7 @@
 ;; all (C-) SPC p org-pomodoro 
 ;; all (C-) SPC a org-agenda 
 ;; all (C-) SPC h my-go-to-help-buffer
-
+;; all (C-) SPC b remember
 ;;;;; my-second-leader-map
 ;; all (C-) \ e t my-test-code 
 ;; all (C-) \ e b my-build-code
@@ -129,6 +129,8 @@
 ;; all (C-) \ e m sharper-main-transient
 ;; all (C-) \ e n my-code-rename
 ;; all (C-) \ s t toggle-theme
+;; all (C-) \ s e my-persist-eldoc
+;; all (C-) \ s n remember-notes
 ;; all (C-) \ p p completion-at-point
 ;; all (C-) \ f d delete-file
 ;; all (C-) \ j s project-switch-to-buffer
@@ -484,6 +486,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "m" 'make-frame-command
   "1" 'my-window-bookmark-home
   "o" 'my-online-search
+  "b" 'remember
   )
 
 
@@ -578,8 +581,8 @@ things you want byte-compiled in them! Like function/macro definitions."
 
 (+general-global-menu! "miscellaneous" "s"
   "t" 'my-cycle-theme
-  "e" 'my-persist-eldoc)
-
+  "e" 'my-persist-eldoc
+  "n" 'remember-notes)
 (+general-global-menu! "eval" "v"
   "s" 'eval-last-sexp
   "b" 'eval-buffer
@@ -1606,7 +1609,7 @@ rebalanced."
       (side . bottom)
       (slot . 0)
       (window-height . 0.50))
-     ((or "^\\*docker.+\\*$" (derived-mode . magit-mode))
+     ((or "^\\*docker.+\\*$" (derived-mode . magit-mode) "\\*Remember\\*")
       (display-buffer-reuse-window display-buffer-in-direction)
       (window . root)
       (window-width . 0.50)
