@@ -985,10 +985,44 @@ rebalanced."
     "C-c ?" 'my-python-eldoc-at-point)) 
 
 ;;;;; dired-mode-map
+(defun my-dired-find-file ()
+  "In Dired, visit the file or directory named on this line."
+  (interactive nil dired-mode)
+  (my-dired--find-possibly-alternative-file (dired-get-file-for-visit)))
+
+(defun my-dired--find-possibly-alternative-file (file)
+  "Find FILE, but respect `dired-kill-when-opening-new-dired-buffer'."
+  (if (and dired-kill-when-opening-new-dired-buffer
+           (file-directory-p file)
+           (< (length (get-buffer-window-list)) 2))
+      (progn
+        (set-buffer-modified-p nil)
+        (dired--find-file #'find-alternate-file file))
+    (my-dired--find-file file)))
+
+(defun my-dired--find-file (file)
+  "Call FIND-FILE-FUNCTION on FILE, but bind some relevant variables."
+  ;; Bind `find-file-run-dired' so that the command works on directories
+  ;; too, independent of the user's setting.
+  (let ((find-file-run-dired t)
+        ;; This binding prevents problems with preserving point in
+        ;; windows displaying Dired buffers, because reverting a Dired
+        ;; buffer empties it, which changes the places where the
+        ;; markers used by switch-to-buffer-preserve-window-point
+        ;; point.
+        (switch-to-buffer-preserve-window-point
+         (if dired-auto-revert-buffer
+             nil
+           switch-to-buffer-preserve-window-point)))
+    (org-display-buffer-in-window (find-file-noselect file) `((window . ,(window-in-direction 'right))))
+    (delete-window)
+    ))
+
 (defun my-dired-keybinds ()
   "Create keybinds for dired."
   (general-def 'normal dired-mode-map
-    "q" 'evil-window-delete))
+    "q" 'evil-window-delete
+    "RET" 'my-dired-find-file))
 
 (add-hook 'dired-mode-hook #'my-dired-keybinds)
 ;;;;; ispell-minor-keymap
