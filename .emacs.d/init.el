@@ -1304,7 +1304,6 @@ rebalanced."
 	     :files ("*.el" "*.rkt")))
 ;;;; code
 ;;;;; tools
-
 (use-package docker
   :straight t
   )
@@ -1623,7 +1622,8 @@ rebalanced."
         (max-height (floor (* 0.50 (frame-height)))))
     (if (my-fit-window-to-buffer window max-height window-min-height max-width)
         nil
-      (window-resize window (- (floor (* 0.35 (frame-width))) (window-width window)) t))))
+      (window-resize window (- max-width (window-width window)) t)
+      (window-resize window (- max-height (window-height window))))))
 
 
 ;; TODO
@@ -1795,7 +1795,8 @@ rebalanced."
 
 ;;;; writing
 (use-package ispell
-  :hook (after-init . ispell-minor-mode)
+  :hook ((prog-mode . ispell-minor-mode)
+         (org-mode . ispell-minor-mode))
   :custom
   (ispell-program-name "hunspell")
   (ispell-dictionary "en_US")
