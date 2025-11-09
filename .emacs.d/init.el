@@ -966,434 +966,437 @@ rebalanced."
       (python-shell-switch-to-shell)
     (run-python "python3 -i" nil t)))
 
-(after! python
-  (general-def 'normal python-ts-mode-map
-    "g z" 'my-python-repl))
+(defun my-python-keybinds ()
+  (after! python
+    (general-def 'normal python-ts-mode-map
+      "g z" 'my-python-repl)))
+
+(add-hook 'python-ts-mode-hook #'my-python-keybinds)
 ;;;;; inferior-python-mode-map
-(defun my-python-eldoc-at-point ()
-  "Get python documentation in eldoc with `python-eldoc--get-doc-at-point'."
-  (interactive)
-  (call-interactively 'eldoc-doc-buffer)
-  (eldoc-display-in-buffer `((,(python-eldoc-function))) nil)
-  )
-(after! python
-  (general-def inferior-python-mode-map
-    "C-c ?" 'my-python-eldoc-at-point)) 
+ (defun my-python-eldoc-at-point ()
+   "Get python documentation in eldoc with `python-eldoc--get-doc-at-point'."
+   (interactive)
+   (call-interactively 'eldoc-doc-buffer)
+   (eldoc-display-in-buffer `((,(python-eldoc-function))) nil)
+   )
+ (after! python
+   (general-def inferior-python-mode-map
+     "C-c ?" 'my-python-eldoc-at-point)) 
 
 ;;;;; dired-mode-map
-(defun my-dired-keybinds ()
-    "Create keybinds for dired."
-    (general-def 'normal dired-mode-map
-      "q" 'evil-window-delete))
+ (defun my-dired-keybinds ()
+   "Create keybinds for dired."
+   (general-def 'normal dired-mode-map
+     "q" 'evil-window-delete))
 
-(add-hook 'dired-mode-hook #'my-dired-keybinds)
+ (add-hook 'dired-mode-hook #'my-dired-keybinds)
 
 ;;;;; fixing overrides
 
-(general-unbind iedit-mode-keymap
-  "TAB"
-  "<tab>"
-  "<backtab")
+ (general-unbind iedit-mode-keymap
+   "TAB"
+   "<tab>"
+   "<backtab")
 
 
 ;;; packages
 ;;;; evil
-(use-package evil-easymotion
-  :straight t
-  :demand t)
-(use-package evil-collection
-  :straight t
-  :demand t
-  :after evil
-  :custom
-  (evil-collection-setup-minibuffer t)
-  :config
-  (evil-collection-init)
-  :diminish evil-collection-unimpaired-mode
-  )
-(use-package evil-owl
-  :diminish evil-owl-mode
-  :straight t
-  :custom
-  (evil-owl-display-method 'posframe)
-  (evil-owl-extra-posframe-args '(:width 50 :height 20))
-  (evil-owl-max-string-length 50)
-  (evil-owl-idle-delay 0.5)
-  :init
-  (evil-owl-mode)
-  )
-(use-package evil-mc
-  :straight t
-  :init
-  (global-evil-mc-mode)
-  :diminish evil-mc-mode
-  )
-(use-package evil-commentary
-  :straight t
-  :hook (prog-mode . evil-commentary-mode)
-  :diminish evil-commentary-mode
-  )
-(defun my-evil-multiedit-maintain-visual-cursor-advice (func &rest args)
-  (if evil-visual-state-minor-mode
-      (set-window-point (selected-window) (- (point) 1))))
-(use-package evil-multiedit
-  :straight t
-  :demand t
-  :config
-  (evil-multiedit-default-keybinds)
-  (advice-add 'evil-multiedit-match-and-next :before #'my-evil-multiedit-maintain-visual-cursor-advice)
-  (advice-add 'evil-multiedit-match-and-prev :before #'my-evil-multiedit-maintain-visual-cursor-advice)
-  )
+ (use-package evil-easymotion
+   :straight t
+   :demand t)
+ (use-package evil-collection
+   :straight t
+   :demand t
+   :after evil
+   :custom
+   (evil-collection-setup-minibuffer t)
+   :config
+   (evil-collection-init)
+   :diminish evil-collection-unimpaired-mode
+   )
+ (use-package evil-owl
+   :diminish evil-owl-mode
+   :straight t
+   :custom
+   (evil-owl-display-method 'posframe)
+   (evil-owl-extra-posframe-args '(:width 50 :height 20))
+   (evil-owl-max-string-length 50)
+   (evil-owl-idle-delay 0.5)
+   :init
+   (evil-owl-mode)
+   )
+ (use-package evil-mc
+   :straight t
+   :init
+   (global-evil-mc-mode)
+   :diminish evil-mc-mode
+   )
+ (use-package evil-commentary
+   :straight t
+   :hook (prog-mode . evil-commentary-mode)
+   :diminish evil-commentary-mode
+   )
+ (defun my-evil-multiedit-maintain-visual-cursor-advice (func &rest args)
+   (if evil-visual-state-minor-mode
+       (set-window-point (selected-window) (- (point) 1))))
+ (use-package evil-multiedit
+   :straight t
+   :demand t
+   :config
+   (evil-multiedit-default-keybinds)
+   (advice-add 'evil-multiedit-match-and-next :before #'my-evil-multiedit-maintain-visual-cursor-advice)
+   (advice-add 'evil-multiedit-match-and-prev :before #'my-evil-multiedit-maintain-visual-cursor-advice)
+   )
 ;;;; org
-(defun my-org-agenda-to-appt ()
-  "Erase all reminders and rebuilt reminders for today from the agenda."
-  (interactive)
-  (setq appt-time-msg-list nil)
-  (org-agenda-to-appt))
+ (defun my-org-agenda-to-appt ()
+   "Erase all reminders and rebuilt reminders for today from the agenda."
+   (interactive)
+   (setq appt-time-msg-list nil)
+   (org-agenda-to-appt))
 
-(defun my-org-inf-repeat ()
-  (interactive)
-  "Treat the TODO as a repeater by logging it."
-  (if (org-element-property :REPEAT (org-element-at-point))
-      (let ((note (cdr (assq 'state org-log-note-headings)))
-            lines)
-        (setq org-log-note-marker (set-marker (make-marker) (aref (plist-get (plist-get (org-element-at-point) 'headline) :standard-properties) 0)))
-        (setq org-log-note-return-to (set-marker (make-marker) (aref (plist-get (plist-get (org-element-at-point) 'headline) :standard-properties) 0)))
-        (setq note
-              (org-replace-escapes
-               note
-               (list (cons "%u" (user-login-name))
-		     (cons "%U" user-full-name)
-		     (cons "%t" (format-time-string
-			         (org-time-stamp-format 'long 'inactive)
-			         (current-time)))
-		     (cons "%T" (format-time-string
-			         (org-time-stamp-format 'long nil)
-			         (current-time)))
-		     (cons "%d" (format-time-string
-			         (org-time-stamp-format nil 'inactive)
-			         (current-time)))
-		     (cons "%D" (format-time-string
-			         (org-time-stamp-format nil nil)
-			         (current-time)))
-		     (cons "%s" (cond
-			         ((not org-log-note-state) "\"DONE\"")
-			         ((string-match-p org-ts-regexp
-						  org-log-note-state)
-				  (format "\"[%s]\""
-					  (substring org-log-note-state 1 -1)))
-			         (t (format "\"%s\"" org-log-note-state))))
-		     (cons "%S"
-			   (cond
-			    ((not org-log-note-previous-state) "\"TODO\"")
-			    ((string-match-p org-ts-regexp
-					     org-log-note-previous-state)
-			     (format "\"[%s]\""
-				     (substring
-				      org-log-note-previous-state 1 -1)))
-			    (t (format "\"%s\""
-				       org-log-note-previous-state)))))))
-        (push note lines)
-        (org-fold-core-ignore-modifications
-          (org-with-wide-buffer
-           ;; Find location for the new note.
-           (goto-char org-log-note-marker)
-           (set-marker org-log-note-marker nil)
-           ;; Note associated to a clock is to be located right after
-           ;; the clock.  Do not move point.
-           (unless (eq org-log-note-purpose 'clock-out)
-             (goto-char (org-log-beginning t)))
-           ;; Make sure point is at the beginning of an empty line.
-           (cond ((not (bolp)) (let ((inhibit-read-only t)) (insert-and-inherit "\n")))
-	         ((looking-at "[ \t]*\\S-") (save-excursion (insert-and-inherit "\n"))))
-           ;; In an existing list, add a new item at the top level.
-           ;; Otherwise, indent line like a regular one.
-           (let ((itemp (org-in-item-p)))
-             (if itemp
-	         (indent-line-to
-	          (let ((struct (save-excursion
-			          (goto-char itemp) (org-list-struct))))
-	            (org-list-get-ind (org-list-get-top-point struct) struct)))
-	       (org-indent-line)))
-           (insert-and-inherit (org-list-bullet-string "-") (pop lines))
-           (let ((ind (org-list-item-body-column (line-beginning-position))))
-             (dolist (line lines)
-	       (insert-and-inherit "\n")
-               (unless (string-empty-p line)
-	         (indent-line-to ind)
-	         (insert-and-inherit line))))
-           (run-hooks 'org-after-note-stored-hook)
-           (message "Note stored")
-           (org-back-to-heading t)))
-        (with-current-buffer (marker-buffer org-log-note-return-to)
-          (goto-char org-log-note-return-to)))))
-
-
-
-(use-package org
-  :straight t
-  :hook ((org-agenda-finalize . my-org-agenda-to-appt)
-         (org-agenda-finalize . append))
-  :mode ("\\.org\\'" . org-mode)
-  :custom
-  (org-clock-sound (concat user-emacs-directory "bell.wav"))
-  (org-agenda-timegrid-use-ampm t)
-  ;; Activate appointments so we get notifications
-  (appt-activate t)
-  ;; If we leave Emacs running overnight - reset the appointments one minute after midnight
-  (run-at-time "24:01" nil 'my-org-agenda-to-appt)
-  ;; keep track of when todo is finished when created
-  (org-log-done 'time)
-  ;; set agenda files
-  (org-agenda-files nil)
-  (org-log-into-drawer t)
-  ;; file path for plantuml
-  ;; ask before killing a pomodora timer
-  (org-src-lang-modes
-   '(("C" . c)
-     ("C++" . c++)
-     ("asymptote" . asy)
-     ("bash" . sh)
-     ("beamer" . latex)
-     ("calc" . fundamental)
-     ("cpp" . c++)
-     ("ditaa" . artist)
-     ("desktop" . conf-desktop)
-     ("dot" . fundamental)
-     ("elisp" . emacs-lisp)
-     ("ocaml" . tuareg)
-     ("screen" . shell-script)
-     ("shell" . sh)
-     ("sqlite" . sql)
-     ("toml" . conf-toml)
-     ("plantuml" . plantuml)))
-  (org-plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
-  :config
-  (org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)
-                                                           (dot . t)
-                                                           (scheme . t)
-                                                           (racket . t)
-                                                           (python . t)
-                                                           (shell . t)))
-  (setq org-agenda-files '("~/org/TODO.org"))
-  (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
-  )
+ (defun my-org-inf-repeat ()
+   (interactive)
+   "Treat the TODO as a repeater by logging it."
+   (if (org-element-property :REPEAT (org-element-at-point))
+       (let ((note (cdr (assq 'state org-log-note-headings)))
+             lines)
+         (setq org-log-note-marker (set-marker (make-marker) (aref (plist-get (plist-get (org-element-at-point) 'headline) :standard-properties) 0)))
+         (setq org-log-note-return-to (set-marker (make-marker) (aref (plist-get (plist-get (org-element-at-point) 'headline) :standard-properties) 0)))
+         (setq note
+               (org-replace-escapes
+                note
+                (list (cons "%u" (user-login-name))
+		      (cons "%U" user-full-name)
+		      (cons "%t" (format-time-string
+			          (org-time-stamp-format 'long 'inactive)
+			          (current-time)))
+		      (cons "%T" (format-time-string
+			          (org-time-stamp-format 'long nil)
+			          (current-time)))
+		      (cons "%d" (format-time-string
+			          (org-time-stamp-format nil 'inactive)
+			          (current-time)))
+		      (cons "%D" (format-time-string
+			          (org-time-stamp-format nil nil)
+			          (current-time)))
+		      (cons "%s" (cond
+			          ((not org-log-note-state) "\"DONE\"")
+			          ((string-match-p org-ts-regexp
+						   org-log-note-state)
+				   (format "\"[%s]\""
+					   (substring org-log-note-state 1 -1)))
+			          (t (format "\"%s\"" org-log-note-state))))
+		      (cons "%S"
+			    (cond
+			     ((not org-log-note-previous-state) "\"TODO\"")
+			     ((string-match-p org-ts-regexp
+					      org-log-note-previous-state)
+			      (format "\"[%s]\""
+				      (substring
+				       org-log-note-previous-state 1 -1)))
+			     (t (format "\"%s\""
+				        org-log-note-previous-state)))))))
+         (push note lines)
+         (org-fold-core-ignore-modifications
+           (org-with-wide-buffer
+            ;; Find location for the new note.
+            (goto-char org-log-note-marker)
+            (set-marker org-log-note-marker nil)
+            ;; Note associated to a clock is to be located right after
+            ;; the clock.  Do not move point.
+            (unless (eq org-log-note-purpose 'clock-out)
+              (goto-char (org-log-beginning t)))
+            ;; Make sure point is at the beginning of an empty line.
+            (cond ((not (bolp)) (let ((inhibit-read-only t)) (insert-and-inherit "\n")))
+	          ((looking-at "[ \t]*\\S-") (save-excursion (insert-and-inherit "\n"))))
+            ;; In an existing list, add a new item at the top level.
+            ;; Otherwise, indent line like a regular one.
+            (let ((itemp (org-in-item-p)))
+              (if itemp
+	          (indent-line-to
+	           (let ((struct (save-excursion
+			           (goto-char itemp) (org-list-struct))))
+	             (org-list-get-ind (org-list-get-top-point struct) struct)))
+	        (org-indent-line)))
+            (insert-and-inherit (org-list-bullet-string "-") (pop lines))
+            (let ((ind (org-list-item-body-column (line-beginning-position))))
+              (dolist (line lines)
+	        (insert-and-inherit "\n")
+                (unless (string-empty-p line)
+	          (indent-line-to ind)
+	          (insert-and-inherit line))))
+            (run-hooks 'org-after-note-stored-hook)
+            (message "Note stored")
+            (org-back-to-heading t)))
+         (with-current-buffer (marker-buffer org-log-note-return-to)
+           (goto-char org-log-note-return-to)))))
 
 
-(use-package org-remark
-  :after org
-  :straight t
-  :hook ((after-init . org-remark-global-tracking-mode)
-         (Info-mode . org-remark-info-mode)
-         (nov-mode . org-remark-nov-mode))
-  :diminish org-remark-global-tracking-mode
-  :diminish org-remark-mode
-  )
+
+ (use-package org
+   :straight t
+   :hook ((org-agenda-finalize . my-org-agenda-to-appt)
+          (org-agenda-finalize . append))
+   :mode ("\\.org\\'" . org-mode)
+   :custom
+   (org-clock-sound (concat user-emacs-directory "bell.wav"))
+   (org-agenda-timegrid-use-ampm t)
+   ;; Activate appointments so we get notifications
+   (appt-activate t)
+   ;; If we leave Emacs running overnight - reset the appointments one minute after midnight
+   (run-at-time "24:01" nil 'my-org-agenda-to-appt)
+   ;; keep track of when todo is finished when created
+   (org-log-done 'time)
+   ;; set agenda files
+   (org-agenda-files nil)
+   (org-log-into-drawer t)
+   ;; file path for plantuml
+   ;; ask before killing a pomodora timer
+   (org-src-lang-modes
+    '(("C" . c)
+      ("C++" . c++)
+      ("asymptote" . asy)
+      ("bash" . sh)
+      ("beamer" . latex)
+      ("calc" . fundamental)
+      ("cpp" . c++)
+      ("ditaa" . artist)
+      ("desktop" . conf-desktop)
+      ("dot" . fundamental)
+      ("elisp" . emacs-lisp)
+      ("ocaml" . tuareg)
+      ("screen" . shell-script)
+      ("shell" . sh)
+      ("sqlite" . sql)
+      ("toml" . conf-toml)
+      ("plantuml" . plantuml)))
+   (org-plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
+   :config
+   (org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)
+                                                            (dot . t)
+                                                            (scheme . t)
+                                                            (racket . t)
+                                                            (python . t)
+                                                            (shell . t)))
+   (setq org-agenda-files '("~/org/TODO.org"))
+   (add-to-list 'org-shiftright-hook #'my-org-inf-repeat)
+   )
 
 
-(use-package nov
-  :straight t
-  :mode ("\\.epub\\'" . nov-mode))
+ (use-package org-remark
+   :after org
+   :straight t
+   :hook ((after-init . org-remark-global-tracking-mode)
+          (Info-mode . org-remark-info-mode)
+          (nov-mode . org-remark-nov-mode))
+   :diminish org-remark-global-tracking-mode
+   :diminish org-remark-mode
+   )
 
 
-(defun my-org-pomodoro-choose-break-time (arg)
-  "Choose break time for pomodoro."
-  (interactive "nBreak time (0 if overtime): ")
-  (setq org-pomodoro-short-break-length arg))
+ (use-package nov
+   :straight t
+   :mode ("\\.epub\\'" . nov-mode))
 
 
-(defun my-org-pomodoro-finished-with-overtime-advice (orig-fun &rest args)
-  "Advise around `org-pomodoro-finished' to choose break time"
-  (org-pomodoro-play-sound :pomodoro)
-  (call-interactively #'my-org-pomodoro-choose-break-time)
-  (cond ((= org-pomodoro-short-break-length 0) (org-pomodoro-overtime))
-        ((zerop (mod (+ org-pomodoro-count 1) org-pomodoro-long-break-frequency)) (apply orig-fun args))
-        (t (apply orig-fun args))))
+ (defun my-org-pomodoro-choose-break-time (arg)
+   "Choose break time for pomodoro."
+   (interactive "nBreak time (0 if overtime): ")
+   (setq org-pomodoro-short-break-length arg))
 
 
-(defun my-org-pomodoro-resume-after-break ()
-  "Resume pomodoro timer if pomodoro timer is not currently in overtime."
-  (save-window-excursion
-    (org-clock-goto)
-    (org-pomodoro)))
-
-(defun my-org-pomodoro-clockout-before-kill-advice ()
-  "Clock out time before exiting `org-pomodoro' so time is accurately tracked."
-  (if (org-clocking-p)
-      (save-window-excursion
-        (org-clock-out))))
+ (defun my-org-pomodoro-finished-with-overtime-advice (orig-fun &rest args)
+   "Advise around `org-pomodoro-finished' to choose break time"
+   (org-pomodoro-play-sound :pomodoro)
+   (call-interactively #'my-org-pomodoro-choose-break-time)
+   (cond ((= org-pomodoro-short-break-length 0) (org-pomodoro-overtime))
+         ((zerop (mod (+ org-pomodoro-count 1) org-pomodoro-long-break-frequency)) (apply orig-fun args))
+         (t (apply orig-fun args))))
 
 
-(use-package org-pomodoro
-  :straight t
-  :after org
-  :hook (org-pomodoro-break-finished . my-org-pomodoro-resume-after-break)
-  :custom
-  (org-pomodoro-ask-upon-killing t)
-  ;; change finish sound to differentiate between starting and stopping
-  (org-pomodoro-finished-sound (concat user-emacs-directory "bell.wav"))
-  ;; change pomo length and pomo break length
-  (org-pomodoro-length 30)
-  (org-pomodoro-short-break-length 7)
-  (org-pomodoro-long-break-length 15)
-  :config
-  (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-finished-with-overtime-advice)
-  (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill-advice))
+ (defun my-org-pomodoro-resume-after-break ()
+   "Resume pomodoro timer if pomodoro timer is not currently in overtime."
+   (save-window-excursion
+     (org-clock-goto)
+     (org-pomodoro)))
 
-(use-package evil-org
-  :straight t
-  :after (evil org)
-  :hook (org-mode .  evil-org-mode)
-  :config
-  (require 'evil-org-agenda)
-  (evil-org-agenda-set-keys)
-  (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
-  :diminish evil-org-mode)
+ (defun my-org-pomodoro-clockout-before-kill-advice ()
+   "Clock out time before exiting `org-pomodoro' so time is accurately tracked."
+   (if (org-clocking-p)
+       (save-window-excursion
+         (org-clock-out))))
 
-(use-package ob-racket
-  :after org
-  :config
-  (add-hook 'ob-racket-pre-runtime-library-load-hook
-	    #'ob-racket-raco-make-runtime-library)
-  :straight (ob-racket
-	     :type git :host github :repo "hasu/emacs-ob-racket"
-	     :files ("*.el" "*.rkt")))
+
+ (use-package org-pomodoro
+   :straight t
+   :after org
+   :hook (org-pomodoro-break-finished . my-org-pomodoro-resume-after-break)
+   :custom
+   (org-pomodoro-ask-upon-killing t)
+   ;; change finish sound to differentiate between starting and stopping
+   (org-pomodoro-finished-sound (concat user-emacs-directory "bell.wav"))
+   ;; change pomo length and pomo break length
+   (org-pomodoro-length 30)
+   (org-pomodoro-short-break-length 7)
+   (org-pomodoro-long-break-length 15)
+   :config
+   (advice-add 'org-pomodoro-finished :around #'my-org-pomodoro-finished-with-overtime-advice)
+   (advice-add 'org-pomodoro-kill :before #'my-org-pomodoro-clockout-before-kill-advice))
+
+ (use-package evil-org
+   :straight t
+   :after (evil org)
+   :hook (org-mode .  evil-org-mode)
+   :config
+   (require 'evil-org-agenda)
+   (evil-org-agenda-set-keys)
+   (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
+   :diminish evil-org-mode)
+
+ (use-package ob-racket
+   :after org
+   :config
+   (add-hook 'ob-racket-pre-runtime-library-load-hook
+	     #'ob-racket-raco-make-runtime-library)
+   :straight (ob-racket
+	      :type git :host github :repo "hasu/emacs-ob-racket"
+	      :files ("*.el" "*.rkt")))
 ;;;; code
 ;;;;; tools
 
-(use-package docker
-  :straight t
-  )
+ (use-package docker
+   :straight t
+   )
 
-(use-package magit
-  :straight t)
+ (use-package magit
+   :straight t)
 
-(use-package pet
-  :demand t
-  :straight t
-  :config
-  (add-hook 'python-base-mode-hook 'pet-mode -10)
-  )
+ (use-package pet
+   :demand t
+   :straight t
+   :config
+   (add-hook 'python-base-mode-hook 'pet-mode -10)
+   )
 
-(use-package sharper
-  :straight t
-  :demand t
-  )
+ (use-package sharper
+   :straight t
+   :demand t
+   )
 
 ;;;;; modes
 
-(use-package racket-mode
-  :straight t
-  )
+ (use-package racket-mode
+   :straight t
+   )
 
-(use-package tex
-  :straight auctex
-  :custom
-  (TeX-auto-save t)
-  (TeX-parse-self t)
-  )
+ (use-package tex
+   :straight auctex
+   :custom
+   (TeX-auto-save t)
+   (TeX-parse-self t)
+   )
 
-(use-package php-mode
-  :straight t
-  :mode ("\\.php\\'" . php-ts-mode)
-  )
+ (use-package php-mode
+   :straight t
+   :mode ("\\.php\\'" . php-ts-mode)
+   )
 
-(use-package js2-mode
-  :straight t
-  :mode ("\\.js\\'" . js2-mode))
-
-
-(use-package elisp-mode
-  :hook (emacs-lisp-mode . (lambda () (setq imenu-generic-expression (append (list  (list "Use Package" "^(use-package \\(.+\\)" 1)) imenu-generic-expression))))
-  )
+ (use-package js2-mode
+   :straight t
+   :mode ("\\.js\\'" . js2-mode))
 
 
-(use-package web-mode
-  :straight t
-  :mode ((("\\.phtml\\'") . web-mode)
-         (("\\page\\'") . web-mode))
-  )
+ (use-package elisp-mode
+   :hook (emacs-lisp-mode . (lambda () (setq imenu-generic-expression (append (list  (list "Use Package" "^(use-package \\(.+\\)" 1)) imenu-generic-expression))))
+   )
 
 
-(use-package plantuml-mode
-  :straight t
-  :custom
-  (plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
-  )
+ (use-package web-mode
+   :straight t
+   :mode ((("\\.phtml\\'") . web-mode)
+          (("\\page\\'") . web-mode))
+   )
+
+
+ (use-package plantuml-mode
+   :straight t
+   :custom
+   (plantuml-jar-path (concat user-emacs-directory "plantuml.jar"))
+   )
 
 ;;;;; debugging
-(use-package dape
-  :straight t
-  :init
-  :hook
-  (kill-emacs . dape-breakpoint-save)
-  (after-init . dape-breakpoint-load)
-  (dape-display-source . pulse-momentary-highlight-one-line)
-  (dape-start . (lambda () (save-some-buffers t t)))
-  (dape-start . (lambda () (repeat-mode 1)))
-  (dape-stopped . (lambda () (repeat-mode -1)))
-  (dape-compile . kill-buffer)
-  (python-ts-mode . dape-breakpoint-global-mode)
-  (csharp-ts-mode . dape-breakpoint-global-mode)
-  :custom
-  (dape-key-prefix nil)
-  (dape-buffer-window-arrangement 'gud)
-  (dape-info-hide-mode-line nil)
+ (use-package dape
+   :straight t
+   :init
+   :hook
+   (kill-emacs . dape-breakpoint-save)
+   (after-init . dape-breakpoint-load)
+   (dape-display-source . pulse-momentary-highlight-one-line)
+   (dape-start . (lambda () (save-some-buffers t t)))
+   (dape-start . (lambda () (repeat-mode 1)))
+   (dape-stopped . (lambda () (repeat-mode -1)))
+   (dape-compile . kill-buffer)
+   (python-ts-mode . dape-breakpoint-global-mode)
+   (csharp-ts-mode . dape-breakpoint-global-mode)
+   :custom
+   (dape-key-prefix nil)
+   (dape-buffer-window-arrangement 'gud)
+   (dape-info-hide-mode-line nil)
 
-  )
+   )
 
 ;;;;; language server
-(defvar my-eglot-completion-functions (list #'yasnippet-capf #'eglot-completion-at-point)
-  "The list of completion functions to combine to replace `eglot-completion-at-point'.")
+ (defvar my-eglot-completion-functions (list #'yasnippet-capf #'eglot-completion-at-point)
+   "The list of completion functions to combine to replace `eglot-completion-at-point'.")
 
-(defun my-eglot-capf ()
-  "Configure `completion-at-point-functions' to replace `eglot-completion-at-point' with completion results including all completions in `my-eglot-capf'."
-  ;; Remember that local values in completion-at-point-functions take priority over global values."
-  (setq-local completion-at-point-functions
-              (list (apply 'cape-capf-super my-eglot-completion-functions))))
+ (defun my-eglot-capf ()
+   "Configure `completion-at-point-functions' to replace `eglot-completion-at-point' with completion results including all completions in `my-eglot-capf'."
+   ;; Remember that local values in completion-at-point-functions take priority over global values."
+   (setq-local completion-at-point-functions
+               (list (apply 'cape-capf-super my-eglot-completion-functions))))
 
-(defun my-file-completion-for-eglot ()
-  "Give `cape-file' priority in `completion-at-point-functions'."
-  ;; Remember that local values in completion-at-point-functions take priority over global values."
-  (add-hook 'completion-at-point-functions #'cape-file -100 t))
+ (defun my-file-completion-for-eglot ()
+   "Give `cape-file' priority in `completion-at-point-functions'."
+   ;; Remember that local values in completion-at-point-functions take priority over global values."
+   (add-hook 'completion-at-point-functions #'cape-file -100 t))
 
-(use-package eglot
-  :hook ((csharp-ts-mode . eglot-ensure)
-         (python-ts-mode . eglot-ensure)
-         (LaTeX-mode . eglot-ensure))
-  :config
-  (add-hook 'eglot-managed-mode-hook #'my-eglot-capf)
-  (add-hook 'eglot-managed-mode-hook #'my-file-completion-for-eglot 100)
-  ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
-  ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
-  ;;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
-  (add-to-list 'eglot-server-programs
-               '(LaTeX-mode . ("texlab")))
-  (setf (alist-get '(csharp-mode csharp-ts-mode) eglot-server-programs) '("csharp-language-server")))
+ (use-package eglot
+   :hook ((csharp-ts-mode . eglot-ensure)
+          (python-ts-mode . eglot-ensure)
+          (LaTeX-mode . eglot-ensure))
+   :config
+   (add-hook 'eglot-managed-mode-hook #'my-eglot-capf)
+   (add-hook 'eglot-managed-mode-hook #'my-file-completion-for-eglot 100)
+   ;; if lsp-server returns many completions then turn off but if it doesn't then turn it on
+   ;; This line causes function to delete or add characters when exiting https://github.com/minad/cape/issues/81
+   ;;  (advice-add #'eglot-completion-at-point :around #'cape-wrap-buster)
+   (add-to-list 'eglot-server-programs
+                '(LaTeX-mode . ("texlab")))
+   (setf (alist-get '(csharp-mode csharp-ts-mode) eglot-server-programs) '("csharp-language-server")))
 
-(defvar eldoc-ratio 0.30)
+ (defvar eldoc-ratio 0.30)
 
-(defun my-buffer-distance (string buffer)
-  "Get Levenshtein distance of STRING and BUFFER."
-  (string-distance string (tramp-get-buffer-string buffer)))
+ (defun my-buffer-distance (string buffer)
+   "Get Levenshtein distance of STRING and BUFFER."
+   (string-distance string (tramp-get-buffer-string buffer)))
 
-(defun my-buffer-length (buffer)
-  "Get string length of BUFFER."
-  (length (tramp-get-buffer-string buffer)))
+ (defun my-buffer-length (buffer)
+   "Get string length of BUFFER."
+   (length (tramp-get-buffer-string buffer)))
 
-(defun my-eldoc-docs-string (list)
-  "Get all strings in eldoc LIST and concat them."
-  (let (value)
-    (dolist (elt list value)
-      (setq value (concat value (substring-no-properties (car elt)))))))
+ (defun my-eldoc-docs-string (list)
+   "Get all strings in eldoc LIST and concat them."
+   (let (value)
+     (dolist (elt list value)
+       (setq value (concat value (substring-no-properties (car elt)))))))
 
 
-(use-package eldoc
-  :custom
-  (eldoc-echo-area-prefer-doc-buffer t)
-  (eldoc-echo-area-use-multiline-p nil)
-  :diminish eldoc-mode
-  )
+ (use-package eldoc
+   :custom
+   (eldoc-echo-area-prefer-doc-buffer t)
+   (eldoc-echo-area-use-multiline-p nil)
+   :diminish eldoc-mode
+   )
 
 
 
@@ -1401,452 +1404,452 @@ rebalanced."
 
 
 ;;;; completion
-(use-package corfu
-  :straight t
-  :init
-  (global-corfu-mode)
-  (corfu-history-mode)
-  (corfu-popupinfo-mode)
-  :custom
-  ;; cycle when reaching end of popup
-  (corfu-cycle t)
-  (corfu-on-exact-match 'quit)
-  (corfu-quit-no-match 'separator)
-  (corfu-preview-current 'nil)
-  (corfu-preselect 'first)
-  (corfu-auto t)
-  ;; if it doesn't work it is probably because the lsp is overriding it with :company-prefix-length
-  (corfu-auto-prefix 2)
-  (corfu-auto-delay 0.3)
-  (corfu-min-width 80)
-  (corfu-max-width corfu-min-width)
-  (corfu-count 14)
-  (corfu-scroll-margin 4)
-  (global-corfu-minibuffer nil)
-  (corfu-popupinfo-delay nil)
-  )
+ (use-package corfu
+   :straight t
+   :init
+   (global-corfu-mode)
+   (corfu-history-mode)
+   (corfu-popupinfo-mode)
+   :custom
+   ;; cycle when reaching end of popup
+   (corfu-cycle t)
+   (corfu-on-exact-match 'quit)
+   (corfu-quit-no-match 'separator)
+   (corfu-preview-current 'nil)
+   (corfu-preselect 'first)
+   (corfu-auto t)
+   ;; if it doesn't work it is probably because the lsp is overriding it with :company-prefix-length
+   (corfu-auto-prefix 2)
+   (corfu-auto-delay 0.3)
+   (corfu-min-width 80)
+   (corfu-max-width corfu-min-width)
+   (corfu-count 14)
+   (corfu-scroll-margin 4)
+   (global-corfu-minibuffer nil)
+   (corfu-popupinfo-delay nil)
+   )
 
-(use-package hippie-exp
-  :custom
-  (hippie-expand-try-functions-list '(try-expand-dabbrev try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill try-complete-file-name-partially try-complete-file-name try-expand-all-abbrevs try-expand-list try-expand-line try-complete-lisp-symbol-partially try-complete-lisp-symbol))
-  :config
-  (defadvice hippie-expand (around hippie-expand-case-fold)
-    (let ((case-fold-search nil))
-      ad-do-it))
-  (ad-activate 'hippie-expand)
-  )
+ (use-package hippie-exp
+   :custom
+   (hippie-expand-try-functions-list '(try-expand-dabbrev try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill try-complete-file-name-partially try-complete-file-name try-expand-all-abbrevs try-expand-list try-expand-line try-complete-lisp-symbol-partially try-complete-lisp-symbol))
+   :config
+   (defadvice hippie-expand (around hippie-expand-case-fold)
+     (let ((case-fold-search nil))
+       ad-do-it))
+   (ad-activate 'hippie-expand)
+   )
 
-(use-package yasnippet
-  :straight t
-  :init
-  (yas-global-mode 1)
-  :custom
-  (yas-also-auto-indent-first-line t)
-  :diminish yas-minor-mode
-  )
+ (use-package yasnippet
+   :straight t
+   :init
+   (yas-global-mode 1)
+   :custom
+   (yas-also-auto-indent-first-line t)
+   :diminish yas-minor-mode
+   )
 
-(use-package yasnippet-snippets
-  :straight t
-  )
+ (use-package yasnippet-snippets
+   :straight t
+   )
 
-(defun my-yasnippet-add-completion-functions ()
-  "Add yasnippet-capf to `completion-at-point-functions'."
-  ;; Note that the list of buffer-local
-  ;; completion functions takes precedence over the global list.
-  ;; Add yasnippet-capf globally
-  (add-to-list 'completion-at-point-functions #'yasnippet-capf)
-  )
+ (defun my-yasnippet-add-completion-functions ()
+   "Add yasnippet-capf to `completion-at-point-functions'."
+   ;; Note that the list of buffer-local
+   ;; completion functions takes precedence over the global list.
+   ;; Add yasnippet-capf globally
+   (add-to-list 'completion-at-point-functions #'yasnippet-capf)
+   )
 
-(use-package yasnippet-capf
-  :straight t
-  :init
-  :hook ((prog-mode org-mode) . my-yasnippet-add-completion-functions)
-  )
-
-
-(use-package vertico
-  :straight t
-  :custom
-  (vertico-cycle t)
-  :init
-  (vertico-mode)
-  :config
-  ;; fixes C-k defaulting to adding a digraph in M-x
-  (eval-after-load "evil-maps"
-    (dolist (map '(evil-insert-state-map))
-      (define-key (eval map) "\C-k" nil)
-      ))
-  )
-
-(use-package orderless
-  :straight t
-  :custom
-  (completion-styles '(orderless partial-completion basic))
-  (completion-category-defaults nil)
-  (completion-category-overrides '((file (styles partial-completion))))
-  )
+ (use-package yasnippet-capf
+   :straight t
+   :init
+   :hook ((prog-mode org-mode) . my-yasnippet-add-completion-functions)
+   )
 
 
-(use-package consult
-  :straight t
-  :custom
-  ;; turns on vertico for : in evil
-  (completion-in-region-function 'consult-completion-in-region)
-  )
+ (use-package vertico
+   :straight t
+   :custom
+   (vertico-cycle t)
+   :init
+   (vertico-mode)
+   :config
+   ;; fixes C-k defaulting to adding a digraph in M-x
+   (eval-after-load "evil-maps"
+     (dolist (map '(evil-insert-state-map))
+       (define-key (eval map) "\C-k" nil)
+       ))
+   )
+
+ (use-package orderless
+   :straight t
+   :custom
+   (completion-styles '(orderless partial-completion basic))
+   (completion-category-defaults nil)
+   (completion-category-overrides '((file (styles partial-completion))))
+   )
 
 
-(use-package cape
-  :straight t
-  :init
-  ;; Add to the global default value of `completion-at-point-functions' which is
-  ;; used by `completion-at-point'.  The order of the functions matters, the
-  ;; first function returning a result wins.  Note that the list of buffer-local
-  ;; completion functions takes precedence over the global list.
-  ;; (add-hook 'completion-at-point-functions #'cape-history)
-  ;; ...
-  ;; (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
-  ;; (advice-add #'lsp-completion-at-point :around #'cape-wrap-nonexclusive)
-  ;; (advice-add #'pcomplete-completions-at-point :around #'cape-wrap-nonexclusive)
+ (use-package consult
+   :straight t
+   :custom
+   ;; turns on vertico for : in evil
+   (completion-in-region-function 'consult-completion-in-region)
+   )
 
-  ;; adds cape-file globally
-  ;; Note that the list of buffer-local
-  ;; completion functions takes precedence over the global list.
-  
-  (add-hook 'completion-at-point-functions #'cape-file)
-  )
+
+ (use-package cape
+   :straight t
+   :init
+   ;; Add to the global default value of `completion-at-point-functions' which is
+   ;; used by `completion-at-point'.  The order of the functions matters, the
+   ;; first function returning a result wins.  Note that the list of buffer-local
+   ;; completion functions takes precedence over the global list.
+   ;; (add-hook 'completion-at-point-functions #'cape-history)
+   ;; ...
+   ;; (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
+   ;; (advice-add #'lsp-completion-at-point :around #'cape-wrap-nonexclusive)
+   ;; (advice-add #'pcomplete-completions-at-point :around #'cape-wrap-nonexclusive)
+
+   ;; adds cape-file globally
+   ;; Note that the list of buffer-local
+   ;; completion functions takes precedence over the global list.
+   
+   (add-hook 'completion-at-point-functions #'cape-file)
+   )
 
 ;;;; ui
-(use-package treesit-auto
-  :straight t
-  :demand t
-  :custom
-  (treesit-font-lock-level 4)
-  :config
-  (global-treesit-auto-mode))
-;; modus-operandi-tinted python
-;; modus-viviendi-tinted C#
-;; modus-viviendi Elisp
-(use-package dired
-  :custom
-  (dired-kill-when-opening-new-dired-buffer t)
-  (dired-auto-revert-buffer t)
-  )
+ (use-package treesit-auto
+   :straight t
+   :demand t
+   :custom
+   (treesit-font-lock-level 4)
+   :config
+   (global-treesit-auto-mode))
+ ;; modus-operandi-tinted python
+ ;; modus-viviendi-tinted C#
+ ;; modus-viviendi Elisp
+ (use-package dired
+   :custom
+   (dired-kill-when-opening-new-dired-buffer t)
+   (dired-auto-revert-buffer t)
+   )
 
-(use-package popper
-  :straight t ; or :straight t
-  :init
-  (setq popper-display-control 'user)
-  (setq popper-reference-buffers
-        '("\\*Messages\\*"
-          "Output\\*$"
-          "\\*Async Shell Command\\*"
-          "\\*eshell\\*"
-          "\\*dotnet"
-          "events\\*"
-          "\\*shell\\*"
-          "\\*dape-shell\\*" 
-          "\\*vterm\\*"
-          "^\\* docker.+ up"
-          "^\\* docker.+ exec"
-          "\\*Racket"
-          (lambda (buf) (with-current-buffer buf
-                          (derived-mode-p 'comint-mode)))
-          debugger-mode
-          compilation-mode
-          ))
-  (popper-mode +1)
-  (popper-echo-mode +1))
+ (use-package popper
+   :straight t ; or :straight t
+   :init
+   (setq popper-display-control 'user)
+   (setq popper-reference-buffers
+         '("\\*Messages\\*"
+           "Output\\*$"
+           "\\*Async Shell Command\\*"
+           "\\*eshell\\*"
+           "\\*dotnet"
+           "events\\*"
+           "\\*shell\\*"
+           "\\*dape-shell\\*" 
+           "\\*vterm\\*"
+           "^\\* docker.+ up"
+           "^\\* docker.+ exec"
+           "\\*Racket"
+           (lambda (buf) (with-current-buffer buf
+                           (derived-mode-p 'comint-mode)))
+           debugger-mode
+           compilation-mode
+           ))
+   (popper-mode +1)
+   (popper-echo-mode +1))
 
-(defun my-fit-window-to-buffer (&optional window max-height min-height max-width min-width preserve-size)
-  (let* ((wind (if window window (selected-window)))
-         (initial-width (window-width wind))
-         (initial-height (window-height window)))
-    (fit-window-to-buffer window max-height min-height max-width min-width preserve-size)
-    (if (or (not (equal (window-width wind) initial-width)) (not (equal (window-height wind) (window-height wind))))
-        t
-      nil)))
-
-
-(defun my-fit-window-to-right-side (window)
-  "Use `fit-window-to-buffer' with right side window specifications."
-  (let ((max-width (floor (* 0.35 (frame-width))))
-        (max-height (floor (* 0.50 (frame-height)))))
-    (if (my-fit-window-to-buffer window max-height window-min-height max-width)
-        nil
-      (window-resize window (- (floor (* 0.35 (frame-width))) (window-width window)) t))))
+ (defun my-fit-window-to-buffer (&optional window max-height min-height max-width min-width preserve-size)
+   (let* ((wind (if window window (selected-window)))
+          (initial-width (window-width wind))
+          (initial-height (window-height window)))
+     (fit-window-to-buffer window max-height min-height max-width min-width preserve-size)
+     (if (or (not (equal (window-width wind) initial-width)) (not (equal (window-height wind) (window-height wind))))
+         t
+       nil)))
 
 
-;; TODO
-(defun my-fit-window-to-magit (window)
-  "Use 'fit-window-to-buffer' but make it work for magit's behavior."
-  (let ((max-width (floor (* 0.50 (frame-width))))
-        (max-height (floor (* 1.00 (frame-height)))))
-    (fit-window-to-buffer window max-height window-min-height max-width)))
-
-(use-package window
-  :custom
-  (menu-bar-mode nil)
-  (fit-window-to-buffer-horizontally t)
-  (tab-bar-mode nil)
-  (tool-bar-mode nil)
-  (line-number-mode nil)
-  (switch-to-buffer-in-dedicated-window 'pop)
-  (switch-to-buffer-obey-display-actions nil)
-  (window-sides-slots '(2 2 2 2))
-  (display-buffer-alist
-   '(("\\*info\\*"
-      (display-buffer-reuse-window display-buffer-in-side-window)
-      (side . right)
-      (slot . 0)
-      (window-width . my-fit-window-to-right-side))
-     ("\\*helpful\\|\\*Help\\*\\|\\*eldoc\\*\\|\\*persisted eldoc\\*"
-      (display-buffer-reuse-window display-buffer-in-side-window)
-      (side . right)
-      (slot . -1)
-      (window-width . my-fit-window-to-right-side))
-     ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*\\|^\\* docker.+ up\\|^\\* docker.+ exec\\|\\*Racket" (major-mode . compilation-mode)  (major-mode . debugger-mode) (derived-mode . comint-mode)) 
-      (display-buffer-reuse-window display-buffer-in-side-window)
-      (side . bottom)
-      (slot . 0)
-      (window-height . 0.50))
-     ((or "^\\*docker.+\\*$" (derived-mode . magit-mode) "\\*Remember\\*")
-      (display-buffer-reuse-window display-buffer-in-direction)
-      (window . root)
-      (window-width . 0.50)
-      (direction . left))
-     ((major-mode . dired-mode)
-      (display-buffer-reuse-mode-window display-buffer-in-direction)
-      (window . root)
-      (window-width . 0.50)
-      (direction . left))
-     )))
+ (defun my-fit-window-to-right-side (window)
+   "Use `fit-window-to-buffer' with right side window specifications."
+   (let ((max-width (floor (* 0.35 (frame-width))))
+         (max-height (floor (* 0.50 (frame-height)))))
+     (if (my-fit-window-to-buffer window max-height window-min-height max-width)
+         nil
+       (window-resize window (- (floor (* 0.35 (frame-width))) (window-width window)) t))))
 
 
-(use-package font-core
-  :config
-  (set-frame-font "JetBrains Mono 10" nil t))
+ ;; TODO
+ (defun my-fit-window-to-magit (window)
+   "Use 'fit-window-to-buffer' but make it work for magit's behavior."
+   (let ((max-width (floor (* 0.50 (frame-width))))
+         (max-height (floor (* 1.00 (frame-height)))))
+     (fit-window-to-buffer window max-height window-min-height max-width)))
+
+ (use-package window
+   :custom
+   (menu-bar-mode nil)
+   (fit-window-to-buffer-horizontally t)
+   (tab-bar-mode nil)
+   (tool-bar-mode nil)
+   (line-number-mode nil)
+   (switch-to-buffer-in-dedicated-window 'pop)
+   (switch-to-buffer-obey-display-actions nil)
+   (window-sides-slots '(2 2 2 2))
+   (display-buffer-alist
+    '(("\\*info\\*"
+       (display-buffer-reuse-window display-buffer-in-side-window)
+       (side . right)
+       (slot . 0)
+       (window-width . my-fit-window-to-right-side))
+      ("\\*helpful\\|\\*Help\\*\\|\\*eldoc\\*\\|\\*persisted eldoc\\*"
+       (display-buffer-reuse-window display-buffer-in-side-window)
+       (side . right)
+       (slot . -1)
+       (window-width . my-fit-window-to-right-side))
+      ((or "\\*dotnet\\|\\*Messages\\*\\|Output\\*\\|events\\*\\|\\*eshell\\*\\|\\*shell\\*\\|\\*dape-shell\\*\\|\\*vterm\\*\\|^\\* docker.+ up\\|^\\* docker.+ exec\\|\\*Racket" (major-mode . compilation-mode)  (major-mode . debugger-mode) (derived-mode . comint-mode)) 
+       (display-buffer-reuse-window display-buffer-in-side-window)
+       (side . bottom)
+       (slot . 0)
+       (window-height . 0.50))
+      ((or "^\\*docker.+\\*$" (derived-mode . magit-mode) "\\*Remember\\*")
+       (display-buffer-reuse-window display-buffer-in-direction)
+       (window . root)
+       (window-width . 0.50)
+       (direction . left))
+      ((major-mode . dired-mode)
+       (display-buffer-reuse-mode-window display-buffer-in-direction)
+       (window . root)
+       (window-width . 0.50)
+       (direction . left))
+      )))
 
 
-(use-package kind-icon
-  :straight t
-  :after corfu
-  :demand t
-  :custom
-  ;; (kind-icon-blend-background t)
-  ;; (kind-icon-default-face 'corfu-default) ; only needed with blend-background
-  (kind-icon-mapping
-   '((array "a" :icon "code-brackets" :face font-lock-type-face)
-     (boolean "b" :icon "circle-half-full" :face
-              font-lock-builtin-face)
-     (class "c" :icon "view-grid-plus-outline" :face
-            font-lock-type-face)
-     (color "#" :icon "palette" :face success)
-     (command "cm" :icon "code-greater-than" :face default)
-     (constant "co" :icon "lock-remove-outline" :face
-               font-lock-constant-face)
-     (constructor "cn" :icon "table-column-plus-after" :face
-                  font-lock-function-name-face)
-     (enummember "em" :icon "order-bool-ascending-variant" :face
-                 font-lock-builtin-face)
-     (enum-member "em" :icon "order-bool-ascending-variant" :face
+ (use-package font-core
+   :config
+   (set-frame-font "JetBrains Mono 10" nil t))
+
+
+ (use-package kind-icon
+   :straight t
+   :after corfu
+   :demand t
+   :custom
+   ;; (kind-icon-blend-background t)
+   ;; (kind-icon-default-face 'corfu-default) ; only needed with blend-background
+   (kind-icon-mapping
+    '((array "a" :icon "code-brackets" :face font-lock-type-face)
+      (boolean "b" :icon "circle-half-full" :face
+               font-lock-builtin-face)
+      (class "c" :icon "view-grid-plus-outline" :face
+             font-lock-type-face)
+      (color "#" :icon "palette" :face success)
+      (command "cm" :icon "code-greater-than" :face default)
+      (constant "co" :icon "lock-remove-outline" :face
+                font-lock-constant-face)
+      (constructor "cn" :icon "table-column-plus-after" :face
+                   font-lock-function-name-face)
+      (enummember "em" :icon "order-bool-ascending-variant" :face
                   font-lock-builtin-face)
-     (enum "e" :icon "format-list-bulleted-square" :face
-           font-lock-builtin-face)
-     (event "ev" :icon "lightning-bolt-outline" :face
-            font-lock-warning-face)
-     (field "fd" :icon "application-braces-outline" :face
-            font-lock-variable-name-face)
-     (file "f" :icon "file-document-outline" :face
-           font-lock-string-face)
-     (folder "d" :icon "folder" :face font-lock-doc-face)
-     (interface "if" :icon "application-brackets-outline" :face
-                font-lock-type-face)
-     (keyword "kw" :icon "key-variant" :face font-lock-keyword-face)
-     (macro "mc" :icon "lambda" :face font-lock-keyword-face)
-     (magic "ma" :icon "auto-fix" :face font-lock-builtin-face)
-     (method "m" :icon "function-variant" :face
-             font-lock-function-name-face)
-     (function "f" :icon "function" :face font-lock-function-name-face)
-     (module "{" :icon "file-code-outline" :face
-             font-lock-preprocessor-face)
-     (numeric "nu" :icon "numeric" :face font-lock-builtin-face)
-     (operator "op" :icon "plus-minus" :face
-               font-lock-comment-delimiter-face)
-     (param "pa" :icon "cog" :face default)
-     (property "pr" :icon "wrench" :face font-lock-variable-name-face)
-     (reference "rf" :icon "library" :face
-                font-lock-variable-name-face)
-     (snippet "S" :icon "content-cut" :face font-lock-string-face)
-     (string "s" :icon "sticker-text-outline" :face
-             font-lock-string-face)
-     (struct "%" :icon "code-braces" :face
-             font-lock-variable-name-face)
-     (text "tx" :icon "script-text-outline" :face font-lock-doc-face)
-     (typeparameter "tp" :icon "format-list-bulleted-type" :face
-                    font-lock-type-face)
-     (type-parameter "tp" :icon "format-list-bulleted-type" :face
-                     font-lock-type-face)
-     (unit "u" :icon "ruler-square" :face font-lock-constant-face)
-     (value "v" :icon "plus-circle-outline" :face
+      (enum-member "em" :icon "order-bool-ascending-variant" :face
+                   font-lock-builtin-face)
+      (enum "e" :icon "format-list-bulleted-square" :face
             font-lock-builtin-face)
-     (variable "va" :icon "variable" :face
-               font-lock-variable-name-face)
-     (t "." :icon "crosshairs-question" :face font-lock-warning-face)))
-  :config
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)
-  )
+      (event "ev" :icon "lightning-bolt-outline" :face
+             font-lock-warning-face)
+      (field "fd" :icon "application-braces-outline" :face
+             font-lock-variable-name-face)
+      (file "f" :icon "file-document-outline" :face
+            font-lock-string-face)
+      (folder "d" :icon "folder" :face font-lock-doc-face)
+      (interface "if" :icon "application-brackets-outline" :face
+                 font-lock-type-face)
+      (keyword "kw" :icon "key-variant" :face font-lock-keyword-face)
+      (macro "mc" :icon "lambda" :face font-lock-keyword-face)
+      (magic "ma" :icon "auto-fix" :face font-lock-builtin-face)
+      (method "m" :icon "function-variant" :face
+              font-lock-function-name-face)
+      (function "f" :icon "function" :face font-lock-function-name-face)
+      (module "{" :icon "file-code-outline" :face
+              font-lock-preprocessor-face)
+      (numeric "nu" :icon "numeric" :face font-lock-builtin-face)
+      (operator "op" :icon "plus-minus" :face
+                font-lock-comment-delimiter-face)
+      (param "pa" :icon "cog" :face default)
+      (property "pr" :icon "wrench" :face font-lock-variable-name-face)
+      (reference "rf" :icon "library" :face
+                 font-lock-variable-name-face)
+      (snippet "S" :icon "content-cut" :face font-lock-string-face)
+      (string "s" :icon "sticker-text-outline" :face
+              font-lock-string-face)
+      (struct "%" :icon "code-braces" :face
+              font-lock-variable-name-face)
+      (text "tx" :icon "script-text-outline" :face font-lock-doc-face)
+      (typeparameter "tp" :icon "format-list-bulleted-type" :face
+                     font-lock-type-face)
+      (type-parameter "tp" :icon "format-list-bulleted-type" :face
+                      font-lock-type-face)
+      (unit "u" :icon "ruler-square" :face font-lock-constant-face)
+      (value "v" :icon "plus-circle-outline" :face
+             font-lock-builtin-face)
+      (variable "va" :icon "variable" :face
+                font-lock-variable-name-face)
+      (t "." :icon "crosshairs-question" :face font-lock-warning-face)))
+   :config
+   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)
+   )
 
 
 
-;;Enable rich annotations using the Marginalia package
-(use-package marginalia
-  :straight t
-  ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
-  ;; available in the *Completions* buffer, add it to the
-  ;; `completion-list-mode-map'.
-  ;; The :init section is always executed.
-  :init
-  ;; Marginalia must be activated in the :init section of use-package such that
-  ;; the mode gets enabled right away. Note that this forces loading the
-  ;; package.
-  (marginalia-mode)
-  )
+ ;;Enable rich annotations using the Marginalia package
+ (use-package marginalia
+   :straight t
+   ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
+   ;; available in the *Completions* buffer, add it to the
+   ;; `completion-list-mode-map'.
+   ;; The :init section is always executed.
+   :init
+   ;; Marginalia must be activated in the :init section of use-package such that
+   ;; the mode gets enabled right away. Note that this forces loading the
+   ;; package.
+   (marginalia-mode)
+   )
 
 
-(use-package posframe
-  :straight t
-  )
+ (use-package posframe
+   :straight t
+   )
 
 
-(use-package adaptive-wrap
-  :straight t
-  :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode dired-mode helpful-mode info-mode) . adaptive-wrap-prefix-mode)
-  )
+ (use-package adaptive-wrap
+   :straight t
+   :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode dired-mode helpful-mode info-mode) . adaptive-wrap-prefix-mode)
+   )
 
-(use-package which-key
-  :init
-  (setq which-key-sort-order #'which-key-key-order-alpha
-        which-key-sort-uppercase-first nil
-        which-key-add-column-padding 1
-        which-key-max-display-columns nil
-        which-key-min-display-lines 6
-        which-key-side-window-slot -10
-        which-key-max-description-length nil)
-  :custom
-  (which-key-idle-delay 0.5)
-  (which-key-separator ":")
-  (which-key-allow-multiple-replacements t)
-  (which-key-popup-type 'minibuffer)
-  :init
-  (which-key-mode)
-  :diminish which-key-mode
-  )
+ (use-package which-key
+   :init
+   (setq which-key-sort-order #'which-key-key-order-alpha
+         which-key-sort-uppercase-first nil
+         which-key-add-column-padding 1
+         which-key-max-display-columns nil
+         which-key-min-display-lines 6
+         which-key-side-window-slot -10
+         which-key-max-description-length nil)
+   :custom
+   (which-key-idle-delay 0.5)
+   (which-key-separator ":")
+   (which-key-allow-multiple-replacements t)
+   (which-key-popup-type 'minibuffer)
+   :init
+   (which-key-mode)
+   :diminish which-key-mode
+   )
 
 
 ;;;; miscaleanous
-(use-package pdf-tools
-  :straight t
-  :mode ("\\.pdf\\'" . pdf-view-mode)
-  :hook (pdf-view-mode . pdf-tools-enable-minor-modes)
-  )
+ (use-package pdf-tools
+   :straight t
+   :mode ("\\.pdf\\'" . pdf-view-mode)
+   :hook (pdf-view-mode . pdf-tools-enable-minor-modes)
+   )
 
-(use-package burly
-  :demand t
-  :straight t)
+ (use-package burly
+   :demand t
+   :straight t)
 
-(use-package vterm
-  :straight t
-  :hook (vterm-mode . (lambda () (setq evil-insert-state-modes nil))))
+ (use-package vterm
+   :straight t
+   :hook (vterm-mode . (lambda () (setq evil-insert-state-modes nil))))
 
-(use-package savehist
-  :init
-  (savehist-mode))
+ (use-package savehist
+   :init
+   (savehist-mode))
 
 
-(use-package eshell
-  :hook ((eshell-first-time-mode . (lambda () (yas-minor-mode -1)))
-         (((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))))
-  :config
-  ;; Setup eshell sudo
-  (require 'em-tramp)
-  (setq password-cache-expiry 3600)
-  (setq eshell-prefer-lisp-functions t)
-  (setq eshell-prefer-lisp-variables t)
-  (setq password-cache t) 
-  (setq password-cache-expiry 3600) 
-  )
+ (use-package eshell
+   :hook ((eshell-first-time-mode . (lambda () (yas-minor-mode -1)))
+          (((eshell-mode shell-mode) . (lambda () (corfu-mode -1)))))
+   :config
+   ;; Setup eshell sudo
+   (require 'em-tramp)
+   (setq password-cache-expiry 3600)
+   (setq eshell-prefer-lisp-functions t)
+   (setq eshell-prefer-lisp-variables t)
+   (setq password-cache t) 
+   (setq password-cache-expiry 3600) 
+   )
 
-(use-package helpful
-  :straight t
-  :demand t
-  :init
-  (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update))
+ (use-package helpful
+   :straight t
+   :demand t
+   :init
+   (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update))
 
-(use-package elisp-demos
-  :straight t
-  )
+ (use-package elisp-demos
+   :straight t
+   )
 
 ;;;; emacs default
-(use-package emacs
-  :mode (("\\.sql\\'" . sql-mode)
-         ("init.el" . (lambda () (emacs-lisp-mode) (outline-minor-mode 1) (evil-close-folds))))
-  :hook (((Info-mode prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
-         ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
-  :config
-  ;; ellipsis marker single character of three dots in org
-  (with-eval-after-load 'mule-util
-    (setq truncate-string-ellipsis "…"))
-  ;; disable transparency
-  (add-to-list 'default-frame-alist '(alpha-background . 1.0))
-  ;; yes or no now y or n
-  (if (version<= emacs-version "28")
-      (defalias 'yes-or-no-p 'y-or-n-p)
-    (setopt use-short-answers t))
+ (use-package emacs
+   :mode (("\\.sql\\'" . sql-mode)
+          ("init.el" . (lambda () (emacs-lisp-mode) (outline-minor-mode 1) (evil-close-folds))))
+   :hook (((Info-mode prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
+          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
+   :config
+   ;; ellipsis marker single character of three dots in org
+   (with-eval-after-load 'mule-util
+     (setq truncate-string-ellipsis "…"))
+   ;; disable transparency
+   (add-to-list 'default-frame-alist '(alpha-background . 1.0))
+   ;; yes or no now y or n
+   (if (version<= emacs-version "28")
+       (defalias 'yes-or-no-p 'y-or-n-p)
+     (setopt use-short-answers t))
 
-  (when scroll-bar-mode
-    (scroll-bar-mode -1))
+   (when scroll-bar-mode
+     (scroll-bar-mode -1))
 
-  (add-to-list 'custom-enabled-themes 'tango-dark)
-  (load-theme 'tango-dark)
-  (blink-cursor-mode 0)
-  ;; paths
-  (add-to-list 'exec-path (concat user-emacs-directory "bin/"))
-  (add-to-list 'Info-directory-list (concat user-emacs-directory "info/"))
+   (add-to-list 'custom-enabled-themes 'tango-dark)
+   (load-theme 'tango-dark)
+   (blink-cursor-mode 0)
+   ;; paths
+   (add-to-list 'exec-path (concat user-emacs-directory "bin/"))
+   (add-to-list 'Info-directory-list (concat user-emacs-directory "info/"))
 
-  :custom
-  (undo-limit 400000)           ;; 400kb (default is 160kb)
-  (undo-strong-limit 3000000)   ;; 3mb   (default is 240kb)
-  (undo-outer-limit 48000000)  ;; 48mb  (default is 24mb)
-
-
-  ;; turn off comp warnings
-  (native-comp-async-report-warnings-error nil)
-  ;; get rid of menu bar, tab bar, and tool bar
-  ;; setup different directory for backups and autosaves
-
-  (backup-directory-alist `(("." . ,(concat user-emacs-directory "backups/"))))
-  ;; tabs insert spaces
-  (indent-tabs-mode nil)
-  ;; cursor over actual space of character ;; doesn't do anything??
-  (x-stretch-cursor t)
-  ;; take new window space from all other windows
-  (window-combination-resize t) 
-  ;; buffer is same version as file when opened
-  (global-auto-revert-mode 1)
-  ;; end double space between sentences
-  (sentence-end-double-space nil)
-  (desktop-save-mode 1)
-
-  (doc-view-resolution 200)
-  ;; support opening new minibuffers from inside existing minibuffers for evil :
-  (enable-recursive-minibuffers t)
-  ;; hide commands in M-x which do not work in current mode.
-  (read-extended-command-predicate #'command-completion-default-include-p)
-  ;; do not allow cursor in the minibuffer prompt
-  (minibuffer-prompt-properties
-   '(read-only t cursor-intangible t face minibuffer-prompt))
+   :custom
+   (undo-limit 400000)           ;; 400kb (default is 160kb)
+   (undo-strong-limit 3000000)   ;; 3mb   (default is 240kb)
+   (undo-outer-limit 48000000)  ;; 48mb  (default is 24mb)
 
 
+   ;; turn off comp warnings
+   (native-comp-async-report-warnings-error nil)
+   ;; get rid of menu bar, tab bar, and tool bar
+   ;; setup different directory for backups and autosaves
 
-  ;; example of customizing colors
-  )
+   (backup-directory-alist `(("." . ,(concat user-emacs-directory "backups/"))))
+   ;; tabs insert spaces
+   (indent-tabs-mode nil)
+   ;; cursor over actual space of character ;; doesn't do anything??
+   (x-stretch-cursor t)
+   ;; take new window space from all other windows
+   (window-combination-resize t) 
+   ;; buffer is same version as file when opened
+   (global-auto-revert-mode 1)
+   ;; end double space between sentences
+   (sentence-end-double-space nil)
+   (desktop-save-mode 1)
+
+   (doc-view-resolution 200)
+   ;; support opening new minibuffers from inside existing minibuffers for evil :
+   (enable-recursive-minibuffers t)
+   ;; hide commands in M-x which do not work in current mode.
+   (read-extended-command-predicate #'command-completion-default-include-p)
+   ;; do not allow cursor in the minibuffer prompt
+   (minibuffer-prompt-properties
+    '(read-only t cursor-intangible t face minibuffer-prompt))
+
+
+
+   ;; example of customizing colors
+   )
