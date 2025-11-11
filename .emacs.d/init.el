@@ -1559,6 +1559,10 @@ rebalanced."
   )
 
 ;;;; ui
+(use-package spacious-padding
+  :straight t
+  :custom
+  (line-spacing 1))
 (use-package treesit-auto
   :straight t
   :demand t
