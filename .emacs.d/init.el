@@ -156,6 +156,9 @@
 ;; TAB smart-tab
 ;; g h help-at-point
 ;; C-w C-v my-evil-window-vsplit-left
+;; g s evilem-map
+;; g f evilem-motion-find-char
+;; g F evilem-motion-find-char-backward
 
 ;;;;; help-map
 ;; normal insert C-h f helpful-callable
@@ -669,10 +672,8 @@ rebalanced."
 
 (after! evil-easymotion
   (general-def 'normal
-    ;; "s" 'evilem-motion-find-char
-    ;; "S" 'evilem-motion-find-char-backward
-    ;; "g f" 'evilem-motion-find-char
-    ;; "g F" 'evilem-motion-find-char-backward
+    "g f" 'evilem-motion-find-char
+    "g F" 'evilem-motion-find-char-backward
     "g s" evilem-map
     ))
 
@@ -1559,10 +1560,6 @@ rebalanced."
   )
 
 ;;;; ui
-(use-package spacious-padding
-  :straight t
-  :custom
-  (line-spacing 1))
 (use-package treesit-auto
   :straight t
   :demand t
