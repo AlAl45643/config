@@ -121,6 +121,7 @@
 ;; all (C-) SPC a org-agenda 
 ;; all (C-) SPC h my-go-to-help-buffer
 ;; all (C-) SPC b remember
+;; all (C-) SPC w eww
 ;;;;; my-second-leader-map
 ;; all (C-) \ e t my-test-code 
 ;; all (C-) \ e b my-build-code
@@ -157,9 +158,8 @@
 ;; g h help-at-point
 ;; C-w C-v my-evil-window-vsplit-left
 ;; g s evilem-map
-;; g f evilem-motion-find-char
-;; g F evilem-motion-find-char-backward
-
+;; M-f evilem-motion-find-char
+;; M-F evilem-motion-find-char-backward
 ;;;;; help-map
 ;; normal insert C-h f helpful-callable
 ;; normal insert C-h v helpful-variable
@@ -206,6 +206,7 @@
 ;; normal insert (C-) , u  dape-until                
 ;; normal insert (C-) , w  dape-watch-dwim           
 ;; normal insert (C-) , x  dape-evaluate-expression  
+;; normal insert (C-) , C-n python-shell-send-defun
 
 ;;;;; dape-active-mode-map
 ;; insert normal F5 dape-continue
@@ -490,6 +491,7 @@ things you want byte-compiled in them! Like function/macro definitions."
   "m" 'make-frame-command
   "1" 'my-window-bookmark-home
   "o" 'my-online-search
+  "w" 'eww
   "b" 'remember
   )
 
@@ -672,8 +674,8 @@ rebalanced."
 
 (after! evil-easymotion
   (general-def 'normal
-    "g f" 'evilem-motion-find-char
-    "g F" 'evilem-motion-find-char-backward
+    "M-f" 'evilem-motion-find-char
+    "M-F" 'evilem-motion-find-char-backward
     "g s" evilem-map
     ))
 
@@ -704,13 +706,12 @@ rebalanced."
 
 (after! help    
   (general-def help-map
-    "C-h f" 'my-helpful-callable-save-window
-    "C-h v" 'my-helpful-variable-save-window
-    "C-h k" 'my-helpful-key-save-window
-    "C-h x" 'my-helpful-command-save-window
-    "C-h F" 'my-helpful-function-save-window
+    "f" 'my-helpful-callable-save-window
+    "v" 'my-helpful-variable-save-window
+    "k" 'my-helpful-key-save-window
+    "x" 'my-helpful-command-save-window
+    "F" 'my-helpful-function-save-window
     ))
-
 ;;;;; vertico-map
 (after! vertico
   (general-def '(insert normal) vertico-map
@@ -971,7 +972,8 @@ rebalanced."
 (defun my-python-keybinds ()
   (after! python
     (general-def 'normal python-ts-mode-map
-      "g z" 'my-python-repl)))
+      "g z" 'my-python-repl
+      "C-n" 'python-shell-send-defun)))
 
 (add-hook 'python-ts-mode-hook #'my-python-keybinds)
 ;;;;; inferior-python-mode-map
@@ -1081,6 +1083,7 @@ rebalanced."
 (defun my-evil-multiedit-maintain-visual-cursor-advice (func &rest args)
   (if evil-visual-state-minor-mode
       (set-window-point (selected-window) (- (point) 1))))
+
 (use-package evil-multiedit
   :straight t
   :demand t
@@ -1230,7 +1233,8 @@ rebalanced."
   :straight t
   :hook ((after-init . org-remark-global-tracking-mode)
          (Info-mode . org-remark-info-mode)
-         (nov-mode . org-remark-nov-mode))
+         (nov-mode . org-remark-nov-mode)
+         (eww-mode . org-remark-eww-mode))
   :diminish org-remark-global-tracking-mode
   :diminish org-remark-mode
   )
@@ -1325,7 +1329,6 @@ rebalanced."
   )
 
 ;;;;; modes
-
 (use-package racket-mode
   :straight t
   )
@@ -1559,7 +1562,54 @@ rebalanced."
   (add-hook 'completion-at-point-functions #'cape-file)
   )
 
+;;;; documentation
+(defun my-file-extension (filename)
+  (if (string-match "\\(?:\\.[A-Za-z]+\\)+$" filename)
+      (let* ((file-extension (match-string 0 filename))
+             (file-extension-list (split-string file-extension "\\." t)))
+        file-extension-list)
+    nil))
+
+(defun my-Info-find-node (filename nodename &optional no-going-back strict-case
+                                   noerror)
+  "Go to an Info node specified as separate FILENAME and NODENAME.
+NO-GOING-BACK is non-nil if recovering from an error in this function;
+it says do not attempt further (recursive) error recovery.
+
+This function first looks for a case-sensitive match for NODENAME;
+if none is found it then tries a case-insensitive match (unless
+STRICT-CASE is non-nil).
+
+If NOERROR, inhibit error messages when we can't find the node."
+  (info-initialize)
+  (setq nodename (info--node-canonicalize-whitespace nodename))
+  (setq filename (Info-find-file filename noerror))
+  ;; Go into Info buffer.
+  (or (derived-mode-p 'Info-mode) (info-pop-to-buffer filename))
+  ;; Record the node we are leaving, if we were in one.
+  (and (not no-going-back)
+       Info-current-file
+       (push (list Info-current-file Info-current-node (point))
+             Info-history))
+  
+  (if (and filename (my-file-extension filename))
+      (let ((buffer (find-file-noselect filename)))
+        (switch-to-buffer buffer)
+        (require 'general)
+        (general-def 'normal 'local
+          "u" 'info))
+    (Info-find-node-2 filename nodename no-going-back strict-case)
+    ))
+
+(use-package info
+  :config
+  (advice-add 'Info-find-node :override #'my-Info-find-node))
+
 ;;;; ui
+(use-package spacious-padding
+  :straight t
+  :custom
+  (line-spacing 1))
 (use-package treesit-auto
   :straight t
   :demand t
@@ -1610,7 +1660,6 @@ rebalanced."
         t
       nil)))
 
-
 (defun my-fit-window-to-right-side (window)
   "Use `fit-window-to-buffer' with right side window specifications."
   (let ((max-width (floor (* 0.35 (frame-width))))
@@ -1639,7 +1688,7 @@ rebalanced."
   (switch-to-buffer-obey-display-actions nil)
   (window-sides-slots '(2 2 2 2))
   (display-buffer-alist
-   '(("\\*info\\*"
+   '(((or "\\*info\\*" (major-mode . eww-mode))
       (display-buffer-reuse-window display-buffer-in-side-window)
       (side . right)
       (slot . 0)
