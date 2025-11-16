@@ -14,6 +14,12 @@ File: dir,	Node: Top	This is the top of the INFO tree
 
 * Menu:
 
-Programming Languages
+Software development
 * Python: (python).                The python programming language.
-* Django: (django).                Python web framework. 
+* Django: (django).                A python web framework. 
+* Numpy: (numpy-user.pdf).         A python scientific computing library.
+* Matplotlib: (Matplotlib.pdf).    A python diagram library.
+* Requests: (Requests).       A python HTTP requests library.
+* Psycopg: (psycopg).         A python PostgreSQL driver. 
+* SQL: (sql.pdf).                  The database language.
+* SICP: (sicp).                    Structures of interpreted languages.
