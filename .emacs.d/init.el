@@ -38,7 +38,7 @@
 ;; C-j C-k when j k isn't available
 ;; g j g k next same heading
 ;; ]] [[ next visible heading
-;; C-S-j C-S-k next grouping or scroll
+;; C-J C-K next grouping or scroll
 ;;; core
 ;;;; packages
 (defvar bootstrap-version)
@@ -537,6 +537,10 @@ rebalanced."
   :hook (org-mode . evil-org-mode)
   :init
   (evil-mode 1)
+  :config
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys)
+  (evil-org-set-key-theme '(navigation insert textobjects additional calendar shift todo heading))
   :diminish evil-org-mode)
 
 
@@ -1099,6 +1103,9 @@ If NOERROR, inhibit error messages when we can't find the node."
    "M-SPC" 'corfu-insert-separator
    "RET" nil
    )
+  ('insert corfu-map
+           "C-S-k" 'corfu-scroll-down
+           "C-S-j" 'corfu-scroll-up)
   (corfu-popupinfo-map
    "C-h" 'corfu-popupinfo-toggle
    "C-S-j" 'corfu-popupinfo-scroll-up
@@ -1427,7 +1434,6 @@ If NOERROR, inhibit error messages when we can't find the node."
    '(read-only t cursor-intangible t face minibuffer-prompt))
   (scroll-bar-mode -1)
   (global-auto-revert-mode 1)
-  (desktop-save-mode 1)
   (savehist-mode 1)
   (with-eval-after-load 'mule-util
     (setq
