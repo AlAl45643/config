@@ -649,7 +649,6 @@ rebalanced."
 
 (use-package org-remark
   :hook
-  (after-init . org-remark-global-tracking-mode)
   (Info-mode . org-remark-info-mode)
   :config
   (org-remark-create "understand"
