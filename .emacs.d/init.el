@@ -1380,8 +1380,10 @@ If NOERROR, inhibit error messages when we can't find the node."
          (if dired-auto-revert-buffer
              nil
            switch-to-buffer-preserve-window-point)))
-    (org-display-buffer-in-window (find-file-noselect file) `((window . ,(window-in-direction 'right))))
-    (delete-window)
+    (if (not (f-dir-p file))
+        (progn (org-display-buffer-in-window (find-file-noselect file) `((window . ,(window-in-direction 'right))))
+               (delete-window))
+      (find-file file))
     ))
 
 (defun my-dired-keybinds ()
