@@ -154,6 +154,12 @@
 
 
 
+(defun my-toggle-line ()
+  (interactive)
+  (cond
+   ((equal display-line-numbers 'relative) (setq display-line-numbers 'visual))
+   ((equal display-line-numbers 'visual) (setq display-line-numbers 'relative))))
+
 (general-define-key
  :keymaps 'override
  :states '(insert normal hybrid motion visual operator)
@@ -168,7 +174,7 @@
   "s" 'switch-to-buffer
   "r" 'my-run-program
   "t" 'popper-toggle
-  "e" 'my-save-all-buffers
+  "e" 'my-toggle-line
   "p" 'org-pomodoro
   "f" 'find-file
   "l" 'vterm
@@ -336,6 +342,7 @@
   (cond
    ((and (featurep 'eglot) eglot--managed-mode) (call-interactively #'eglot-format-buffer))
    (t (indent-region (point-min) (point-max)))))
+
 
 (use-package evil
   :demand t
