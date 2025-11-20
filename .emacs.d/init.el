@@ -742,6 +742,16 @@ If NOERROR, inhibit error messages when we can't find the node."
 (use-package php-mode
   :mode ("\\.php\\'" . php-ts-mode)
   )
+;;; latex
+;;;; packages
+(my-install-package auctex)
+;;;; config
+(use-package tex
+  :init
+  (setopt
+   TeX-auto-save t
+   TeX-parse-self t))
+
 ;;; python
 ;;;; packages
 (my-install-package pet)
