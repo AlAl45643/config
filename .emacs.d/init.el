@@ -389,10 +389,7 @@ rebalanced."
    "C-c ," 'evil-repeat-find-char-reverse)
   ('insert 'override
            "C-," (general-simulate-key "C-c")
-           "C-<menu>" (general-simulate-key "C-c"))
-  ('(normal motion)
-   "j" 'evil-next-visual-line
-   "k" 'evil-previous-visual-line))
+           "C-<menu>" (general-simulate-key "C-c")))
 
 (use-package easy-motion
   :general
@@ -1440,7 +1437,7 @@ If NOERROR, inhibit error messages when we can't find the node."
 
 ;;; emacs
 (use-package emacs
-  :hook (((Info-mode prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
+  :hook (((Info-mode prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'relative)))
          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :mode ("init.el" . (lambda () (emacs-lisp-mode) (outline-minor-mode 1) (evil-close-folds)))
   :config
