@@ -547,6 +547,7 @@ rebalanced."
 ;;;; org babel diagrams
 ;;;;; packages
 (my-install-package plantuml-mode)
+(my-install-package graphviz-dot-mode)
 ;;;;; config
 (use-package org
   :config
