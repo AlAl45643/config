@@ -153,13 +153,6 @@
   (bookmark-jump "Burly: home"))
 
 
-
-(defun my-toggle-line ()
-  (interactive)
-  (cond
-   ((equal display-line-numbers 'relative) (setq display-line-numbers 'visual))
-   ((equal display-line-numbers 'visual) (setq display-line-numbers 'relative))))
-
 (general-define-key
  :keymaps 'override
  :states '(insert normal hybrid motion visual operator)
@@ -174,7 +167,7 @@
   "s" 'switch-to-buffer
   "r" 'my-run-program
   "t" 'popper-toggle
-  "e" 'my-toggle-line
+  "e" 'my-save-all-buffers
   "p" 'org-pomodoro
   "f" 'find-file
   "l" 'vterm
@@ -186,7 +179,7 @@
   "v" 'my-eval-expression
   "a" 'org-agenda-list
   "u" 'my-browse-documentation
-  "c" 'toggle-truncate-lines
+  "c" 'visual-line-mode
   "m" 'make-frame-command
   "1" 'my-window-bookmark-home
   "o" 'my-online-search
@@ -362,6 +355,7 @@
    evil-visual-char-message nil
    evil-visual-line-message nil
    evil-visual-block-message nil
+   evil-respect-visual-line-mode t
    evil-visual-screen-line-message nil)
   (evil-mode 1)
   :config
@@ -1444,7 +1438,7 @@ If NOERROR, inhibit error messages when we can't find the node."
 
 ;;; emacs
 (use-package emacs
-  :hook (((Info-mode prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'relative)))
+  :hook (((Info-mode prog-mode evil-org-mode html-ts-mode ibuffer-mode imenu-list-minor-mode dired-mode LaTeX-mode) . (lambda () (setq display-line-numbers 'visual)))
          ((prog-mode html-ts-mode) . (lambda () (setq indent-tabs-mode nil))))
   :mode ("init.el" . (lambda () (emacs-lisp-mode) (outline-minor-mode 1) (evil-close-folds)))
   :config
