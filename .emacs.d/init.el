@@ -59,7 +59,6 @@
 
 (straight-use-package 'use-package)
 
-(straight-pull-recipe-repositories)
 (use-package use-package-core
   :custom
   (use-package-always-defer t))
@@ -377,7 +376,7 @@ rebalanced."
   ('normal
    "=" (general-key-dispatch 'evil-indent
          "=" 'my-format-buffer)
-   "C-D" 'evil-scroll-up
+   "C-S-d" 'evil-scroll-up
    "[ x" 'xref-go-back
    "] x" 'xref-go-forward
    "g d" 'xref-find-definitions
