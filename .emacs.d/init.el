@@ -1320,16 +1320,11 @@ If NOERROR, inhibit error messages when we can't find the node."
 
 ;;; visual non-functional changes
 ;;;; packages
-(my-install-package adaptive-wrap)
 ;;;; config
 (use-package font-core
   :config
   (set-frame-font "JetBrains Mono 10" nil t)
   (setopt line-spacing 1))
-
-(use-package adaptive-wrap
-  :hook ((eshell-mode help-mode html-ts-mode prog-mode evil-org-mode dired-mode helpful-mode info-mode) . adaptive-wrap-prefix-mode)
-  )
 
 ;;; which key
 (use-package which-key
