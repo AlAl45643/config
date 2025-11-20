@@ -744,6 +744,10 @@ If NOERROR, inhibit error messages when we can't find the node."
   :mode ("\\.php\\'" . php-ts-mode)
   )
 ;;; python
+;;;; packages
+(my-install-package pet)
+(my-install-package treesit-auto)
+;;;; config
 (defun my-python-repl ()
   "Go to Python REPL and create it if needed."
   (interactive)
@@ -767,6 +771,19 @@ If NOERROR, inhibit error messages when we can't find the node."
   (inferior-python-mode-map
    "C-c ?" 'my-python-eldoc-at-point))
 
+(use-package pet
+  :demand t
+  :config
+  (add-hook 'python-base-mode-hook 'pet-mode -10)
+  :diminish pet-mode)
+
+(use-package treesit-auto
+  :demand t
+  :init
+  (setopt
+   treesit-font-lock-level 4)
+  :config
+  (global-treesit-auto-mode))
 ;;; javascript
 ;;;;; packages
 (my-install-package js2-mode)
