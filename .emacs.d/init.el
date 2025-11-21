@@ -1328,6 +1328,10 @@ If NOERROR, inhibit error messages when we can't find the node."
   (set-frame-font "JetBrains Mono 10" nil t)
   (setopt line-spacing 1))
 
+(use-package visual-wrap
+  :init
+  (global-visual-wrap-prefix-mode))
+
 ;;; which key
 (use-package which-key
   :init
