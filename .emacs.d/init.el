@@ -403,7 +403,9 @@ rebalanced."
   :hook (evil-mode . evil-collection-init)
   :init
   (setopt
-   evil-collection-setup-minibuffer t)
+   evil-collection-setup-minibuffer t))
+
+(use-package evil-collection-unimpaired
   :diminish evil-collection-unimpaired-mode)
 
 
@@ -1452,7 +1454,8 @@ If NOERROR, inhibit error messages when we can't find the node."
    enable-recursive-minibuffers t
    read-extended-command-predicate #'command-completion-default-include-p
    minibuffer-prompt-properties
-   '(read-only t cursor-intangible t face minibuffer-prompt))
+   '(read-only t cursor-intangible t face minibuffer-prompt)
+   truncate-lines t)
   (scroll-bar-mode -1)
   (global-auto-revert-mode 1)
   (savehist-mode 1)
