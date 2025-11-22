@@ -1332,8 +1332,15 @@ If NOERROR, inhibit error messages when we can't find the node."
 
 
 (use-package simple
-  :hook (visual-line-mode . visual-wrap-prefix-mode)
-   )
+  :hook
+  (visual-line-mode . visual-wrap-prefix-mode)
+  ((org-mode prog-mode) . visual-line-mode)
+  :init
+  (setopt
+   visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+  :diminish visual-line-mode)
+
+   
 
 ;;; which key
 (use-package which-key
