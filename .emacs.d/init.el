@@ -114,11 +114,6 @@
    (t (call-interactively #'eval-expression)))
   )
 
-(defun my-save-all-buffers ()
-  "Save all buffers."
-  (interactive)
-  (save-some-buffers "!"))
-
 (defun my-browse-csharp-docs (x)
   "Browse csharp docs by searching duckduckgo with site: learn.microsoft.com."
   (interactive "sSearch: ")
@@ -167,7 +162,6 @@
   "s" 'switch-to-buffer
   "r" 'my-run-program
   "t" 'popper-toggle
-  "e" 'my-save-all-buffers
   "p" 'org-pomodoro
   "f" 'find-file
   "l" 'vterm
@@ -736,6 +730,13 @@ If NOERROR, inhibit error messages when we can't find the node."
 ;;; docker
 ;;;; packages
 (my-install-package docker)
+;;;; config
+(use-package docker
+  :init
+  (setopt
+   docker-command "podman"))
+
+
 ;;; php
 ;;;;; packages
 (my-install-package php-mode)
@@ -1328,9 +1329,11 @@ If NOERROR, inhibit error messages when we can't find the node."
   (set-frame-font "JetBrains Mono 10" nil t)
   (setopt line-spacing 1))
 
-(use-package visual-wrap
-  :init
-  (global-visual-wrap-prefix-mode))
+
+
+(use-package simple
+  :hook (visual-line-mode . visual-wrap-prefix-mode)
+   )
 
 ;;; which key
 (use-package which-key
@@ -1459,8 +1462,10 @@ If NOERROR, inhibit error messages when we can't find the node."
    read-extended-command-predicate #'command-completion-default-include-p
    minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt)
+   auto-save-visited-interval 1
    truncate-lines t)
   (scroll-bar-mode -1)
+  (auto-save-visited-mode 1)
   (global-auto-revert-mode 1)
   (savehist-mode 1)
   (with-eval-after-load 'mule-util
