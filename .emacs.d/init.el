@@ -576,19 +576,23 @@ rebalanced."
 (my-install-package helpful)
 (my-install-package evil)
 (my-install-package elisp-demos)
+(my-install-package pydoc)
 ;;;;; config
 (defun my-persist-eldoc (interactive)
   (interactive (list t))
-  (if (get-buffer "*persisted eldoc*")
-      (kill-buffer "*persisted eldoc*"))
-  (with-current-buffer eldoc--doc-buffer
-    (let ((s (buffer-string)))
-      (with-current-buffer (generate-new-buffer "*persisted eldoc*")
-        (insert s)
-        (display-buffer (current-buffer))
-        (set-window-start (get-buffer-window "*persisted eldoc*") 0)
-        (general-def 'normal 'local
-          "q" 'evil-window-delete)))))
+  (let ((mode major-mode))
+    (if (get-buffer "*persisted eldoc*")
+        (kill-buffer "*persisted eldoc*"))
+    (with-current-buffer eldoc--doc-buffer
+      (let ((s (string-replace " " " " (buffer-string))))
+        (with-current-buffer (generate-new-buffer "*persisted eldoc*")
+          (insert s)
+          (display-buffer (current-buffer))
+          (set-window-start (get-buffer-window "*persisted eldoc*") 0)
+          (general-def 'normal 'local
+            "q" 'evil-window-delete)
+          (cond
+           ((or (equal mode 'python-ts-mode) (equal mode 'python-mode)) (pydoc-mode))))))))
 
 (defun my-help-at-point ()
   (interactive)
