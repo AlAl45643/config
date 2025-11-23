@@ -480,14 +480,16 @@ rebalanced."
    org-log-into-drawer t
    org-agenda-files '("~/org/TODO.org")
    org-preview-latex-process-alist '((dvipng :programs ("docker")  :description "dvi > png"
-         :message
-         "you need to install the programs: docker."
-         :image-input-type "dvi" :image-output-type "png"
-         :image-size-adjust (1.0 . 1.0) :latex-compiler
-         ("docker run --name latexcn --mount type=bind,src=%f,destination=/workdir/%b.tex docker.io/texlive/texlive:latest latex -interaction nonstopmode /workdir/%b.tex && docker cp latexcn:/workdir/%b.dvi /tmp/%b.dvi && docker container rm latexcn")
-         :image-converter ("docker run --name latexcn --mount type=bind,src=%f,destination=/workdir/%b.dvi docker.io/texlive/texlive:latest dvipng -D %D -T tight /workdir/%b.dvi && docker cp latexcn:/workdir/%b1.png %O && docker container rm latexcn")
-         :transparent-image-converter
-         ("docker run --name latexcn --mount type=bind,src=%f,destination=/workdir/%b.dvi docker.io/texlive/texlive:latest dvipng -D %D -T tight -bg Transparent /workdir/%b.dvi && docker cp latexcn:/workdir/%b.png %O && docker container rm latexcn"))))
+                                             :message
+                                             "you need to install the programs: docker."
+                                             :image-input-type "dvi" :image-output-type "png"
+                                             :image-size-adjust (1.0 . 1.0) :latex-compiler
+                                             ("docker cp %f latex:/workdir/%b.tex && docker exec latex latex -interaction nonstopmode /workdir/%b.tex && docker cp latex:/workdir/%b.dvi /tmp/%b.dvi")
+                                             ;;docker cp latexcndocker.io/texlive/texlive:latest latex -interaction nonstopmode /workdir/%b.tex && docker cp latexcn:/workdir/%b.dvi /tmp/%b.dvi && docker container rm latexcn
+                                             :image-converter ("docker exec latex dvipng -D %D -T tight /workdir/%b.dvi && docker cp latex:/workdir/%b1.png %O")
+                                             :transparent-image-converter
+                                             ("docker exec latex dvipng -D %D -T tight -bg Transparent /workdir/%b.dvi && docker cp latex:/workdir/%b1.png %O"
+                                              ))))
   :config
   (run-at-time "24:01" nil 'my-org-agenda-to-appt))
 
