@@ -35,10 +35,11 @@
 ;;;;; keybind conventions
 ;; q ephermal quit
 ;; Z Q non epehermal quit
-;; C-j C-k when j k isn't available
+;; C-j C-k for history elements
 ;; g j g k next same heading
 ;; ]] [[ next visible heading
-;; C-J C-K next grouping or scroll
+;; C-S-j C-S-k next grouping or scroll
+;; should M or S or C have meanings?
 ;;; core
 ;;;; packages
 (defvar bootstrap-version)
@@ -286,7 +287,7 @@
 ;;;; packages
 (my-install-package evil)
 (my-install-package evil-collection)
-(my-install-package evil-easymotion)
+(my-install-package evil-easymotion '(evil-easymotion :type git :host github :repo "LemonBreezes/evil-easymotion" :branch "avoid-infinite-loops-in-overlays"))
 (my-install-package evil-owl)
 (my-install-package evil-mc)
 (my-install-package evil-commentary)
@@ -360,7 +361,10 @@ rebalanced."
    "[ x" 'xref-go-back
    "] x" 'xref-go-forward
    "g d" 'xref-find-definitions
-   "C-w C-v" 'my-evil-window-vsplit-left)
+   "C-w C-v" 'my-evil-window-vsplit-left
+   "C-S-f" 'scroll-other-window
+   "C-S-b" 'scroll-other-window-down
+   )
   ('insert
    "TAB" 'smart-tab)
   ('(normal visual) 'override
@@ -1167,6 +1171,7 @@ If NOERROR, inhibit error messages when we can't find the node."
    "C-j" 'vertico-next
    "C-k" 'vertico-previous
    "C-S-j" 'scroll-up-command
+   "C-S-k" 'scroll-down-command
    "C-b" 'evil-backward-char
    "C-f" 'evil-forward-char))
 
