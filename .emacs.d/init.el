@@ -281,10 +281,6 @@
   "d" 'delete-file
   "c" 'copy-file)
 
-(general-define-key
- :keymaps 'my-second-leader-map
- "x" `("extend" . ,ctl-x-map)
- )
 
 ;;; evil suite
 ;;;; packages
@@ -1149,8 +1145,8 @@ If NOERROR, inhibit error messages when we can't find the node."
    "RET" nil
    )
   ('insert corfu-map
-           "C-S-k" 'corfu-scroll-down
-           "C-S-j" 'corfu-scroll-up)
+           "M-k" 'corfu-scroll-down
+           "M-j" 'corfu-scroll-up)
   (corfu-popupinfo-map
    "C-h" 'corfu-popupinfo-toggle
    "C-S-j" 'corfu-popupinfo-scroll-up
