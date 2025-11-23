@@ -780,6 +780,7 @@ If NOERROR, inhibit error messages when we can't find the node."
   (eldoc-display-in-buffer `((,(python-eldoc-function))) nil)
   )
 
+
 (use-package python
   :general-config
   ('normal python-ts-mode-map
@@ -1093,6 +1094,10 @@ If NOERROR, inhibit error messages when we can't find the node."
 (use-package yasnippet-capf
   :hook ((prog-mode org-mode) . my-yasnippet-add-completion-functions)
   )
+
+(use-package cape
+  :init
+  (add-to-list 'completion-at-point-functions #'cape-file))
 
 ;;; completion middle end
 ;;;; packages
@@ -1491,4 +1496,5 @@ If NOERROR, inhibit error messages when we can't find the node."
   (add-to-list 'exec-path (concat user-emacs-directory "bin/"))
   (add-to-list 'Info-directory-list (concat user-emacs-directory "info/"))
   :diminish outline-minor-mode)
+
 
