@@ -220,16 +220,6 @@
         ((equal custom-enabled-themes '(modus-operandi-tinted)) (disable-theme 'modus-operandi-tinted) (load-theme 'modus-vivendi-tinted))
         ((equal custom-enabled-themes '(modus-vivendi-tinted)) (disable-theme 'modus-vivendi-tinted) (load-theme 'modus-vivendi))))
 
-(defun my-persist-eldoc (interactive)
-  (interactive (list t))
-  (if (get-buffer "*persisted eldoc*")
-      (kill-buffer "*persisted eldoc*"))
-  (with-current-buffer eldoc--doc-buffer
-    (let ((s (buffer-string)))
-      (with-current-buffer (generate-new-buffer "*persisted eldoc*")
-        (insert s)
-        (display-buffer (current-buffer))
-        (set-window-start (get-buffer-window "*persisted eldoc*") 0)))))
 
 (defun my-code-rename ()
   (interactive)
@@ -272,7 +262,6 @@
 
 (+general-global-menu! "miscellaneous" "s"
   "t" 'my-cycle-theme
-  "e" 'my-persist-eldoc
   "n" 'remember-notes)
 (+general-global-menu! "eval" "v"
   "s" 'eval-last-sexp
@@ -588,11 +577,24 @@ rebalanced."
 (my-install-package evil)
 (my-install-package elisp-demos)
 ;;;;; config
+(defun my-persist-eldoc (interactive)
+  (interactive (list t))
+  (if (get-buffer "*persisted eldoc*")
+      (kill-buffer "*persisted eldoc*"))
+  (with-current-buffer eldoc--doc-buffer
+    (let ((s (buffer-string)))
+      (with-current-buffer (generate-new-buffer "*persisted eldoc*")
+        (insert s)
+        (display-buffer (current-buffer))
+        (set-window-start (get-buffer-window "*persisted eldoc*") 0)
+        (general-def 'normal 'local
+          "q" 'evil-window-delete)))))
+
 (defun my-help-at-point ()
   (interactive)
   (cond
    ((and (featurep 'eglot) eglot--managed-mode) 
-    (call-interactively 'eldoc-doc-buffer))
+    (call-interactively #'my-persist-eldoc))
    ((equal major-mode 'inferior-python-mode)
     (my-python-eldoc-at-point))
    ((featurep 'helpful)
@@ -1346,7 +1348,7 @@ If NOERROR, inhibit error messages when we can't find the node."
 (use-package simple
   :hook
   (visual-line-mode . visual-wrap-prefix-mode)
-  ((org-mode prog-mode) . visual-line-mode)
+  ((org-mode prog-mode fundamental-mode) . visual-line-mode)
   :init
   (setopt
    visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
@@ -1481,8 +1483,7 @@ If NOERROR, inhibit error messages when we can't find the node."
    read-extended-command-predicate #'command-completion-default-include-p
    minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt)
-   auto-save-visited-interval 1
-   truncate-lines t)
+   auto-save-visited-interval 1)
   (scroll-bar-mode -1)
   (auto-save-visited-mode 1)
   (global-auto-revert-mode 1)
