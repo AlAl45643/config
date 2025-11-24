@@ -139,14 +139,61 @@
    ((equal major-mode (or 'python-ts-mode 'python-mode))
     (call-interactively #'my-browse-python-docs))))
 
+(defvar my-previous-window-bookmark "prev")
+
+(defvar my-issues-org-template 
+  "
+1. Go through errors mentally
+2. Create hypothesis for error
+3. Test hypothesis with debugger
+4. Write down failed hypothesis
+5. Repeat 2-4 until you find the problem
+6. Come up with a task to fix the problem
+")
+
+(defun my-window-bookmark-previous ()
+  "Move to previous bookmark"
+  (interactive)
+  (bookmark-maybe-load-default-file)
+  (bookmark-jump my-previous-window-bookmark))
 
 (defun my-window-bookmark-home ()
   "Move to home bookmark."
   (interactive)
   (bookmark-maybe-load-default-file)
+  (burly-bookmark-windows my-previous-window-bookmark)
   ;; work around to get org-agenda buffer working in bookmarks
   (org-agenda-list)
-  (bookmark-jump "Burly: home"))
+  (bookmark-jump "Burly: home")
+  (with-selected-window (get-buffer-window "*Org Agenda*")
+    (org-agenda-goto-today)))
+
+(defun my-window-bookmark-dape ()
+  "Move to dape bookmark."
+  (interactive)
+  (burly-bookmark-windows my-previous-window-bookmark)
+  (save-window-excursion
+    (call-interactively #'dape-info))
+  (delete-other-windows)
+  (let ((left (selected-window))
+        (right (split-window-right))
+        (middle (split-window-right)))
+    (with-selected-window left
+      (switch-to-buffer "*dape-info Scope*"))
+    (with-selected-window right
+      (if (project-current)
+          (let* ((root (project-root (project-current)))
+                 (issues (concat root "issues.org")))
+            (if (f-file-p issues)
+                (find-file issues)
+              (find-file issues)
+              (insert my-issues-org-template)))
+        (let ((issues "./issues.org"))
+          (if (f-file-p issues)
+              (find-file issues)
+            (find-file issues)
+            (insert my-issues-org-template)))))
+    (select-window middle)))
 
 
 (general-define-key
@@ -176,7 +223,9 @@
   "u" 'my-browse-documentation
   "c" 'visual-line-mode
   "m" 'make-frame-command
+  "0" 'my-window-bookmark-previous
   "1" 'my-window-bookmark-home
+  "2" 'my-window-bookmark-dape
   "o" 'my-online-search
   "w" 'eww
   "b" 'remember
@@ -570,7 +619,6 @@ rebalanced."
 (use-package org
   :config
   (org-babel-do-load-languages 'org-babel-load-languages '((python . t))))
-
 ;;; better help
 ;;;;; packages
 (my-install-package helpful)
@@ -769,6 +817,11 @@ If NOERROR, inhibit error messages when we can't find the node."
 
 ;;; python
 ;;;; packages
+;; (my-install-package slime)
+;; (my-install-package slime-company)
+;; (my-install-package py-isort)
+;; (my-install-package slime-star '(slime-star :type git :host github :repo "bpecsek/slime-star"))
+;; (my-install-package swanky-python '(swanky-python :type git :host codeberg :repo "sczi/swanky-python"))
 (my-install-package pet)
 (my-install-package treesit-auto)
 ;;;; config
@@ -809,6 +862,19 @@ If NOERROR, inhibit error messages when we can't find the node."
    treesit-font-lock-level 4)
   :config
   (global-treesit-auto-mode))
+
+;; (use-package swanky-python
+;;   :init
+;;   (setq inferior-lisp-program "sbcl")
+;;   (add-to-list 'load-path (concat user-emacs-directory "straight/repos/slime-star/"))
+;;   (add-to-list 'load-path (concat user-emacs-directory "straight/repos/swanky-python/slimy-python/"))
+;;   (setq slime-contribs '(slime-py slime-fancy slime-star slime-company
+;;                                   slime-asdf slime-sprof slime-tramp)))
+
+
+
+
+
 ;;; javascript
 ;;;;; packages
 (my-install-package js2-mode)
@@ -1360,6 +1426,9 @@ If NOERROR, inhibit error messages when we can't find the node."
   :diminish visual-line-mode)
 
 
+(use-package bookmark
+  :init
+  (setopt bookmark-fringe-mark nil))
 
 ;;; which key
 (use-package which-key
@@ -1489,6 +1558,7 @@ If NOERROR, inhibit error messages when we can't find the node."
    minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt)
    auto-save-visited-interval 1)
+  (setq-default truncate-lines nil)
   (scroll-bar-mode -1)
   (auto-save-visited-mode 1)
   (global-auto-revert-mode 1)
