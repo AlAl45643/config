@@ -229,6 +229,7 @@
   "o" 'my-online-search
   "w" 'eww
   "b" 'remember
+  "y" 'evil-avy-goto-char
   )
 
 ;;;; my-second-leader-evil-map
@@ -336,7 +337,6 @@
 ;;;; packages
 (my-install-package evil)
 (my-install-package evil-collection)
-(my-install-package evil-easymotion '(evil-easymotion :type git :host github :repo "LemonBreezes/evil-easymotion" :branch "avoid-infinite-loops-in-overlays"))
 (my-install-package evil-owl)
 (my-install-package evil-mc)
 (my-install-package evil-commentary)
@@ -423,13 +423,6 @@ rebalanced."
   ('insert 'override
            "C-," (general-simulate-key "C-c")
            "C-<menu>" (general-simulate-key "C-c")))
-
-(use-package easy-motion
-  :general
-  ('normal
-   "M-f" 'evilem-motion-find-char
-   "M-F" 'evilem-motion-find-char-backward
-   ))
 
 (use-package evil-collection
   :hook (evil-mode . evil-collection-init)
@@ -619,7 +612,7 @@ rebalanced."
 (use-package org
   :config
   (org-babel-do-load-languages 'org-babel-load-languages '((python . t))))
-;;; better help
+;;; better help 
 ;;;;; packages
 (my-install-package helpful)
 (my-install-package evil)
