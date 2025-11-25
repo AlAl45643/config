@@ -336,6 +336,7 @@
 ;;; evil suite
 ;;;; packages
 (my-install-package evil)
+(my-install-package avy)
 (my-install-package evil-collection)
 (my-install-package evil-owl)
 (my-install-package evil-mc)
@@ -767,7 +768,9 @@ If NOERROR, inhibit error messages when we can't find the node."
 
 (use-package info
   :config
-  (advice-add 'Info-find-node :override #'my-Info-find-node))
+  (advice-add 'Info-find-node :override #'my-Info-find-node)
+  (add-to-list 'Info-directory-list (concat user-emacs-directory "info/"))
+  )
 
 ;;; git
 ;;;; packages
@@ -810,11 +813,12 @@ If NOERROR, inhibit error messages when we can't find the node."
 
 ;;; python
 ;;;; packages
-;; (my-install-package slime)
-;; (my-install-package slime-company)
-;; (my-install-package py-isort)
-;; (my-install-package slime-star '(slime-star :type git :host github :repo "bpecsek/slime-star"))
-;; (my-install-package swanky-python '(swanky-python :type git :host codeberg :repo "sczi/swanky-python"))
+(my-install-package slime)
+(my-install-package slime-company)
+(my-install-package slime-cape '(slime-cape :type git :host github :repo "ccqpein/slime-cape"))
+(my-install-package py-isort)
+(my-install-package slime-star '(slime-star :type git :host github :repo "bpecsek/slime-star"))
+(my-install-package swanky-python '(swanky-python :type git :host codeberg :repo "sczi/swanky-python"))
 (my-install-package pet)
 (my-install-package treesit-auto)
 ;;;; config
@@ -856,13 +860,27 @@ If NOERROR, inhibit error messages when we can't find the node."
   :config
   (global-treesit-auto-mode))
 
-;; (use-package swanky-python
-;;   :init
-;;   (setq inferior-lisp-program "sbcl")
-;;   (add-to-list 'load-path (concat user-emacs-directory "straight/repos/slime-star/"))
-;;   (add-to-list 'load-path (concat user-emacs-directory "straight/repos/swanky-python/slimy-python/"))
-;;   (setq slime-contribs '(slime-py slime-fancy slime-star slime-company
-;;                                   slime-asdf slime-sprof slime-tramp)))
+
+(use-package slime-company
+  :init
+  (setopt slime-company-completion 'fuzzy))
+
+(use-package slime-cape
+  :hook
+  (slime . slime-cape)
+  (slime-repl . slime-cape)
+  )
+
+
+(use-package swanky-python
+  :hook
+  (slime . (lambda () (company-mode -1)))
+  (slime-repl . (lambda () (company-mode -1)))
+  :init
+  (setq inferior-lisp-program "sbcl")
+  (add-to-list 'load-path (concat user-emacs-directory "straight/repos/slime-star/"))
+  (add-to-list 'load-path (concat user-emacs-directory "straight/repos/swanky-python/slimy-python/"))
+  (setq slime-contribs '(slime-py slime-fancy slime-cape slime-star slime-asdf slime-sprof slime-tramp)))
 
 
 
@@ -1563,7 +1581,6 @@ If NOERROR, inhibit error messages when we can't find the node."
   (load-theme 'tango-dark)
   (blink-cursor-mode 0)
   (add-to-list 'exec-path (concat user-emacs-directory "bin/"))
-  (add-to-list 'Info-directory-list (concat user-emacs-directory "info/"))
   :diminish outline-minor-mode)
 
 
