@@ -333,6 +333,14 @@
   "c" 'copy-file)
 
 
+;;;; simulation keys
+(general-def '(normal visual) 'override
+  "," (general-simulate-key "C-c")
+  "<menu>" (general-simulate-key "C-c")
+  "C-c ," 'evil-repeat-find-char-reverse)
+(general-def 'insert 'override
+  "C-," (general-simulate-key "C-c")
+  "C-<menu>" (general-simulate-key "C-c"))
 ;;; evil suite
 ;;;; packages
 (my-install-package evil)
@@ -416,14 +424,7 @@ rebalanced."
    "C-S-b" 'scroll-other-window-down
    )
   ('insert
-   "TAB" 'smart-tab)
-  ('(normal visual) 'override
-   "," (general-simulate-key "C-c")
-   "<menu>" (general-simulate-key "C-c")
-   "C-c ," 'evil-repeat-find-char-reverse)
-  ('insert 'override
-           "C-," (general-simulate-key "C-c")
-           "C-<menu>" (general-simulate-key "C-c")))
+   "TAB" 'smart-tab))
 
 (use-package evil-collection
   :hook (evil-mode . evil-collection-init)
@@ -503,7 +504,13 @@ rebalanced."
    "C-<iso-lefttab>" 'org-shifttab
    "C-c t" 'org-match-sparse-tree-heading)
   :init
+  (require 'org-habit)
+  (add-to-list 'org-modules 'org-habit t)
   (setopt
+   org-habit-graph-column 50
+   org-habit-show-habits-only-for-today nil
+   org-habit-preceding-days 15
+   org-habit-following-days 14
    org-clock-sound (concat user-emacs-directory "bell.wav")
    org-agenda-timegrid-use-ampm t
    appt-activate t
@@ -524,6 +531,7 @@ rebalanced."
                                               ))))
   :config
   (run-at-time "24:01" nil 'my-org-agenda-to-appt))
+
 
 (defun my-org-pomodoro-choose-break-time (arg)
   "Choose break time for pomodoro."
@@ -1433,7 +1441,7 @@ If NOERROR, inhibit error messages when we can't find the node."
   ((org-mode prog-mode fundamental-mode) . visual-line-mode)
   :init
   (setopt
-   visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+   visual-line-fringe-indicators '(nill nill))
   :diminish visual-line-mode)
 
 
