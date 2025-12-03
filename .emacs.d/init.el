@@ -1522,7 +1522,7 @@ If NOERROR, inhibit error messages when we can't find the node."
 ;;; grammar
 ;;;; config
 (use-package ispell
-  :hook ((prog-mode org-mode) . ispell-minor-mode)
+  :hook ((prog-mode org-mode LaTeX-mode) . ispell-minor-mode)
   :init
   (setopt
    ispell-program-name "hunspell"
