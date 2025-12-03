@@ -587,6 +587,11 @@ rebalanced."
 
 
 
+;;;; org shell
+;;;;; config
+(use-package org
+  :config
+  (org-babel-do-load-languages 'org-babel-load-languages '((shell . t))))
 ;;;; org babel diagrams
 ;;;;; packages
 (my-install-package plantuml-mode)
